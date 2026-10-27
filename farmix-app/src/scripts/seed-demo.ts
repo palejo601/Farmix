@@ -8,15 +8,22 @@ import { createDb } from '../db/client.js';
  * La clave se genera al azar y se imprime una sola vez. No usar en producción.
  */
 const config = loadConfig({ ...process.env, LOG_LEVEL: 'warn' });
-if (config.NODE_ENV === 'production') {
-  console.error('seed:demo no se ejecuta en producción.');
+if (config.NODE_ENV === 'production' && process.env.SEED_DEMO !== 'true') {
+  console.error('seed:demo no se ejecuta en producción salvo que se defina SEED_DEMO=true de forma explícita.');
   process.exit(1);
 }
 
 const { pool } = createDb(config.DATABASE_URL);
 const app = await buildApp(config, pool);
-const email = process.argv[2] ?? 'demo@ejemplo.test';
-const password = randomBytes(12).toString('base64url');
+const email = process.argv[2] ?? process.env.DEMO_EMAIL ?? 'demo@ejemplo.test';
+const password = process.env.DEMO_PASSWORD || randomBytes(12).toString('base64url');
+const existing = await pool.query('SELECT 1 FROM users WHERE lower(email) = lower($1)', [email]);
+if (existing.rowCount) {
+  console.log(`La cuenta de demostración ${email} ya existe: no se vuelve a sembrar.`);
+  await app.close();
+  await pool.end();
+  process.exit(0);
+}
 const day = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 let cookie = '';
 
@@ -79,7 +86,7 @@ await call('POST', `${P}/diagnoses`, { performedOn: day(-1), notes: 'Diagnóstic
 
 console.log('\nDatos de demostración SIMULADOS creados.');
 console.log(`  Correo:     ${email}`);
-console.log(`  Contraseña: ${password}   (se muestra una sola vez)`);
+console.log(process.env.DEMO_PASSWORD ? '  Contraseña: la definida en DEMO_PASSWORD' : `  Contraseña: ${password}   (se muestra una sola vez)`);
 console.log(`  Droguería:  ${d}\n`);
 await app.close();
 await pool.end();

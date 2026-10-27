@@ -33,7 +33,9 @@ export class ConfigError extends Error {
 
 /** Valida las variables de entorno. Lanza ConfigError si falta o es inválida una obligatoria. */
 export function loadConfig(raw: Record<string, string | undefined> = process.env): Config {
-  const result = schema.safeParse(raw);
+  // Render expone la URL pública del servicio en RENDER_EXTERNAL_URL; se usa solo si APP_ORIGIN no se definió.
+  const withFallback = { ...raw, APP_ORIGIN: raw.APP_ORIGIN || raw.RENDER_EXTERNAL_URL };
+  const result = schema.safeParse(withFallback);
   if (!result.success) {
     throw new ConfigError(result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`));
   }

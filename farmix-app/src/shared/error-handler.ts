@@ -13,8 +13,12 @@ const BY_STATUS: Record<number, ErrorCode> = {
 };
 
 /** Formato único de error. Nunca expone trazas ni mensajes internos al cliente. */
-export function registerErrorHandling(app: FastifyInstance): void {
+export function registerErrorHandling(app: FastifyInstance, opts: { spaFallback?: boolean } = {}): void {
   app.setNotFoundHandler((req, reply) => {
+    // Rutas del frontend (React Router): se responde index.html; /api nunca cae aquí.
+    if (opts.spaFallback && req.method === 'GET' && !req.url.startsWith('/api/') && (req.headers.accept ?? '').includes('text/html')) {
+      return reply.sendFile('index.html');
+    }
     const body: ErrorBody = { error: { code: 'NOT_FOUND', message: 'Recurso no encontrado', requestId: req.id } };
     return reply.code(404).send(body);
   });

@@ -12,9 +12,9 @@ cp .env.example .env          # complete DATABASE_URL y APP_ORIGIN (obligatorias
 npm run migrate               # aplica las migraciones SQL numeradas
 npm run seed:demo             # opcional: datos de demostración SIMULADOS (imprime una clave aleatoria)
 npm run dev                   # servidor con recarga en http://localhost:3000
-npm test                      # 358 pruebas (requiere PostgreSQL, ver docs/05)
+npm test                      # 368 pruebas (requiere PostgreSQL, ver docs/05)
 npm run openapi               # regenera docs/openapi.json
-npm run build && npm start    # compilar y ejecutar en producción
+npm run build && npm start    # compilar y ejecutar en producción (ver docs/07-despliegue.md)
 ```
 
 Base de datos de pruebas: defina `TEST_DATABASE_URL` (por ejemplo `postgres://USUARIO:CLAVE@localhost:5432/farmix_test`); las pruebas **borran y recrean el esquema `public`** de esa base. Nunca la apunte a una base con datos. Sin esa variable las pruebas se niegan a ejecutarse.
@@ -67,6 +67,5 @@ Módulos: `health`, `auth`, `users`, `personal-data`, `drugstores`, `expirations
 ## Qué NO está implementado (honestidad)
 
 - `MAIL_MODE=smtp`: se valida la variable pero no hay envío real; con `MAIL_MODE=dev` los correos quedan en la tabla `dev_mailbox`.
-- `STATIC_DIR`: se valida pero el backend **no** sirve archivos estáticos; el frontend debe servirse aparte o detrás de un proxy.
 - No hay limpieza programada de sesiones vencidas ni de vistas previas caducadas (las filas permanecen, aunque no son utilizables).
 - No existe traspaso de propiedad de una droguería, ni gestión de versiones del instrumento por la API.

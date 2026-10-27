@@ -27,6 +27,7 @@ El encargo exige justificar por escrito cualquier cambio. Se **agregaron** (no s
 |---|---|---|
 | @fastify/multipart | 10.1.6 | Necesario para la carga de soportes y de archivos de importación (no hay forma estándar de recibir multipart en Fastify sin él). Límites: 5 MB, 1 archivo. |
 | @fastify/cors | 11.3.1 | Si el frontend corre en otro origen (p. ej. servidor de desarrollo), el navegador bloquea las llamadas con cookie sin CORS. Se restringe a `APP_ORIGIN` con credenciales. |
+| @fastify/static | 10.1.8 | Sirve el frontend compilado (`STATIC_DIR`) desde el mismo servicio, con una sola URL pública y sin CORS. |
 | @fastify/swagger | 9.9.2 | Genera el documento OpenAPI exigido en la Fase 4 a partir de los esquemas Zod. |
 | exceljs | 4.4.0 | Lectura de `.xlsx` en la importación. Se descartó `xlsx` (SheetJS) porque su versión en npm no se mantiene y arrastra avisos de seguridad. |
 | csv-parse | 7.0.3 | Lectura robusta de `.csv`. |

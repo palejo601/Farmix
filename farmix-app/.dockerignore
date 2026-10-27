@@ -1,0 +1,10 @@
+node_modules
+dist
+storage
+.env
+.git
+docs
+tests
+frontend/node_modules
+frontend/dist
+frontend/e2e

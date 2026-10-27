@@ -1,0 +1,44 @@
+# Blueprint de Render para el repositorio completo: el proyecto vive en la carpeta farmix-app/.
+# (farmix-app/render.yaml es el equivalente si esa carpeta se mueve a la raíz de su propio repositorio.)
+# FARMIX es un producto mínimo viable en estudio: la demostración usa datos SIMULADOS.
+# Plan gratuito: el servicio se duerme, la base caduca a los 30 días y los soportes subidos se pierden al redesplegar.
+databases:
+  - name: farmix-db
+    plan: free
+    databaseName: farmix
+    user: farmix
+
+services:
+  - type: web
+    name: farmix
+    runtime: docker
+    repo: https://github.com/palejo601/Farmix
+    branch: claude/hopeful-maxwell-an8ywk
+    rootDir: farmix-app
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: farmix-db
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: TRUST_PROXY
+        value: "true"
+      - key: EXPOSE_DOCS
+        value: "false"
+      - key: STORAGE_DIR
+        value: /tmp/farmix-storage
+      - key: MAIL_MODE
+        value: dev
+      - key: LOG_LEVEL
+        value: info
+      - key: SEED_DEMO
+        value: "true"
+      - key: DEMO_PASSWORD
+        generateValue: true

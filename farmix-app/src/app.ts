@@ -4,6 +4,9 @@ import swagger from '@fastify/swagger';
 import multipart from '@fastify/multipart';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import fastifyStatic from '@fastify/static';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import type pg from 'pg';
@@ -60,7 +63,10 @@ export async function buildApp(config: Config, pool: pg.Pool): Promise<FastifyIn
   app.decorate('db', makeDb(pool));
 
   registerRequestId(app);
-  registerErrorHandling(app);
+  const staticRoot = config.STATIC_DIR ? path.resolve(config.STATIC_DIR) : '';
+  const serveFrontend = Boolean(staticRoot) && existsSync(path.join(staticRoot, 'index.html'));
+  if (config.STATIC_DIR && !serveFrontend) app.log.warn({ STATIC_DIR: staticRoot }, 'STATIC_DIR no contiene index.html: no se sirve el frontend');
+  registerErrorHandling(app, { spaFallback: serveFrontend });
   registerAuthHooks(app);
   app.decorateRequest('membership', null);
 
@@ -104,6 +110,24 @@ export async function buildApp(config: Config, pool: pg.Pool): Promise<FastifyIn
   });
   if (config.EXPOSE_DOCS) {
     app.get('/api/v1/openapi.json', { schema: { hide: true } }, async () => app.swagger());
+  }
+
+  if (serveFrontend) {
+    // La API conserva la CSP estricta (default-src 'none'); solo las páginas y archivos del frontend usan esta,
+    // que permite scripts y estilos propios y atributos style (barras de progreso) pero no scripts en línea.
+    const FRONT_CSP = "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
+    app.addHook('onSend', async (req, reply) => {
+      if (!req.url.startsWith('/api/')) reply.header('Content-Security-Policy', FRONT_CSP);
+    });
+    await app.register(fastifyStatic, {
+      root: staticRoot,
+      wildcard: true,
+      index: 'index.html',
+      dotfiles: 'ignore',
+      setHeaders: (res, filePath) => {
+        res.header('Cache-Control', filePath.includes(`${path.sep}assets${path.sep}`) ? 'public, max-age=31536000, immutable' : 'no-cache');
+      },
+    });
   }
 
   await app.register(healthRoutes, { prefix: '/api/v1' });

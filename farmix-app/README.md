@@ -26,11 +26,15 @@ cd frontend && npm install && npm run dev      # http://localhost:5173 (puerto f
 
 Ver [`docs/06-frontend.md`](docs/06-frontend.md).
 
+## Despliegue (una sola URL)
+
+`Dockerfile` + `render.yaml`: el backend sirve también la interfaz. Pasos en [`docs/07-despliegue.md`](docs/07-despliegue.md).
+
 ## Pruebas
 
 ```bash
 export TEST_DATABASE_URL=postgres://USUARIO:CLAVE@localhost:5432/NOMBRE_BD_PRUEBAS   # base desechable
-npm test     # 358 pruebas; recrea el esquema public de esa base
+npm test     # 368 pruebas; recrea el esquema public de esa base
 ```
 
 ## Documentación (`docs/`)
@@ -41,4 +45,5 @@ npm test     # 358 pruebas; recrea el esquema public de esa base
 4. [`04-stack.md`](docs/04-stack.md): versiones y justificación de cambios.
 5. [`05-resultado-de-pruebas.md`](docs/05-resultado-de-pruebas.md): resultados y pendientes.
 - [`06-frontend.md`](docs/06-frontend.md): interfaz web, pantallas, cómo probarla y límites.
+- [`07-despliegue.md`](docs/07-despliegue.md): un solo servicio (API + web), Docker y Render.
 - [`rutas.md`](docs/rutas.md): inventario de las 71 rutas (propuesta; el prototipo no estuvo disponible).

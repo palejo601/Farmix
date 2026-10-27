@@ -22,6 +22,15 @@ describe('configuración', () => {
     expect(() => loadConfig({ ...baseEnv, COOKIE_SECURE: 'si' })).toThrow(ConfigError);
   });
 
+  it('usa RENDER_EXTERNAL_URL solo si APP_ORIGIN no está definido', () => {
+    const env: Record<string, string | undefined> = { ...baseEnv, RENDER_EXTERNAL_URL: 'https://farmix.onrender.com' };
+    delete env.APP_ORIGIN;
+    expect(loadConfig(env).APP_ORIGIN).toBe('https://farmix.onrender.com');
+    expect(loadConfig({ ...env, APP_ORIGIN: 'https://propio.example' }).APP_ORIGIN).toBe('https://propio.example');
+    delete env.RENDER_EXTERNAL_URL;
+    expect(() => loadConfig(env)).toThrow(ConfigError);
+  });
+
   it('exige COOKIE_SECURE=true en producción', () => {
     expect(() => loadConfig({ ...baseEnv, NODE_ENV: 'production' })).toThrow(/COOKIE_SECURE/);
     expect(loadConfig({ ...baseEnv, NODE_ENV: 'production', COOKIE_SECURE: 'true' }).NODE_ENV).toBe('production');

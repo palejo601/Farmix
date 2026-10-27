@@ -70,4 +70,4 @@ DEMO_PASSWORD='<la que imprimió seed:demo>' SHOTS=/tmp/capturas node frontend/e
 - Los formatos de fecha de los campos `date` dependen del idioma del navegador.
 - Sin paginación por páginas: «Cargar más» (100 por tanto).
 - No hay edición de diagnósticos eliminados ni gestión de versiones del instrumento (la API no la ofrece).
-- Producción: falta definir cómo se sirve el frontend compilado (`frontend/dist`); el backend no lo sirve (`STATIC_DIR` no implementado). Un proxy inverso (nginx, Caddy) delante de ambos resuelve el origen único.
+- Producción: el backend sirve `frontend/dist` si se define `STATIC_DIR` (ver `docs/07-despliegue.md`). La CSP del frontend permite estilos en atributos (`style-src-attr 'unsafe-inline'`) por las barras de progreso; los scripts en línea siguen bloqueados.
