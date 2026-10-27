@@ -38,7 +38,8 @@ export const topicResponse = z.object({ item: topicDto });
 export const topicList = z.object({ items: z.array(topicDto) });
 
 // ---- Capacitaciones ----
-export const TRAINING_STATUSES = ['vigente', 'pendiente', 'vencida'] as const;
+// pendiente: sin fecha de realización · vencida: vigencia pasada · sin_soporte: realizada y vigente pero sin certificado ni lista de asistencia · vigente: realizada, vigente y con soporte.
+export const TRAINING_STATUSES = ['vigente', 'pendiente', 'vencida', 'sin_soporte'] as const;
 export const trainingBody = z.object({
   workerId: z.uuid(),
   topicId: z.uuid(),

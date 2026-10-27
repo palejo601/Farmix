@@ -20,21 +20,21 @@ Abra <http://localhost:5173>. `seed:demo` imprime el correo y una contraseña al
 
 ## Pantallas
 
+Siguen las secciones del prototipo original de FARMIX (Medir · Analizar · Mejorar):
+
 | Pantalla | Qué hace |
 |---|---|
 | Ingreso, registro (con aceptación del aviso de privacidad), recuperar contraseña | Cuentas y sesión |
-| Mis droguerías | Lista y creación |
-| Resumen | Reporte consolidado con periodo editable, barras por clasificación, segregación, personal, plan y último diagnóstico; imprimible |
-| Vencimientos | Alta/edición/borrado, filtro por estado, pérdida confirmada y valor en riesgo, destino |
-| Residuos | Registro por fecha, clasificación, cantidad y unidad; regla «medicamento vencido ≠ riesgo biológico» |
-| Segregación | Verificaciones con porcentaje calculado por la API |
-| Personal y capacitación | Trabajadores, temas y capacitaciones (pendiente/vigente/vencida), con soporte PDF/imagen |
-| Plan de mejoramiento | Acciones con estado; cerrar exige fecha de cierre; marca de atraso |
-| Diagnóstico | Cuestionario 1–5 por ítem, madurez por área y global |
-| Importar Excel / CSV | Vista previa (no guarda), tabla fila a fila, confirmación, plantilla CSV |
-| Migrar datos locales | Pegar o cargar JSON, vista previa, confirmar y revertir |
-| Miembros / Configuración | Roles, alta y retiro; edición y borrado de la droguería (según rol) |
-| Mi cuenta | Perfil, cambio de contraseña, descarga de datos, solicitud/cancelación de eliminación (15 días) |
+| Mis droguerías | Lista y creación (número de empleados; marca de demostración con datos simulados) |
+| **Inicio** | Ciclo registrar → medir → analizar → mejorar → volver a medir; alertas de lo que necesita atención hoy; indicadores descriptivos |
+| **Diagnóstico** | Pestañas *Obligatorios* (11, cumple/no cumple/no aplica, con fundamento normativo), *Madurez* (17, puntaje 1–5 por área), *Resultados* (antes y después frente a la línea base, pendientes → crear mejora, historial) y *Mejoras* (tablero pendiente / en curso / cerrada) |
+| **Vencimientos** | Tres cifras (pérdida confirmada, en riesgo sin gestionar, devuelto a proveedor), filtros con conteo, anillo de días, destino editable, aviso configurable |
+| **Residuos** | Registro por tipo, clasificación, manejo y soporte; kg y unidades por separado; gráfica de 6 meses por clase; guía de bolsas; pestaña de verificación de segregación |
+| **Personal** | Tarjetas por trabajador con un chip por tema (Capacitado, Sin soporte, Vencida, Pendiente); registro grupal con soporte PDF/imagen; temas base |
+| **Reporte** | Documento de gestión con 6 secciones, imprimible o PDF, con marca de datos simulados |
+| **Normativa** | Marco legal con fuentes oficiales y estado (obligación legal / pendiente de verificación) |
+| Importar Excel / CSV, Migrar datos locales | Dos pasos con vista previa; migración con reversión |
+| Miembros, Configuración, Mi cuenta | Roles, datos de la droguería, privacidad, descarga y eliminación de cuenta |
 
 La interfaz muestra en todo momento el rótulo «producto mínimo viable en estudio · indicadores = hipótesis por validar · datos de demostración simulados». Los botones de borrado se ocultan para el rol operador; aun así **la autorización real la hace el backend** (la interfaz solo evita acciones que fallarían).
 
@@ -55,7 +55,7 @@ Dependencias: React 19, React Router 7, Vite 8, TypeScript. Sin librerías de in
 ## Pruebas realizadas
 
 - `npm run build` (compilación TypeScript estricta + empaquetado) sin errores.
-- `e2e/ui-smoke.cjs` (Playwright/Chromium contra servidores reales): **18 de 18 pasos correctos**, sin errores de consola ni respuestas 5xx. Cubre ingreso fallido y exitoso, resumen, alta y gestión de producto, error de duplicado, regla de residuos, validación de segregación, trabajador→tema→capacitación (pendiente→vigente), cierre de acción con fecha, diagnóstico, importación en dos pasos, migración local con reversión, miembros, cuenta, cierre de sesión, ruta protegida, registro con aviso de privacidad y menú móvil.
+- `e2e/ui-smoke.cjs` (Playwright/Chromium contra servidores reales): **22 de 22 pasos correctos**, sin errores de consola ni respuestas 5xx. Cubre ingreso fallido y exitoso, resumen, alta y gestión de producto, error de duplicado, regla de residuos, validación de segregación, trabajador→tema→capacitación (pendiente→vigente), cierre de acción con fecha, diagnóstico, importación en dos pasos, migración local con reversión, miembros, cuenta, cierre de sesión, ruta protegida, registro con aviso de privacidad y menú móvil.
 
 ```bash
 DEMO_PASSWORD='<la que imprimió seed:demo>' SHOTS=/tmp/capturas node frontend/e2e/ui-smoke.cjs

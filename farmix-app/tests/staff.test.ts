@@ -76,7 +76,9 @@ describe('temas', () => {
     expect(a.statusCode).toBe(201);
     expect(a.json().item.validityMonths).toBe(12);
     expect((await topic({ topicName: 'MANEJO DE RESIDUOS' })).statusCode).toBe(409);
-    expect((await get(ctx, `${P()}/training-topics`, t.op.cookie)).json().items).toHaveLength(1);
+    const items = (await get(ctx, `${P()}/training-topics`, t.op.cookie)).json().items;
+    expect(items).toHaveLength(5); // 4 temas base de la droguería + el creado aquí
+    expect(items.map((i: { topicName: string }) => i.topicName)).toContain('Gestión integral de residuos (PGIRASA)');
   });
 
   it.each([
@@ -107,22 +109,35 @@ describe('capacitaciones', () => {
     const { w, tp } = await setup(6);
     const d = await day(-10);
     const res = await train({ workerId: w, topicId: tp, trainedOn: d });
-    expect(res.json().item.status).toBe('vigente');
+    expect(res.json().item.status).toBe('sin_soporte'); // realizada y dentro de vigencia, pero sin certificado
     const exp = await ctx.pool.query("SELECT to_char($1::date + interval '6 months', 'YYYY-MM-DD') AS d", [d]);
     expect(res.json().item.validUntil).toBe(exp.rows[0].d);
   });
 
-  it('clasifica vigente, vencida y pendiente según la fecha de vigencia', async () => {
+  it('clasifica vencida, sin soporte y pendiente según la fecha de vigencia', async () => {
     const { w, tp } = await setup();
     const w2 = (await worker()).json().item.id;
     const w3 = (await worker()).json().item.id;
     expect((await train({ workerId: w, topicId: tp, trainedOn: await day(-400), validUntil: await day(-1) })).json().item.status).toBe('vencida');
-    expect((await train({ workerId: w2, topicId: tp, trainedOn: await day(-10), validUntil: await day(0) })).json().item.status).toBe('vigente');
+    expect((await train({ workerId: w2, topicId: tp, trainedOn: await day(-10), validUntil: await day(0) })).json().item.status).toBe('sin_soporte');
     expect((await train({ workerId: w3, topicId: tp })).json().item.status).toBe('pendiente');
     const list = (await get(ctx, `${P()}/trainings`, t.op.cookie)).json();
     expect(list.total).toBe(3);
     expect((await get(ctx, `${P()}/trainings?status=vencida`, t.op.cookie)).json().total).toBe(1);
     expect((await get(ctx, `${P()}/trainings?workerId=${w2}`, t.op.cookie)).json().items[0].workerName).toMatch(/Trabajador Simulado/);
+  });
+
+  it('con soporte adjunto la capacitación queda vigente; sin soporte, «sin_soporte»', async () => {
+    const { w, tp } = await setup();
+    const id = (await train({ workerId: w, topicId: tp, trainedOn: await day(-2) })).json().item.id;
+    const file = await ctx.pool.query(
+      "INSERT INTO support_files (drugstore_id, original_name, stored_name, mime_type, size_bytes, sha256) VALUES ($1, 'cert.pdf', $2, 'application/pdf', 10, $3) RETURNING id",
+      [t.id, 'a'.repeat(32) + '.pdf', 'b'.repeat(64)],
+    );
+    const up = await send(ctx, 'PATCH', `${P()}/trainings/${id}`, { supportFileId: file.rows[0].id }, t.op.cookie);
+    expect(up.json().item.status).toBe('vigente');
+    const off = await send(ctx, 'PATCH', `${P()}/trainings/${id}`, { supportFileId: null }, t.op.cookie);
+    expect(off.json().item.status).toBe('sin_soporte');
   });
 
   it('un solo registro por trabajador y tema', async () => {
@@ -159,7 +174,7 @@ describe('capacitaciones', () => {
     const { w, tp } = await setup(12);
     const id = (await train({ workerId: w, topicId: tp })).json().item.id;
     const done = await send(ctx, 'PATCH', `${P()}/trainings/${id}`, { trainedOn: await day(-1) }, t.op.cookie);
-    expect(done.json().item.status).toBe('vigente');
+    expect(done.json().item.status).toBe('sin_soporte');
     expect(done.json().item.validUntil).not.toBeNull();
     const back = await send(ctx, 'PATCH', `${P()}/trainings/${id}`, { trainedOn: null }, t.op.cookie);
     expect(back.json().item).toMatchObject({ status: 'pendiente', validUntil: null });
@@ -187,6 +202,18 @@ describe('capacitaciones', () => {
     expect((await send(ctx, 'DELETE', `${P()}/trainings/${id}`, undefined, t.admin.cookie)).statusCode).toBe(204);
     const a = await ctx.pool.query('SELECT action FROM audit_logs WHERE resource_id=$1 ORDER BY id', [id]);
     expect(a.rows.map((x) => x.action)).toEqual(['staff.training_create', 'staff.training_delete']);
+  });
+});
+
+describe('temas base', () => {
+  it('toda droguería nueva trae los 4 temas base de capacitación (PGIRASA, vencimientos, servicio farmacéutico, bioseguridad)', async () => {
+    const names = (await get(ctx, `${P()}/training-topics`, t.owner.cookie)).json().items.map((i: { topicName: string }) => i.topicName);
+    expect(names).toEqual(expect.arrayContaining([
+      'Gestión integral de residuos (PGIRASA)', 'Control de vencimientos y rotación de lotes',
+      'Procedimientos del servicio farmacéutico', 'Bioseguridad',
+    ]));
+    const other = (await get(ctx, `/drugstores/${t.other.id}/training-topics`, t.other.owner.cookie)).json().items;
+    expect(other).toHaveLength(4);
   });
 });
 

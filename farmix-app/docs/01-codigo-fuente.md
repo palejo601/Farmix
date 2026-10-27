@@ -12,7 +12,7 @@ cp .env.example .env          # complete DATABASE_URL y APP_ORIGIN (obligatorias
 npm run migrate               # aplica las migraciones SQL numeradas
 npm run seed:demo             # opcional: datos de demostración SIMULADOS (imprime una clave aleatoria)
 npm run dev                   # servidor con recarga en http://localhost:3000
-npm test                      # 368 pruebas (requiere PostgreSQL, ver docs/05)
+npm test                      # 391 pruebas (requiere PostgreSQL, ver docs/05)
 npm run openapi               # regenera docs/openapi.json
 npm run build && npm start    # compilar y ejecutar en producción (ver docs/07-despliegue.md)
 ```
@@ -34,7 +34,7 @@ src/
     migrate.ts              Ejecutor de migraciones: orden, transacción por archivo, bloqueo, hash anti-alteración.
     migrate-cli.ts          Comando `npm run migrate`.
     schema.ts               Tablas Drizzle (reflejan las migraciones; la fuente de verdad son los .sql).
-    migrations/0001..0012   Migraciones SQL numeradas (nunca se editan una vez aplicadas).
+    migrations/0001..0013   Migraciones SQL numeradas (nunca se editan una vez aplicadas).
   shared/
     errors.ts, error-handler.ts   Formato único de error, sin detalles internos.
     request-id.ts           X-Request-Id en cada respuesta.
@@ -52,7 +52,7 @@ src/
   modules/imports/parse.ts  Lectura de .xlsx y .csv.
   scripts/seed-demo.ts      Datos de demostración simulados.
   scripts/export-openapi.ts Exporta docs/openapi.json.
-tests/                      20 archivos de prueba (ver docs/05).
+tests/                      21 archivos de prueba (ver docs/05).
 docs/                       Esta documentación, schema.sql, openapi.json, rutas.md.
 ```
 

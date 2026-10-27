@@ -752,6 +752,15 @@
                             "minimum": -9007199254740991,
                             "maximum": 9007199254740991
                           },
+                          "employeeCount": {
+                            "nullable": true,
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "isDemo": {
+                            "type": "boolean"
+                          },
                           "role": {
                             "type": "string",
                             "enum": [
@@ -776,6 +785,8 @@
                           "name",
                           "city",
                           "expiryAlertDays",
+                          "employeeCount",
+                          "isDemo",
                           "role",
                           "createdAt",
                           "updatedAt"
@@ -816,6 +827,15 @@
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 365
+                  },
+                  "employeeCount": {
+                    "nullable": true,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "isDemo": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -852,6 +872,15 @@
                           "minimum": -9007199254740991,
                           "maximum": 9007199254740991
                         },
+                        "employeeCount": {
+                          "nullable": true,
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "isDemo": {
+                          "type": "boolean"
+                        },
                         "role": {
                           "type": "string",
                           "enum": [
@@ -876,6 +905,8 @@
                         "name",
                         "city",
                         "expiryAlertDays",
+                        "employeeCount",
+                        "isDemo",
                         "role",
                         "createdAt",
                         "updatedAt"
@@ -935,6 +966,15 @@
                           "minimum": -9007199254740991,
                           "maximum": 9007199254740991
                         },
+                        "employeeCount": {
+                          "nullable": true,
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "isDemo": {
+                          "type": "boolean"
+                        },
                         "role": {
                           "type": "string",
                           "enum": [
@@ -959,6 +999,8 @@
                         "name",
                         "city",
                         "expiryAlertDays",
+                        "employeeCount",
+                        "isDemo",
                         "role",
                         "createdAt",
                         "updatedAt"
@@ -998,6 +1040,12 @@
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 365
+                  },
+                  "employeeCount": {
+                    "nullable": true,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000
                   }
                 }
               }
@@ -1043,6 +1091,15 @@
                           "minimum": -9007199254740991,
                           "maximum": 9007199254740991
                         },
+                        "employeeCount": {
+                          "nullable": true,
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "isDemo": {
+                          "type": "boolean"
+                        },
                         "role": {
                           "type": "string",
                           "enum": [
@@ -1067,6 +1124,8 @@
                         "name",
                         "city",
                         "expiryAlertDays",
+                        "employeeCount",
+                        "isDemo",
                         "role",
                         "createdAt",
                         "updatedAt"
@@ -1510,10 +1569,14 @@
                             "type": "string",
                             "enum": [
                               "pendiente",
-                              "devolucion_proveedor",
-                              "disposicion_final",
-                              "otro"
+                              "devuelto_proveedor",
+                              "destruccion_gestor",
+                              "averia_deterioro"
                             ]
+                          },
+                          "supportRef": {
+                            "nullable": true,
+                            "type": "string"
                           },
                           "managedAt": {
                             "nullable": true,
@@ -1553,6 +1616,7 @@
                           "unitCost",
                           "totalCost",
                           "destination",
+                          "supportRef",
                           "managedAt",
                           "status",
                           "createdAt",
@@ -1639,10 +1703,16 @@
                     "type": "string",
                     "enum": [
                       "pendiente",
-                      "devolucion_proveedor",
-                      "disposicion_final",
-                      "otro"
+                      "devuelto_proveedor",
+                      "destruccion_gestor",
+                      "averia_deterioro"
                     ]
+                  },
+                  "supportRef": {
+                    "nullable": true,
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
                   }
                 },
                 "required": [
@@ -1720,10 +1790,14 @@
                           "type": "string",
                           "enum": [
                             "pendiente",
-                            "devolucion_proveedor",
-                            "disposicion_final",
-                            "otro"
+                            "devuelto_proveedor",
+                            "destruccion_gestor",
+                            "averia_deterioro"
                           ]
+                        },
+                        "supportRef": {
+                          "nullable": true,
+                          "type": "string"
                         },
                         "managedAt": {
                           "nullable": true,
@@ -1763,6 +1837,7 @@
                         "unitCost",
                         "totalCost",
                         "destination",
+                        "supportRef",
                         "managedAt",
                         "status",
                         "createdAt",
@@ -1851,10 +1926,14 @@
                             "type": "string",
                             "enum": [
                               "pendiente",
-                              "devolucion_proveedor",
-                              "disposicion_final",
-                              "otro"
+                              "devuelto_proveedor",
+                              "destruccion_gestor",
+                              "averia_deterioro"
                             ]
+                          },
+                          "supportRef": {
+                            "nullable": true,
+                            "type": "string"
                           },
                           "managedAt": {
                             "nullable": true,
@@ -1894,6 +1973,7 @@
                           "unitCost",
                           "totalCost",
                           "destination",
+                          "supportRef",
                           "managedAt",
                           "status",
                           "createdAt",
@@ -2011,6 +2091,30 @@
                       ],
                       "additionalProperties": false
                     },
+                    "devueltoProveedor": {
+                      "type": "object",
+                      "properties": {
+                        "productos": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "unidades": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "valor": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "productos",
+                        "unidades",
+                        "valor"
+                      ],
+                      "additionalProperties": false
+                    },
                     "anticipacionDias": {
                       "type": "integer",
                       "minimum": -9007199254740991,
@@ -2024,6 +2128,7 @@
                     "moneda",
                     "perdidaConfirmada",
                     "valorEnRiesgo",
+                    "devueltoProveedor",
                     "anticipacionDias",
                     "aviso"
                   ],
@@ -2112,10 +2217,14 @@
                           "type": "string",
                           "enum": [
                             "pendiente",
-                            "devolucion_proveedor",
-                            "disposicion_final",
-                            "otro"
+                            "devuelto_proveedor",
+                            "destruccion_gestor",
+                            "averia_deterioro"
                           ]
+                        },
+                        "supportRef": {
+                          "nullable": true,
+                          "type": "string"
                         },
                         "managedAt": {
                           "nullable": true,
@@ -2155,6 +2264,7 @@
                         "unitCost",
                         "totalCost",
                         "destination",
+                        "supportRef",
                         "managedAt",
                         "status",
                         "createdAt",
@@ -2222,10 +2332,16 @@
                     "type": "string",
                     "enum": [
                       "pendiente",
-                      "devolucion_proveedor",
-                      "disposicion_final",
-                      "otro"
+                      "devuelto_proveedor",
+                      "destruccion_gestor",
+                      "averia_deterioro"
                     ]
+                  },
+                  "supportRef": {
+                    "nullable": true,
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
                   }
                 }
               }
@@ -2307,10 +2423,14 @@
                           "type": "string",
                           "enum": [
                             "pendiente",
-                            "devolucion_proveedor",
-                            "disposicion_final",
-                            "otro"
+                            "devuelto_proveedor",
+                            "destruccion_gestor",
+                            "averia_deterioro"
                           ]
+                        },
+                        "supportRef": {
+                          "nullable": true,
+                          "type": "string"
                         },
                         "managedAt": {
                           "nullable": true,
@@ -2350,6 +2470,7 @@
                         "unitCost",
                         "totalCost",
                         "destination",
+                        "supportRef",
                         "managedAt",
                         "status",
                         "createdAt",
@@ -2507,7 +2628,8 @@
                             "type": "string",
                             "enum": [
                               "kg",
-                              "g"
+                              "g",
+                              "unidades"
                             ]
                           },
                           "origin": {
@@ -2519,6 +2641,18 @@
                             ]
                           },
                           "notes": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "wasteType": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "handling": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "supportRef": {
                             "nullable": true,
                             "type": "string"
                           },
@@ -2541,6 +2675,9 @@
                           "unit",
                           "origin",
                           "notes",
+                          "wasteType",
+                          "handling",
+                          "supportRef",
                           "createdAt",
                           "updatedAt"
                         ],
@@ -2609,7 +2746,8 @@
                     "type": "string",
                     "enum": [
                       "kg",
-                      "g"
+                      "g",
+                      "unidades"
                     ]
                   },
                   "origin": {
@@ -2625,6 +2763,24 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 500
+                  },
+                  "wasteType": {
+                    "nullable": true,
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "handling": {
+                    "nullable": true,
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "supportRef": {
+                    "nullable": true,
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
                   }
                 },
                 "required": [
@@ -2685,7 +2841,8 @@
                           "type": "string",
                           "enum": [
                             "kg",
-                            "g"
+                            "g",
+                            "unidades"
                           ]
                         },
                         "origin": {
@@ -2697,6 +2854,18 @@
                           ]
                         },
                         "notes": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "wasteType": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "handling": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "supportRef": {
                           "nullable": true,
                           "type": "string"
                         },
@@ -2719,6 +2888,9 @@
                         "unit",
                         "origin",
                         "notes",
+                        "wasteType",
+                        "handling",
+                        "supportRef",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -2796,7 +2968,8 @@
                           "type": "string",
                           "enum": [
                             "kg",
-                            "g"
+                            "g",
+                            "unidades"
                           ]
                         },
                         "origin": {
@@ -2808,6 +2981,18 @@
                           ]
                         },
                         "notes": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "wasteType": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "handling": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "supportRef": {
                           "nullable": true,
                           "type": "string"
                         },
@@ -2830,6 +3015,9 @@
                         "unit",
                         "origin",
                         "notes",
+                        "wasteType",
+                        "handling",
+                        "supportRef",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -2879,7 +3067,8 @@
                     "type": "string",
                     "enum": [
                       "kg",
-                      "g"
+                      "g",
+                      "unidades"
                     ]
                   },
                   "origin": {
@@ -2895,6 +3084,24 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 500
+                  },
+                  "wasteType": {
+                    "nullable": true,
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "handling": {
+                    "nullable": true,
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "supportRef": {
+                    "nullable": true,
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
                   }
                 }
               }
@@ -2959,7 +3166,8 @@
                           "type": "string",
                           "enum": [
                             "kg",
-                            "g"
+                            "g",
+                            "unidades"
                           ]
                         },
                         "origin": {
@@ -2971,6 +3179,18 @@
                           ]
                         },
                         "notes": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "wasteType": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "handling": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "supportRef": {
                           "nullable": true,
                           "type": "string"
                         },
@@ -2993,6 +3213,9 @@
                         "unit",
                         "origin",
                         "notes",
+                        "wasteType",
+                        "handling",
+                        "supportRef",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -4270,7 +4493,8 @@
               "enum": [
                 "vigente",
                 "pendiente",
-                "vencida"
+                "vencida",
+                "sin_soporte"
               ]
             },
             "in": "query",
@@ -4363,7 +4587,8 @@
                             "enum": [
                               "vigente",
                               "pendiente",
-                              "vencida"
+                              "vencida",
+                              "sin_soporte"
                             ]
                           },
                           "createdAt": {
@@ -4530,7 +4755,8 @@
                           "enum": [
                             "vigente",
                             "pendiente",
-                            "vencida"
+                            "vencida",
+                            "sin_soporte"
                           ]
                         },
                         "createdAt": {
@@ -4676,7 +4902,8 @@
                           "enum": [
                             "vigente",
                             "pendiente",
-                            "vencida"
+                            "vencida",
+                            "sin_soporte"
                           ]
                         },
                         "createdAt": {
@@ -4829,13 +5056,22 @@
                             "type": "string"
                           },
                           "correctiveAction": {
+                            "nullable": true,
                             "type": "string"
                           },
                           "responsible": {
+                            "nullable": true,
                             "type": "string"
                           },
                           "dueOn": {
+                            "nullable": true,
                             "type": "string"
+                          },
+                          "originItemId": {
+                            "nullable": true,
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                           },
                           "state": {
                             "type": "string",
@@ -4869,6 +5105,7 @@
                           "correctiveAction",
                           "responsible",
                           "dueOn",
+                          "originItemId",
                           "state",
                           "closedOn",
                           "overdue",
@@ -4921,16 +5158,19 @@
                     "maxLength": 500
                   },
                   "correctiveAction": {
+                    "nullable": true,
                     "type": "string",
                     "minLength": 3,
                     "maxLength": 500
                   },
                   "responsible": {
+                    "nullable": true,
                     "type": "string",
                     "minLength": 2,
                     "maxLength": 120
                   },
                   "dueOn": {
+                    "nullable": true,
                     "type": "string",
                     "format": "date",
                     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
@@ -4948,13 +5188,16 @@
                     "type": "string",
                     "format": "date",
                     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                  },
+                  "originItemId": {
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                   }
                 },
                 "required": [
-                  "finding",
-                  "correctiveAction",
-                  "responsible",
-                  "dueOn"
+                  "finding"
                 ]
               }
             }
@@ -4992,13 +5235,22 @@
                           "type": "string"
                         },
                         "correctiveAction": {
+                          "nullable": true,
                           "type": "string"
                         },
                         "responsible": {
+                          "nullable": true,
                           "type": "string"
                         },
                         "dueOn": {
+                          "nullable": true,
                           "type": "string"
+                        },
+                        "originItemId": {
+                          "nullable": true,
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                         },
                         "state": {
                           "type": "string",
@@ -5032,6 +5284,7 @@
                         "correctiveAction",
                         "responsible",
                         "dueOn",
+                        "originItemId",
                         "state",
                         "closedOn",
                         "overdue",
@@ -5096,13 +5349,22 @@
                           "type": "string"
                         },
                         "correctiveAction": {
+                          "nullable": true,
                           "type": "string"
                         },
                         "responsible": {
+                          "nullable": true,
                           "type": "string"
                         },
                         "dueOn": {
+                          "nullable": true,
                           "type": "string"
+                        },
+                        "originItemId": {
+                          "nullable": true,
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                         },
                         "state": {
                           "type": "string",
@@ -5136,6 +5398,7 @@
                         "correctiveAction",
                         "responsible",
                         "dueOn",
+                        "originItemId",
                         "state",
                         "closedOn",
                         "overdue",
@@ -5169,16 +5432,19 @@
                     "maxLength": 500
                   },
                   "correctiveAction": {
+                    "nullable": true,
                     "type": "string",
                     "minLength": 3,
                     "maxLength": 500
                   },
                   "responsible": {
+                    "nullable": true,
                     "type": "string",
                     "minLength": 2,
                     "maxLength": 120
                   },
                   "dueOn": {
+                    "nullable": true,
                     "type": "string",
                     "format": "date",
                     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
@@ -5244,13 +5510,22 @@
                           "type": "string"
                         },
                         "correctiveAction": {
+                          "nullable": true,
                           "type": "string"
                         },
                         "responsible": {
+                          "nullable": true,
                           "type": "string"
                         },
                         "dueOn": {
+                          "nullable": true,
                           "type": "string"
+                        },
+                        "originItemId": {
+                          "nullable": true,
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                         },
                         "state": {
                           "type": "string",
@@ -5284,6 +5559,7 @@
                         "correctiveAction",
                         "responsible",
                         "dueOn",
+                        "originItemId",
                         "state",
                         "closedOn",
                         "overdue",
@@ -5375,8 +5651,51 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "scoring": {
+                          "type": "string",
+                          "enum": [
+                            "likert_avg",
+                            "compliance_ratio"
+                          ]
+                        },
                         "escala": {
                           "type": "string"
+                        },
+                        "obligatorios": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "code": {
+                                "type": "string"
+                              },
+                              "prompt": {
+                                "type": "string"
+                              },
+                              "position": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "legalBasis": {
+                                "nullable": true,
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "code",
+                              "prompt",
+                              "position",
+                              "legalBasis"
+                            ],
+                            "additionalProperties": false
+                          }
                         },
                         "areas": {
                           "type": "array",
@@ -5390,7 +5709,10 @@
                                   "vencimientos",
                                   "segregacion",
                                   "personal_capacitacion",
-                                  "documentacion"
+                                  "documentacion",
+                                  "vencimientos_perdidas",
+                                  "capacitacion_documentos",
+                                  "seguimiento_mejora"
                                 ]
                               },
                               "label": {
@@ -5435,6 +5757,9 @@
                             ],
                             "additionalProperties": false
                           }
+                        },
+                        "aviso": {
+                          "type": "string"
                         }
                       },
                       "required": [
@@ -5442,8 +5767,11 @@
                         "versionNumber",
                         "title",
                         "description",
+                        "scoring",
                         "escala",
-                        "areas"
+                        "obligatorios",
+                        "areas",
+                        "aviso"
                       ],
                       "additionalProperties": false
                     }
@@ -5535,6 +5863,72 @@
                             "minimum": -9007199254740991,
                             "maximum": 9007199254740991
                           },
+                          "obligatorios": {
+                            "type": "object",
+                            "properties": {
+                              "cumple": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "aplicables": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "pendientes": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "sinResponder": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "cumple",
+                              "aplicables",
+                              "pendientes",
+                              "sinResponder"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "areaScores": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "area": {
+                                  "type": "string",
+                                  "enum": [
+                                    "residuos",
+                                    "vencimientos",
+                                    "segregacion",
+                                    "personal_capacitacion",
+                                    "documentacion",
+                                    "vencimientos_perdidas",
+                                    "capacitacion_documentos",
+                                    "seguimiento_mejora"
+                                  ]
+                                },
+                                "label": {
+                                  "type": "string"
+                                },
+                                "score": {
+                                  "nullable": true,
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "area",
+                                "label",
+                                "score"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
                           "createdAt": {
                             "type": "string",
                             "format": "date-time",
@@ -5548,6 +5942,8 @@
                           "overallScore",
                           "answeredCount",
                           "itemCount",
+                          "obligatorios",
+                          "areaScores",
                           "createdAt"
                         ],
                         "additionalProperties": false
@@ -5613,6 +6009,15 @@
                           "format": "uuid",
                           "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                         },
+                        "response": {
+                          "nullable": true,
+                          "type": "string",
+                          "enum": [
+                            "si",
+                            "no",
+                            "na"
+                          ]
+                        },
                         "score": {
                           "type": "integer",
                           "minimum": 1,
@@ -5620,8 +6025,7 @@
                         }
                       },
                       "required": [
-                        "itemId",
-                        "score"
+                        "itemId"
                       ]
                     }
                   }
@@ -5683,12 +6087,20 @@
                             },
                             "title": {
                               "type": "string"
+                            },
+                            "scoring": {
+                              "type": "string",
+                              "enum": [
+                                "likert_avg",
+                                "compliance_ratio"
+                              ]
                             }
                           },
                           "required": [
                             "id",
                             "versionNumber",
-                            "title"
+                            "title",
+                            "scoring"
                           ],
                           "additionalProperties": false
                         },
@@ -5706,16 +6118,26 @@
                                 "type": "string"
                               },
                               "area": {
+                                "type": "string"
+                              },
+                              "kind": {
                                 "type": "string",
                                 "enum": [
-                                  "residuos",
-                                  "vencimientos",
-                                  "segregacion",
-                                  "personal_capacitacion",
-                                  "documentacion"
+                                  "obligatorio",
+                                  "madurez"
+                                ]
+                              },
+                              "response": {
+                                "nullable": true,
+                                "type": "string",
+                                "enum": [
+                                  "si",
+                                  "no",
+                                  "na"
                                 ]
                               },
                               "score": {
+                                "nullable": true,
                                 "type": "integer",
                                 "minimum": -9007199254740991,
                                 "maximum": 9007199254740991
@@ -5725,10 +6147,81 @@
                               "itemId",
                               "code",
                               "area",
+                              "kind",
+                              "response",
                               "score"
                             ],
                             "additionalProperties": false
                           }
+                        },
+                        "obligatorios": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "aplicables": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "cumple": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "noAplica": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "sinResponder": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "noCumple": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "itemId": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                  },
+                                  "code": {
+                                    "type": "string"
+                                  },
+                                  "prompt": {
+                                    "type": "string"
+                                  },
+                                  "legalBasis": {
+                                    "nullable": true,
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "itemId",
+                                  "code",
+                                  "prompt",
+                                  "legalBasis"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "total",
+                            "aplicables",
+                            "cumple",
+                            "noAplica",
+                            "sinResponder",
+                            "noCumple"
+                          ],
+                          "additionalProperties": false
                         },
                         "areaScores": {
                           "type": "array",
@@ -5742,7 +6235,10 @@
                                   "vencimientos",
                                   "segregacion",
                                   "personal_capacitacion",
-                                  "documentacion"
+                                  "documentacion",
+                                  "vencimientos_perdidas",
+                                  "capacitacion_documentos",
+                                  "seguimiento_mejora"
                                 ]
                               },
                               "label": {
@@ -5807,6 +6303,7 @@
                         "notes",
                         "instrument",
                         "answers",
+                        "obligatorios",
                         "areaScores",
                         "overallScore",
                         "answeredCount",
@@ -5891,12 +6388,20 @@
                             },
                             "title": {
                               "type": "string"
+                            },
+                            "scoring": {
+                              "type": "string",
+                              "enum": [
+                                "likert_avg",
+                                "compliance_ratio"
+                              ]
                             }
                           },
                           "required": [
                             "id",
                             "versionNumber",
-                            "title"
+                            "title",
+                            "scoring"
                           ],
                           "additionalProperties": false
                         },
@@ -5914,16 +6419,26 @@
                                 "type": "string"
                               },
                               "area": {
+                                "type": "string"
+                              },
+                              "kind": {
                                 "type": "string",
                                 "enum": [
-                                  "residuos",
-                                  "vencimientos",
-                                  "segregacion",
-                                  "personal_capacitacion",
-                                  "documentacion"
+                                  "obligatorio",
+                                  "madurez"
+                                ]
+                              },
+                              "response": {
+                                "nullable": true,
+                                "type": "string",
+                                "enum": [
+                                  "si",
+                                  "no",
+                                  "na"
                                 ]
                               },
                               "score": {
+                                "nullable": true,
                                 "type": "integer",
                                 "minimum": -9007199254740991,
                                 "maximum": 9007199254740991
@@ -5933,10 +6448,81 @@
                               "itemId",
                               "code",
                               "area",
+                              "kind",
+                              "response",
                               "score"
                             ],
                             "additionalProperties": false
                           }
+                        },
+                        "obligatorios": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "aplicables": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "cumple": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "noAplica": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "sinResponder": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "noCumple": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "itemId": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                  },
+                                  "code": {
+                                    "type": "string"
+                                  },
+                                  "prompt": {
+                                    "type": "string"
+                                  },
+                                  "legalBasis": {
+                                    "nullable": true,
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "itemId",
+                                  "code",
+                                  "prompt",
+                                  "legalBasis"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "total",
+                            "aplicables",
+                            "cumple",
+                            "noAplica",
+                            "sinResponder",
+                            "noCumple"
+                          ],
+                          "additionalProperties": false
                         },
                         "areaScores": {
                           "type": "array",
@@ -5950,7 +6536,10 @@
                                   "vencimientos",
                                   "segregacion",
                                   "personal_capacitacion",
-                                  "documentacion"
+                                  "documentacion",
+                                  "vencimientos_perdidas",
+                                  "capacitacion_documentos",
+                                  "seguimiento_mejora"
                                 ]
                               },
                               "label": {
@@ -6015,6 +6604,7 @@
                         "notes",
                         "instrument",
                         "answers",
+                        "obligatorios",
                         "areaScores",
                         "overallScore",
                         "answeredCount",
@@ -6066,6 +6656,15 @@
                           "format": "uuid",
                           "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                         },
+                        "response": {
+                          "nullable": true,
+                          "type": "string",
+                          "enum": [
+                            "si",
+                            "no",
+                            "na"
+                          ]
+                        },
                         "score": {
                           "type": "integer",
                           "minimum": 1,
@@ -6073,8 +6672,7 @@
                         }
                       },
                       "required": [
-                        "itemId",
-                        "score"
+                        "itemId"
                       ]
                     }
                   }
@@ -6143,12 +6741,20 @@
                             },
                             "title": {
                               "type": "string"
+                            },
+                            "scoring": {
+                              "type": "string",
+                              "enum": [
+                                "likert_avg",
+                                "compliance_ratio"
+                              ]
                             }
                           },
                           "required": [
                             "id",
                             "versionNumber",
-                            "title"
+                            "title",
+                            "scoring"
                           ],
                           "additionalProperties": false
                         },
@@ -6166,16 +6772,26 @@
                                 "type": "string"
                               },
                               "area": {
+                                "type": "string"
+                              },
+                              "kind": {
                                 "type": "string",
                                 "enum": [
-                                  "residuos",
-                                  "vencimientos",
-                                  "segregacion",
-                                  "personal_capacitacion",
-                                  "documentacion"
+                                  "obligatorio",
+                                  "madurez"
+                                ]
+                              },
+                              "response": {
+                                "nullable": true,
+                                "type": "string",
+                                "enum": [
+                                  "si",
+                                  "no",
+                                  "na"
                                 ]
                               },
                               "score": {
+                                "nullable": true,
                                 "type": "integer",
                                 "minimum": -9007199254740991,
                                 "maximum": 9007199254740991
@@ -6185,10 +6801,81 @@
                               "itemId",
                               "code",
                               "area",
+                              "kind",
+                              "response",
                               "score"
                             ],
                             "additionalProperties": false
                           }
+                        },
+                        "obligatorios": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "aplicables": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "cumple": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "noAplica": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "sinResponder": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "noCumple": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "itemId": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                  },
+                                  "code": {
+                                    "type": "string"
+                                  },
+                                  "prompt": {
+                                    "type": "string"
+                                  },
+                                  "legalBasis": {
+                                    "nullable": true,
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "itemId",
+                                  "code",
+                                  "prompt",
+                                  "legalBasis"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "total",
+                            "aplicables",
+                            "cumple",
+                            "noAplica",
+                            "sinResponder",
+                            "noCumple"
+                          ],
+                          "additionalProperties": false
                         },
                         "areaScores": {
                           "type": "array",
@@ -6202,7 +6889,10 @@
                                   "vencimientos",
                                   "segregacion",
                                   "personal_capacitacion",
-                                  "documentacion"
+                                  "documentacion",
+                                  "vencimientos_perdidas",
+                                  "capacitacion_documentos",
+                                  "seguimiento_mejora"
                                 ]
                               },
                               "label": {
@@ -6267,6 +6957,7 @@
                         "notes",
                         "instrument",
                         "answers",
+                        "obligatorios",
                         "areaScores",
                         "overallScore",
                         "answeredCount",
@@ -7568,8 +8259,14 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                     },
+                    "codigo": {
+                      "type": "string"
+                    },
                     "aviso": {
                       "type": "string"
+                    },
+                    "datosSimulados": {
+                      "type": "boolean"
                     },
                     "periodo": {
                       "type": "object",
@@ -7605,13 +8302,24 @@
                           "type": "integer",
                           "minimum": -9007199254740991,
                           "maximum": 9007199254740991
+                        },
+                        "employeeCount": {
+                          "nullable": true,
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "isDemo": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
                         "id",
                         "name",
                         "city",
-                        "expiryAlertDays"
+                        "expiryAlertDays",
+                        "employeeCount",
+                        "isDemo"
                       ],
                       "additionalProperties": false
                     },
@@ -7704,6 +8412,30 @@
                           ],
                           "additionalProperties": false
                         },
+                        "devueltoProveedor": {
+                          "type": "object",
+                          "properties": {
+                            "productos": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "unidades": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "valor": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "productos",
+                            "unidades",
+                            "valor"
+                          ],
+                          "additionalProperties": false
+                        },
                         "moneda": {
                           "type": "string",
                           "enum": [
@@ -7715,6 +8447,7 @@
                         "productos",
                         "perdidaConfirmada",
                         "valorEnRiesgo",
+                        "devueltoProveedor",
                         "moneda"
                       ],
                       "additionalProperties": false
@@ -7754,12 +8487,54 @@
                             ],
                             "additionalProperties": false
                           }
+                        },
+                        "enUnidades": {
+                          "type": "object",
+                          "properties": {
+                            "registros": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "cantidad": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "registros",
+                            "cantidad"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "serieMensual": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "mes": {
+                                "type": "string"
+                              },
+                              "kg": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "type": "number"
+                                }
+                              }
+                            },
+                            "required": [
+                              "mes",
+                              "kg"
+                            ],
+                            "additionalProperties": false
+                          }
                         }
                       },
                       "required": [
                         "registros",
                         "totalKg",
-                        "porClasificacion"
+                        "porClasificacion",
+                        "enUnidades",
+                        "serieMensual"
                       ],
                       "additionalProperties": false
                     },
@@ -7802,6 +8577,11 @@
                           "minimum": -9007199254740991,
                           "maximum": 9007199254740991
                         },
+                        "trabajadoresAlDia": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
                         "capacitaciones": {
                           "type": "object",
                           "properties": {
@@ -7824,20 +8604,86 @@
                               "type": "integer",
                               "minimum": -9007199254740991,
                               "maximum": 9007199254740991
+                            },
+                            "sinSoporte": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
                             }
                           },
                           "required": [
                             "total",
                             "vigente",
                             "pendiente",
-                            "vencida"
+                            "vencida",
+                            "sinSoporte"
                           ],
                           "additionalProperties": false
+                        },
+                        "equipo": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "workerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "nombre": {
+                                "type": "string"
+                              },
+                              "cargo": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "alDia": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "total": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "faltan": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "tema": {
+                                      "type": "string"
+                                    },
+                                    "estado": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "tema",
+                                    "estado"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "workerId",
+                              "nombre",
+                              "cargo",
+                              "alDia",
+                              "total",
+                              "faltan"
+                            ],
+                            "additionalProperties": false
+                          }
                         }
                       },
                       "required": [
                         "trabajadores",
-                        "capacitaciones"
+                        "trabajadoresAlDia",
+                        "capacitaciones",
+                        "equipo"
                       ],
                       "additionalProperties": false
                     },
@@ -7868,6 +8714,46 @@
                           "type": "integer",
                           "minimum": -9007199254740991,
                           "maximum": 9007199254740991
+                        },
+                        "pendientes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "hallazgo": {
+                                "type": "string"
+                              },
+                              "accion": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "responsable": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "fechaLimite": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "atrasada": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "hallazgo",
+                              "accion",
+                              "responsable",
+                              "fechaLimite",
+                              "atrasada"
+                            ],
+                            "additionalProperties": false
+                          }
                         }
                       },
                       "required": [
@@ -7875,69 +8761,259 @@
                         "pendiente",
                         "enCurso",
                         "cerrada",
-                        "atrasadas"
+                        "atrasadas",
+                        "pendientes"
                       ],
                       "additionalProperties": false
                     },
                     "diagnostico": {
-                      "nullable": true,
                       "type": "object",
                       "properties": {
-                        "id": {
-                          "type": "string",
-                          "format": "uuid",
-                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        "lineaBase": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "fecha": {
+                              "type": "string"
+                            },
+                            "versionInstrumento": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "puntajeGlobal": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "obligatorios": {
+                              "type": "object",
+                              "properties": {
+                                "cumple": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "aplicables": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "pendientes": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "sinResponder": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "noCumple": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "code": {
+                                        "type": "string"
+                                      },
+                                      "prompt": {
+                                        "type": "string"
+                                      },
+                                      "legalBasis": {
+                                        "nullable": true,
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "code",
+                                      "prompt",
+                                      "legalBasis"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                }
+                              },
+                              "required": [
+                                "cumple",
+                                "aplicables",
+                                "pendientes",
+                                "sinResponder",
+                                "noCumple"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "areas": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "area": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "score": {
+                                    "nullable": true,
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "area",
+                                  "label",
+                                  "score"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "fecha",
+                            "versionInstrumento",
+                            "puntajeGlobal",
+                            "obligatorios",
+                            "areas"
+                          ],
+                          "additionalProperties": false
                         },
-                        "fecha": {
-                          "type": "string"
+                        "ultimo": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "fecha": {
+                              "type": "string"
+                            },
+                            "versionInstrumento": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "puntajeGlobal": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "obligatorios": {
+                              "type": "object",
+                              "properties": {
+                                "cumple": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "aplicables": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "pendientes": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "sinResponder": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "noCumple": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "code": {
+                                        "type": "string"
+                                      },
+                                      "prompt": {
+                                        "type": "string"
+                                      },
+                                      "legalBasis": {
+                                        "nullable": true,
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "code",
+                                      "prompt",
+                                      "legalBasis"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                }
+                              },
+                              "required": [
+                                "cumple",
+                                "aplicables",
+                                "pendientes",
+                                "sinResponder",
+                                "noCumple"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "areas": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "area": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "score": {
+                                    "nullable": true,
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "area",
+                                  "label",
+                                  "score"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "fecha",
+                            "versionInstrumento",
+                            "puntajeGlobal",
+                            "obligatorios",
+                            "areas"
+                          ],
+                          "additionalProperties": false
                         },
-                        "versionInstrumento": {
+                        "totalDiagnosticos": {
                           "type": "integer",
                           "minimum": -9007199254740991,
                           "maximum": 9007199254740991
-                        },
-                        "puntajeGlobal": {
-                          "nullable": true,
-                          "type": "number"
-                        },
-                        "areas": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "area": {
-                                "type": "string"
-                              },
-                              "label": {
-                                "type": "string"
-                              },
-                              "score": {
-                                "nullable": true,
-                                "type": "number"
-                              }
-                            },
-                            "required": [
-                              "area",
-                              "label",
-                              "score"
-                            ],
-                            "additionalProperties": false
-                          }
                         }
                       },
                       "required": [
-                        "id",
-                        "fecha",
-                        "versionInstrumento",
-                        "puntajeGlobal",
-                        "areas"
+                        "lineaBase",
+                        "ultimo",
+                        "totalDiagnosticos"
                       ],
                       "additionalProperties": false
                     }
                   },
                   "required": [
                     "generadoEn",
+                    "codigo",
                     "aviso",
+                    "datosSimulados",
                     "periodo",
                     "drugstore",
                     "vencimientos",

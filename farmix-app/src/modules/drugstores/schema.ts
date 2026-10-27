@@ -12,9 +12,17 @@ const name = z.string().trim().min(2).max(120);
 const city = z.string().trim().min(2).max(80);
 const alertDays = z.number().int().min(1).max(365);
 
-export const createBody = z.object({ name, city: city.optional(), expiryAlertDays: alertDays.optional() });
+const employees = z.number().int().min(0).max(10000);
+
+export const createBody = z.object({
+  name,
+  city: city.optional(),
+  expiryAlertDays: alertDays.optional(),
+  employeeCount: employees.nullish(),
+  isDemo: z.boolean().optional(),
+});
 export const updateBody = z
-  .object({ name: name.optional(), city: city.optional(), expiryAlertDays: alertDays.optional() })
+  .object({ name: name.optional(), city: city.optional(), expiryAlertDays: alertDays.optional(), employeeCount: employees.nullable().optional() })
   .refine((v) => Object.keys(v).length > 0, 'Debe enviar al menos un campo');
 
 export const addMemberBody = z.object({ email, role: z.enum(['administrador', 'operador']) });
@@ -25,6 +33,8 @@ export const drugstoreDto = z.object({
   name: z.string(),
   city: z.string(),
   expiryAlertDays: z.number().int(),
+  employeeCount: z.number().int().nullable(),
+  isDemo: z.boolean(),
   role: z.enum(ROLES),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),

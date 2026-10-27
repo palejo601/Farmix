@@ -76,6 +76,19 @@ describe('CRUD de droguerías', () => {
   });
 });
 
+describe('número de empleados y datos de demostración', () => {
+  it('guarda el número de empleados y la bandera de demostración (simulada)', async () => {
+    const { cookie } = await registerUser(ctx);
+    const res = await send(ctx, 'POST', '/drugstores', { name: 'Droguería demo (simulada)', employeeCount: 4, isDemo: true }, cookie);
+    expect(res.json().drugstore).toMatchObject({ employeeCount: 4, isDemo: true });
+    const normal = await send(ctx, 'POST', '/drugstores', { name: 'Droguería normal' }, cookie);
+    expect(normal.json().drugstore).toMatchObject({ employeeCount: null, isDemo: false });
+    const up = await send(ctx, 'PATCH', `/drugstores/${normal.json().drugstore.id}`, { employeeCount: 7 }, cookie);
+    expect(up.json().drugstore.employeeCount).toBe(7);
+    expect((await send(ctx, 'PATCH', `/drugstores/${normal.json().drugstore.id}`, { employeeCount: -1 }, cookie)).statusCode).toBe(400);
+  });
+});
+
 describe('aislamiento: una cuenta ajena recibe 404 en todas las rutas', () => {
   const routes: [string, (id: string, uid: string) => string, unknown?][] = [
     ['GET', (id) => `/drugstores/${id}`],

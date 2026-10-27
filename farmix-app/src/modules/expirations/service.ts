@@ -10,11 +10,11 @@ import type { ProductDto } from './schema.js';
 const today = sql`(now() AT TIME ZONE 'America/Bogota')::date`;
 const daysLeftExpr = sql<number>`(${t.expiresOn} - ${today})::int`;
 
-/** Única fuente de la clasificación. Vence "hoy" aún es vigente; próximo = faltan menos días que la anticipación. */
+/** Única fuente de la clasificación (como el prototipo): vence hoy = próximo; próximo = faltan N días o menos, con N la anticipación de la droguería. */
 const statusExpr = (alertDays: number) => sql<ProductDto['status']>`CASE
   WHEN ${t.destination} <> 'pendiente' THEN 'gestionado'
   WHEN ${t.expiresOn} < ${today} THEN 'vencido'
-  WHEN (${t.expiresOn} - ${today}) < ${alertDays}::int THEN 'proximo_a_vencer'
+  WHEN (${t.expiresOn} - ${today}) <= ${alertDays}::int THEN 'proximo_a_vencer'
   ELSE 'vigente' END`;
 
 const scope = (drugstoreId: string) => and(eq(t.drugstoreId, drugstoreId), isNull(t.deletedAt));
@@ -37,6 +37,7 @@ function toDto(r: Row): ProductDto {
     unitCost,
     totalCost: Math.round(unitCost * r.quantity * 100) / 100,
     destination: r.destination as ProductDto['destination'],
+    supportRef: r.supportRef,
     managedAt: r.managedAt?.toISOString() ?? null,
     status: r.status,
     createdAt: r.createdAt.toISOString(),
@@ -63,7 +64,7 @@ export async function get(db: Db, m: Membership, id: string) {
 
 type Input = {
   productName?: string; batch?: string; sanitaryRegistry?: string | null; holder?: string | null;
-  expiresOn?: string; quantity?: number; unitCost?: number; destination?: ProductDto['destination'];
+  expiresOn?: string; quantity?: number; unitCost?: number; destination?: ProductDto['destination']; supportRef?: string | null;
 };
 
 function columns(input: Input) {
@@ -75,6 +76,7 @@ function columns(input: Input) {
   if (input.expiresOn !== undefined) out.expiresOn = input.expiresOn;
   if (input.quantity !== undefined) out.quantity = input.quantity;
   if (input.unitCost !== undefined) out.unitCost = input.unitCost.toFixed(2);
+  if (input.supportRef !== undefined) out.supportRef = input.supportRef;
   if (input.destination !== undefined) {
     out.destination = input.destination;
     out.managedAt = input.destination === 'pendiente' ? null : new Date();
@@ -132,25 +134,37 @@ export async function alerts(db: Db, m: Membership) {
   };
 }
 
-/** Pérdida confirmada = vencido sin gestionar. Valor en riesgo = próximo a vencer. Cifras descriptivas. */
+/**
+ * Tres cifras, como el prototipo:
+ *  - pérdida confirmada: destruida por gestor autorizado o con avería/deterioro (ya se perdió);
+ *  - valor en riesgo: pendiente de gestión y vencida o próxima a vencer;
+ *  - devuelto a proveedor: valor recuperado.
+ * Son cifras descriptivas; no demuestran reducción de pérdidas.
+ */
 export async function losses(db: Db, m: Membership) {
   const status = statusExpr(m.drugstore.expiryAlertDays);
-  const agg = (s: string) => ({
-    productos: sql<number>`(count(*) FILTER (WHERE ${status} = ${s}))::int`,
-    unidades: sql<number>`(coalesce(sum(${t.quantity}) FILTER (WHERE ${status} = ${s}), 0))::int`,
-    valor: sql<string>`coalesce(sum(${t.quantity} * ${t.unitCost}) FILTER (WHERE ${status} = ${s}), 0)`,
+  const lost = sql`${t.destination} IN ('destruccion_gestor', 'averia_deterioro')`;
+  const risk = sql`${status} IN ('vencido', 'proximo_a_vencer')`;
+  const back = sql`${t.destination} = 'devuelto_proveedor'`;
+  const bucket = (cond: ReturnType<typeof sql>) => ({
+    productos: sql<number>`(count(*) FILTER (WHERE ${cond}))::int`,
+    unidades: sql<number>`(coalesce(sum(${t.quantity}) FILTER (WHERE ${cond}), 0))::int`,
+    valor: sql<string>`coalesce(sum(${t.quantity} * ${t.unitCost}) FILTER (WHERE ${cond}), 0)`,
   });
   const [row] = await db
     .select({
-      vencidoProductos: agg('vencido').productos, vencidoUnidades: agg('vencido').unidades, vencidoValor: agg('vencido').valor,
-      riesgoProductos: agg('proximo_a_vencer').productos, riesgoUnidades: agg('proximo_a_vencer').unidades, riesgoValor: agg('proximo_a_vencer').valor,
+      lp: bucket(lost).productos, lu: bucket(lost).unidades, lv: bucket(lost).valor,
+      rp: bucket(risk).productos, ru: bucket(risk).unidades, rv: bucket(risk).valor,
+      bp: bucket(back).productos, bu: bucket(back).unidades, bv: bucket(back).valor,
     })
     .from(t)
     .where(scope(m.drugstore.id));
+  const r = row!;
   return {
     moneda: 'COP' as const,
-    perdidaConfirmada: { productos: row!.vencidoProductos, unidades: row!.vencidoUnidades, valor: Number(row!.vencidoValor) },
-    valorEnRiesgo: { productos: row!.riesgoProductos, unidades: row!.riesgoUnidades, valor: Number(row!.riesgoValor) },
+    perdidaConfirmada: { productos: r.lp, unidades: r.lu, valor: Number(r.lv) },
+    valorEnRiesgo: { productos: r.rp, unidades: r.ru, valor: Number(r.rv) },
+    devueltoProveedor: { productos: r.bp, unidades: r.bu, valor: Number(r.bv) },
     anticipacionDias: m.drugstore.expiryAlertDays,
     aviso: 'Cifras descriptivas calculadas con los datos registrados; son hipótesis por validar, no evidencia de reducción de pérdidas.',
   };

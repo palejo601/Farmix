@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const CLASSIFICATIONS = ['riesgo_biologico', 'peligroso_quimico', 'aprovechable', 'organico_aprovechable', 'no_aprovechable'] as const;
-export const UNITS = ['kg', 'g'] as const;
+export const UNITS = ['kg', 'g', 'unidades'] as const;
 export const ORIGINS = ['medicamento_vencido', 'otro'] as const;
 
 export const drugstoreParams = z.object({ id: z.uuid() });
@@ -21,6 +21,9 @@ export const createBody = z.object({
   unit: z.enum(UNITS),
   origin: z.enum(ORIGINS).nullish(),
   notes: z.string().trim().min(1).max(500).nullish(),
+  wasteType: z.string().trim().min(1).max(120).nullish(),
+  handling: z.string().trim().min(1).max(200).nullish(),
+  supportRef: z.string().trim().min(1).max(120).nullish(),
 });
 export const updateBody = createBody.partial().refine((v) => Object.keys(v).length > 0, 'Debe enviar al menos un campo');
 
@@ -42,6 +45,9 @@ export const wasteDto = z.object({
   unit: z.enum(UNITS),
   origin: z.enum(ORIGINS).nullable(),
   notes: z.string().nullable(),
+  wasteType: z.string().nullable(),
+  handling: z.string().nullable(),
+  supportRef: z.string().nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });

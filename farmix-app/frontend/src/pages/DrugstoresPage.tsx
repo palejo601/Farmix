@@ -25,7 +25,7 @@ export function DrugstoresPage() {
             <Link key={d.id} to={`/d/${d.id}`} className="card" style={{ textDecoration: 'none', color: 'inherit' }}>
               <div className="k">{d.city}</div>
               <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{d.name}</div>
-              <div className="s">Su rol: {label(d.role)} · alerta de vencimiento: {d.expiryAlertDays} días</div>
+              <div className="s">Su rol: {label(d.role)} · aviso de vencimiento: {d.expiryAlertDays} días{d.isDemo ? ' · DEMOSTRACIÓN (datos simulados)' : ''}</div>
             </Link>
           ))}
         </div>
@@ -37,12 +37,12 @@ export function DrugstoresPage() {
 
 function NewDrugstore({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
   const toast = useToast();
-  const [v, setV] = useState({ name: '', city: 'Sincelejo', expiryAlertDays: '60' });
+  const [v, setV] = useState({ name: '', city: 'Sincelejo', expiryAlertDays: '60', employeeCount: '', isDemo: false });
   const [error, setError] = useState('');
   async function submit(e: FormEvent) {
     e.preventDefault();
     try {
-      await api.post('/drugstores', { name: v.name, city: v.city, expiryAlertDays: Number(v.expiryAlertDays) });
+      await api.post('/drugstores', { name: v.name, city: v.city, expiryAlertDays: Number(v.expiryAlertDays), isDemo: v.isDemo, ...(v.employeeCount !== '' ? { employeeCount: Number(v.employeeCount) } : {}) });
       toast('Droguería creada');
       onDone();
     } catch (err) { setError(errText(err)); }
@@ -54,6 +54,8 @@ function NewDrugstore({ onClose, onDone }: { onClose: () => void; onDone: () => 
         <label className="full">Nombre<input required minLength={2} maxLength={120} value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} /></label>
         <label>Ciudad<input required value={v.city} onChange={(e) => setV({ ...v, city: e.target.value })} /></label>
         <label>Anticipación de alerta (días)<input type="number" min={1} max={365} required value={v.expiryAlertDays} onChange={(e) => setV({ ...v, expiryAlertDays: e.target.value })} /><small className="muted">Un producto es «próximo a vencer» si faltan menos días.</small></label>
+        <label>Número de empleados<input type="number" min={0} max={10000} value={v.employeeCount} onChange={(e) => setV({ ...v, employeeCount: e.target.value })} /></label>
+        <label className="chk" style={{ alignSelf: 'end' }}><input type="checkbox" checked={v.isDemo} onChange={(e) => setV({ ...v, isDemo: e.target.checked })} />Es de demostración (datos simulados)</label>
         <div className="form-actions full"><button type="button" onClick={onClose}>Cancelar</button><button className="primary">Crear</button></div>
       </form>
     </Modal>

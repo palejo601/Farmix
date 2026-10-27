@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate, useParams, Link } from 'react-router-dom'
 import { useAuth } from './auth';
 import { DrugstoreCtx, atLeast, type Drugstore } from './drugstore';
 import { api } from './api';
-import { Alert, Spinner, useLoad } from './ui';
+import { Alert, DemoNote, Spinner, useLoad } from './ui';
 import { label } from './format';
 
 export function Banner() {
@@ -34,13 +34,13 @@ export function DrugstoreLayout() {
           {d && (
             <>
               <div className="group">Gestión</div>
-              {item(`/d/${id}`, 'Resumen', true)}
+              {item(`/d/${id}`, 'Inicio', true)}
+              {item(`/d/${id}/diagnostico`, 'Diagnóstico')}
               {item(`/d/${id}/vencimientos`, 'Vencimientos')}
               {item(`/d/${id}/residuos`, 'Residuos')}
-              {item(`/d/${id}/segregacion`, 'Segregación')}
-              {item(`/d/${id}/personal`, 'Personal y capacitación')}
-              {item(`/d/${id}/plan`, 'Plan de mejoramiento')}
-              {item(`/d/${id}/diagnostico`, 'Diagnóstico')}
+              {item(`/d/${id}/personal`, 'Personal')}
+              {item(`/d/${id}/reporte`, 'Reporte')}
+              {item(`/d/${id}/normativa`, 'Normativa')}
               <div className="group">Datos</div>
               {item(`/d/${id}/importar`, 'Importar Excel / CSV')}
               {item(`/d/${id}/migrar`, 'Migrar datos locales')}
@@ -66,6 +66,7 @@ export function DrugstoreLayout() {
             </>
           ) : (
             <DrugstoreCtx.Provider value={{ drugstore: d, reload }}>
+              {d.isDemo && <DemoNote />}
               <Outlet />
             </DrugstoreCtx.Provider>
           )}

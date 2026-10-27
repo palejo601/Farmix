@@ -85,11 +85,11 @@ export function SettingsPage() {
   const { drugstore, reload } = useDrugstore();
   const toast = useToast();
   const nav = useNavigate();
-  const [v, setV] = useState({ name: drugstore.name, city: drugstore.city, expiryAlertDays: String(drugstore.expiryAlertDays) });
+  const [v, setV] = useState({ name: drugstore.name, city: drugstore.city, expiryAlertDays: String(drugstore.expiryAlertDays), employeeCount: drugstore.employeeCount === null ? '' : String(drugstore.employeeCount) });
   const [error, setError] = useState('');
   async function save(e: FormEvent) {
     e.preventDefault(); setError('');
-    try { await api.patch(`/drugstores/${drugstore.id}`, { name: v.name, city: v.city, expiryAlertDays: Number(v.expiryAlertDays) }); toast('Configuración guardada'); reload(); } catch (err) { setError(errText(err)); }
+    try { await api.patch(`/drugstores/${drugstore.id}`, { name: v.name, city: v.city, expiryAlertDays: Number(v.expiryAlertDays), employeeCount: v.employeeCount === '' ? null : Number(v.employeeCount) }); toast('Configuración guardada'); reload(); } catch (err) { setError(errText(err)); }
   }
   async function del() {
     if (!window.confirm(`¿Eliminar la droguería «${drugstore.name}»? Se archivará (borrado lógico) y dejará de ser visible para todos sus miembros.`)) return;
@@ -102,7 +102,8 @@ export function SettingsPage() {
         {error && <div className="full"><Alert>{error}</Alert></div>}
         <label className="full">Nombre<input required minLength={2} maxLength={120} value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} /></label>
         <label>Ciudad<input required value={v.city} onChange={(e) => setV({ ...v, city: e.target.value })} /></label>
-        <label>Anticipación de alerta de vencimiento (días)<input type="number" min={1} max={365} required value={v.expiryAlertDays} onChange={(e) => setV({ ...v, expiryAlertDays: e.target.value })} /></label>
+        <label>Días de anticipación del aviso de vencimiento<input type="number" min={1} max={365} required value={v.expiryAlertDays} onChange={(e) => setV({ ...v, expiryAlertDays: e.target.value })} /></label>
+        <label>Número de empleados<input type="number" min={0} max={10000} value={v.employeeCount} onChange={(e) => setV({ ...v, employeeCount: e.target.value })} /></label>
         <div className="form-actions full"><button className="primary">Guardar</button></div>
       </form>
       {drugstore.role === 'propietario' && (

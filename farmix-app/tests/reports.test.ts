@@ -26,20 +26,35 @@ describe('reporte vacío', () => {
     const res = await report();
     expect(res.statusCode).toBe(200);
     const r = res.json();
-    expect(r.drugstore).toMatchObject({ name: 'Droguería A (simulada)', expiryAlertDays: 60 });
+    expect(r.drugstore).toMatchObject({ name: 'Droguería A (simulada)', expiryAlertDays: 60, isDemo: false });
+    expect(r.datosSimulados).toBe(false);
+    expect(r.codigo).toMatch(/^FARMIX-REP-\d{8}$/);
     expect(r.vencimientos.productos.total).toBe(0);
     expect(r.vencimientos.perdidaConfirmada.valor).toBe(0);
-    expect(r.residuos).toEqual({ registros: 0, totalKg: 0, porClasificacion: [] });
+    expect(r.vencimientos.devueltoProveedor.valor).toBe(0);
+    expect(r.residuos).toMatchObject({ registros: 0, totalKg: 0, porClasificacion: [], enUnidades: { registros: 0, cantidad: 0 } });
+    expect(r.residuos.serieMensual).toHaveLength(6);
     expect(r.segregacion).toEqual({ verificaciones: 0, revisados: 0, bienSegregados: 0, porcentajeCorrecto: null });
-    expect(r.planDeMejoramiento).toMatchObject({ total: 0, atrasadas: 0 });
-    expect(r.diagnostico).toBeNull();
+    expect(r.personal).toMatchObject({ trabajadores: 0, trabajadoresAlDia: 0, equipo: [] });
+    expect(r.planDeMejoramiento).toMatchObject({ total: 0, atrasadas: 0, pendientes: [] });
+    expect(r.diagnostico).toEqual({ lineaBase: null, ultimo: null, totalDiagnosticos: 0 });
   });
 
-  it('el aviso lo presenta como producto mínimo viable en estudio con hipótesis por validar', async () => {
+  it('el aviso lo presenta como producto mínimo viable en estudio que apoya (sin sustituir) el PGIRASA', async () => {
     const r = (await report()).json();
     expect(r.aviso).toMatch(/producto mínimo viable en estudio/);
     expect(r.aviso).toMatch(/hipótesis por validar/);
+    expect(r.aviso).toMatch(/PGIRASA/);
+    expect(r.aviso).toMatch(/no lo sustituye/);
     expect(JSON.stringify(r)).not.toMatch(/aplicación instalable|producto terminado/i);
+  });
+
+  it('una droguería marcada como demostración se declara con datos simulados', async () => {
+    const demo = await send(ctx, 'POST', '/drugstores', { name: 'Demo (simulada)', isDemo: true, employeeCount: 3 }, t.owner.cookie);
+    expect(demo.json().drugstore).toMatchObject({ isDemo: true, employeeCount: 3 });
+    const r = (await report('', t.owner.cookie, demo.json().drugstore.id)).json();
+    expect(r.datosSimulados).toBe(true);
+    expect(r.drugstore.employeeCount).toBe(3);
   });
 });
 
@@ -48,54 +63,108 @@ describe('reporte con datos', () => {
     await post('/expirations', { productName: 'Vencido sim', batch: 'V1', expiresOn: await day(-5), quantity: 10, unitCost: 1000 });
     await post('/expirations', { productName: 'Próximo sim', batch: 'P1', expiresOn: await day(20), quantity: 4, unitCost: 500 });
     await post('/expirations', { productName: 'Vigente sim', batch: 'G1', expiresOn: await day(300), quantity: 1 });
-    await post('/expirations', { productName: 'Gestionado sim', batch: 'M1', expiresOn: await day(-9), quantity: 9, unitCost: 10, destination: 'devolucion_proveedor' });
+    await post('/expirations', { productName: 'Destruido sim', batch: 'M1', expiresOn: await day(-9), quantity: 9, unitCost: 10, destination: 'destruccion_gestor' });
+    await post('/expirations', { productName: 'Devuelto sim', batch: 'D1', expiresOn: await day(-2), quantity: 5, unitCost: 100, destination: 'devuelto_proveedor' });
     await post('/waste-records', { recordedOn: await day(-2), classification: 'aprovechable', quantity: 2, unit: 'kg' });
     await post('/waste-records', { recordedOn: await day(-3), classification: 'aprovechable', quantity: 500, unit: 'g' });
-    await post('/waste-records', { recordedOn: await day(-3), classification: 'peligroso_quimico', quantity: 1, unit: 'kg' });
+    await post('/waste-records', { recordedOn: await day(-3), classification: 'peligroso_quimico', quantity: 1, unit: 'kg', wasteType: 'Medicamentos vencidos', handling: 'Entrega a gestor autorizado', supportRef: 'CERT-SIM-1' });
+    await post('/waste-records', { recordedOn: await day(-4), classification: 'peligroso_quimico', quantity: 2, unit: 'unidades', wasteType: 'Luminarias' });
     await post('/waste-records', { recordedOn: await day(-200), classification: 'no_aprovechable', quantity: 50, unit: 'kg' });
     await post('/segregation-checks', { checkedOn: await day(-1), itemsReviewed: 10, itemsCorrect: 8, location: 'Bodega' });
     await post('/segregation-checks', { checkedOn: await day(-4), itemsReviewed: 30, itemsCorrect: 27, location: 'Mostrador' });
     await post('/segregation-checks', { checkedOn: await day(-300), itemsReviewed: 100, itemsCorrect: 1, location: 'Antigua' });
-    const w = (await post('/workers', { workerCode: 'W1', fullName: 'Persona Simulada' })).json().item.id;
-    const w2 = (await post('/workers', { workerCode: 'W2', fullName: 'Otra Simulada' })).json().item.id;
-    const tp = (await post('/training-topics', { topicName: 'Tema simulado' })).json().item.id;
-    await post('/trainings', { workerId: w, topicId: tp, trainedOn: await day(-10) });
-    await post('/trainings', { workerId: w2, topicId: tp });
+    const w1 = (await post('/workers', { workerCode: 'W1', fullName: 'Persona Simulada' })).json().item.id;
+    await post('/workers', { workerCode: 'W2', fullName: 'Otra Simulada' });
+    const topics = (await get(ctx, `/drugstores/${t.id}/training-topics`, t.owner.cookie)).json().items;
+    const byName = (n: string) => topics.find((x: { topicName: string }) => x.topicName.startsWith(n)).id;
+    const file = await ctx.pool.query(
+      "INSERT INTO support_files (drugstore_id, original_name, stored_name, mime_type, size_bytes, sha256) VALUES ($1, 'c.pdf', $2, 'application/pdf', 10, $3) RETURNING id",
+      [t.id, 'c'.repeat(32) + '.pdf', 'd'.repeat(64)],
+    );
+    await post('/trainings', { workerId: w1, topicId: byName('Gestión integral'), trainedOn: await day(-10), supportFileId: file.rows[0].id });
+    await post('/trainings', { workerId: w1, topicId: byName('Bioseguridad'), trainedOn: await day(-10) });
     await post('/improvement-actions', { finding: 'Hallazgo uno', correctiveAction: 'Acción uno', responsible: 'Responsable', dueOn: await day(-2) });
-    await post('/improvement-actions', { finding: 'Hallazgo dos', correctiveAction: 'Acción dos', responsible: 'Responsable', dueOn: await day(10), state: 'en_curso' });
+    await post('/improvement-actions', { finding: 'Hallazgo dos', dueOn: await day(10), state: 'en_curso' });
     await post('/improvement-actions', { finding: 'Hallazgo tres', correctiveAction: 'Acción tres', responsible: 'Responsable', dueOn: await day(-20), state: 'cerrada', closedOn: await day(-1) });
     const inst = (await get(ctx, `/drugstores/${t.id}/diagnoses/instrument/current`, t.owner.cookie)).json().instrument;
-    const codes = Object.fromEntries(inst.areas.flatMap((a: { items: { id: string; code: string }[] }) => a.items.map((i) => [i.code, i.id])));
-    await post('/diagnoses', { performedOn: await day(-1), answers: [{ itemId: codes['RES-01'], score: 4 }, { itemId: codes['VEN-01'], score: 2 }] });
+    const id = (code: string) => [...inst.obligatorios, ...inst.areas.flatMap((a: { items: unknown[] }) => a.items)].find((i: { code: string }) => i.code === code).id;
+    await post('/diagnoses', { performedOn: await day(-30), answers: [
+      { itemId: id('OB-01'), response: 'no' }, { itemId: id('OB-02'), response: 'si' }, { itemId: id('OB-03'), response: 'si' }, { itemId: id('OB-04'), response: 'na' },
+      { itemId: id('RES-1'), response: 'si' }, { itemId: id('RES-2'), response: 'no' },
+    ] });
+    await post('/diagnoses', { performedOn: await day(-1), answers: [
+      { itemId: id('OB-01'), response: 'si' }, { itemId: id('OB-02'), response: 'si' }, { itemId: id('OB-03'), response: 'si' }, { itemId: id('OB-04'), response: 'na' },
+      { itemId: id('RES-1'), response: 'si' }, { itemId: id('RES-2'), response: 'si' }, { itemId: id('VEN-1'), response: 'si' }, { itemId: id('VEN-2'), response: 'no' },
+    ] });
   }
 
   it('consolida todos los módulos con cifras coherentes', async () => {
     await seed();
     const r = (await report()).json();
-    expect(r.vencimientos.productos).toEqual({ total: 4, vigente: 1, proximoAVencer: 1, vencido: 1, gestionado: 1 });
-    expect(r.vencimientos.perdidaConfirmada).toEqual({ productos: 1, unidades: 10, valor: 10000 });
-    expect(r.vencimientos.valorEnRiesgo).toEqual({ productos: 1, unidades: 4, valor: 2000 });
+    expect(r.vencimientos.productos).toEqual({ total: 5, vigente: 1, proximoAVencer: 1, vencido: 1, gestionado: 2 });
+    expect(r.vencimientos.perdidaConfirmada).toEqual({ productos: 1, unidades: 9, valor: 90 });
+    expect(r.vencimientos.valorEnRiesgo).toEqual({ productos: 2, unidades: 14, valor: 12000 });
+    expect(r.vencimientos.devueltoProveedor).toEqual({ productos: 1, unidades: 5, valor: 500 });
     expect(r.residuos.totalKg).toBe(3.5);
     expect(r.residuos.porClasificacion).toEqual([
       { clasificacion: 'aprovechable', registros: 2, kg: 2.5 },
       { clasificacion: 'peligroso_quimico', registros: 1, kg: 1 },
     ]);
+    expect(r.residuos.enUnidades).toEqual({ registros: 1, cantidad: 2 });
     expect(r.segregacion).toEqual({ verificaciones: 2, revisados: 40, bienSegregados: 35, porcentajeCorrecto: 87.5 });
-    expect(r.personal).toEqual({ trabajadores: 2, capacitaciones: { total: 2, vigente: 1, pendiente: 1, vencida: 0 } });
-    expect(r.planDeMejoramiento).toEqual({ total: 3, pendiente: 1, enCurso: 1, cerrada: 1, atrasadas: 1 });
-    expect(r.diagnostico).toMatchObject({ versionInstrumento: 1, puntajeGlobal: 3 });
-    expect(r.diagnostico.areas.find((a: { area: string }) => a.area === 'residuos').score).toBe(4);
+    expect(r.planDeMejoramiento).toMatchObject({ total: 3, pendiente: 1, enCurso: 1, cerrada: 1, atrasadas: 1 });
+    expect(r.planDeMejoramiento.pendientes.map((p: { hallazgo: string }) => p.hallazgo)).toEqual(['Hallazgo uno', 'Hallazgo dos']);
+    expect(r.planDeMejoramiento.pendientes[1].accion).toBeNull();
+  });
+
+  it('personal: cada par trabajador × tema cuenta; sin registro = pendiente; sin soporte aparte', async () => {
+    await seed();
+    const p = (await report()).json().personal;
+    expect(p.trabajadores).toBe(2);
+    expect(p.capacitaciones).toEqual({ total: 8, vigente: 1, pendiente: 6, vencida: 0, sinSoporte: 1 });
+    expect(p.trabajadoresAlDia).toBe(0);
+    const w1 = p.equipo.find((e: { nombre: string }) => e.nombre === 'Persona Simulada');
+    expect(w1).toMatchObject({ alDia: 1, total: 4 });
+    expect(w1.faltan.find((f: { tema: string }) => f.tema === 'Bioseguridad').estado).toBe('sin_soporte');
+    expect(p.equipo.find((e: { nombre: string }) => e.nombre === 'Otra Simulada').alDia).toBe(0);
+  });
+
+  it('serie mensual de residuos: 6 meses, kg por clasificación; las unidades no se suman', async () => {
+    await seed();
+    const s = (await report()).json().residuos.serieMensual as { mes: string; kg: Record<string, number> }[];
+    expect(s).toHaveLength(6);
+    const sum = (c: string) => Math.round(s.reduce((a, m) => a + m.kg[c]!, 0) * 1000) / 1000;
+    expect(sum('aprovechable')).toBe(2.5);
+    expect(sum('peligroso_quimico')).toBe(1); // las 2 «unidades» no se convierten a kg
+    expect(sum('no_aprovechable')).toBe(0); // el registro de hace 200 días queda fuera de los 6 meses
+    expect(s.map((m) => m.mes)).toEqual([...s.map((m) => m.mes)].sort());
+  });
+
+  it('diagnóstico: línea base vs último, con obligatorios y madurez por área', async () => {
+    await seed();
+    const d = (await report()).json().diagnostico;
+    expect(d.totalDiagnosticos).toBe(2);
+    expect(d.lineaBase.fecha).toBe(await day(-30));
+    expect(d.lineaBase.obligatorios).toMatchObject({ cumple: 2, aplicables: 10, pendientes: 1, sinResponder: 7 });
+    expect(d.lineaBase.obligatorios.noCumple[0]).toMatchObject({ code: 'OB-01' });
+    expect(d.lineaBase.obligatorios.noCumple[0].legalBasis).toMatch(/Res\. 591\/2024/);
+    expect(d.lineaBase.puntajeGlobal).toBe(3);
+    expect(d.ultimo.fecha).toBe(await day(-1));
+    expect(d.ultimo.obligatorios).toMatchObject({ cumple: 3, aplicables: 10, pendientes: 0 });
+    expect(d.ultimo.puntajeGlobal).toBe(4);
+    const score = (a: string) => d.ultimo.areas.find((x: { area: string }) => x.area === a).score;
+    expect(score('residuos')).toBe(5);
+    expect(score('vencimientos_perdidas')).toBe(3);
+    expect(score('seguimiento_mejora')).toBeNull();
   });
 
   it('el periodo por defecto son 90 días y se puede cambiar', async () => {
     await seed();
-    const def = (await report()).json();
-    expect(def.periodo).toEqual({ desde: await day(-89), hasta: await day(0) });
+    expect((await report()).json().periodo).toEqual({ desde: await day(-89), hasta: await day(0) });
     const wide = (await report(`?from=${await day(-400)}`)).json();
     expect(wide.residuos.totalKg).toBe(53.5);
     expect(wide.segregacion.verificaciones).toBe(3);
-    const narrow = (await report(`?from=${await day(-2)}&to=${await day(0)}`)).json();
-    expect(narrow.residuos.totalKg).toBe(2);
+    expect((await report(`?from=${await day(-2)}&to=${await day(0)}`)).json().residuos.totalKg).toBe(2);
   });
 
   it('valida el periodo', async () => {
@@ -110,7 +179,7 @@ describe('reporte con datos', () => {
     expect(other.vencimientos.productos.total).toBe(0);
     expect(other.residuos.registros).toBe(0);
     expect(other.personal.trabajadores).toBe(0);
-    expect(other.diagnostico).toBeNull();
+    expect(other.diagnostico.ultimo).toBeNull();
   });
 
   it('no cuenta registros borrados', async () => {

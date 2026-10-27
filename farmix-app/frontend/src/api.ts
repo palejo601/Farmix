@@ -61,3 +61,14 @@ export const qs = (params: Record<string, string | number | undefined | null>) =
   const s = p.toString();
   return s ? `?${s}` : '';
 };
+
+/** Trae todas las páginas de una colección paginada (limit/offset) y devuelve los ítems. */
+export async function fetchAll(path: string, pageSize = 200, max = 2000): Promise<any[]> {
+  const out: any[] = [];
+  for (let offset = 0; offset < max; offset += pageSize) {
+    const page = await api.get(`${path}${path.includes('?') ? '&' : '?'}limit=${pageSize}&offset=${offset}`);
+    out.push(...page.items);
+    if (out.length >= (page.total ?? out.length) || page.items.length === 0) break;
+  }
+  return out;
+}

@@ -27,6 +27,10 @@ docker run -p 3000:3000 \
 
 Debe ir detrás de HTTPS (proxy inverso: Caddy, nginx). Con `COOKIE_SECURE=true` la cookie solo viaja por HTTPS. El contenedor aplica las migraciones al arrancar (y se detiene si una ya aplicada fue alterada). Para sembrar la demostración añada `-e SEED_DEMO=true -e DEMO_PASSWORD=...`.
 
+## Actualizar la demostración después de un cambio de versión
+
+Al arrancar, el contenedor aplica las migraciones nuevas (los datos existentes se conservan y se convierten). La cuenta de demostración ya existente **no se vuelve a sembrar**; para ver los datos simulados de la versión nueva, defina `DEMO_EMAIL` con otro correo (p. ej. `demo2@ejemplo.test`) y redespliegue: se crea una cuenta y una droguería de demostración nuevas.
+
 ## Variables relevantes
 
 | Variable | Valor en producción |

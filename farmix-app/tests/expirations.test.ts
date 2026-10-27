@@ -76,11 +76,12 @@ describe('crear y consultar', () => {
 });
 
 describe('clasificación (anticipación por defecto: 60 días)', () => {
+  // Como el prototipo: próximo = faltan N días o menos (N = anticipación de la droguería); vence hoy es próximo.
   it.each([
     [-1, 'vencido'],
     [0, 'proximo_a_vencer'],
     [59, 'proximo_a_vencer'],
-    [60, 'vigente'],
+    [60, 'proximo_a_vencer'],
     [61, 'vigente'],
   ])('vence en %i días → %s', async (offset, expected) => {
     const res = await add(offset);
@@ -89,32 +90,32 @@ describe('clasificación (anticipación por defecto: 60 días)', () => {
   });
 
   it('un producto gestionado se clasifica como gestionado aunque esté vencido', async () => {
-    const res = await add(-5, { destination: 'devolucion_proveedor' });
+    const res = await add(-5, { destination: 'devuelto_proveedor' });
     expect(res.json().item.status).toBe('gestionado');
     expect(res.json().item.managedAt).not.toBeNull();
   });
 
   it('respeta la anticipación definida por la droguería', async () => {
     await send(ctx, 'PATCH', `/drugstores/${t.id}`, { expiryAlertDays: 30 }, t.owner.cookie);
-    expect((await add(29)).json().item.status).toBe('proximo_a_vencer');
-    expect((await add(30)).json().item.status).toBe('vigente');
+    expect((await add(30)).json().item.status).toBe('proximo_a_vencer');
+    expect((await add(31)).json().item.status).toBe('vigente');
   });
 });
 
 describe('edición, destino y borrado', () => {
   it('al asignar destino se registra la gestión y al volver a pendiente se limpia', async () => {
     const id = (await add(-3)).json().item.id;
-    const up = await send(ctx, 'PATCH', `${base()}/${id}`, { destination: 'disposicion_final' }, t.op.cookie);
-    expect(up.json().item).toMatchObject({ status: 'gestionado', destination: 'disposicion_final' });
+    const up = await send(ctx, 'PATCH', `${base()}/${id}`, { destination: 'destruccion_gestor' }, t.op.cookie);
+    expect(up.json().item).toMatchObject({ status: 'gestionado', destination: 'destruccion_gestor' });
     expect(up.json().item.managedAt).not.toBeNull();
     const back = await send(ctx, 'PATCH', `${base()}/${id}`, { destination: 'pendiente' }, t.op.cookie);
     expect(back.json().item).toMatchObject({ status: 'vencido', managedAt: null });
   });
 
   it('conserva la fecha de gestión al cambiar entre destinos gestionados', async () => {
-    const id = (await add(-3, { destination: 'otro' })).json().item.id;
+    const id = (await add(-3, { destination: 'averia_deterioro' })).json().item.id;
     const first = (await get(ctx, `${base()}/${id}`, t.owner.cookie)).json().item.managedAt;
-    const up = await send(ctx, 'PATCH', `${base()}/${id}`, { destination: 'disposicion_final' }, t.owner.cookie);
+    const up = await send(ctx, 'PATCH', `${base()}/${id}`, { destination: 'destruccion_gestor' }, t.owner.cookie);
     expect(up.json().item.managedAt).toBe(first);
   });
 
@@ -163,24 +164,27 @@ describe('listado, alertas y pérdidas', () => {
   });
 
   it('las alertas incluyen vencidos y próximos, ordenados por fecha', async () => {
-    await add(30); await add(-10); await add(120); await add(-1, { destination: 'otro' });
+    await add(30); await add(-10); await add(120); await add(-1, { destination: 'averia_deterioro' });
     const res = await get(ctx, `${base()}/alerts`, t.op.cookie);
     expect(res.json().items.map((i: { daysLeft: number }) => i.daysLeft)).toEqual([-10, 30]);
     expect(res.json().summary).toEqual({ vencidos: 1, proximos: 1 });
   });
 
-  it('calcula pérdida confirmada (vencido sin gestionar) y valor en riesgo (próximo)', async () => {
-    await add(-5, { quantity: 10, unitCost: 1000 });                 // pérdida 10.000
-    await add(-1, { quantity: 2, unitCost: 500.5 });                 // pérdida 1.001
-    await add(-9, { quantity: 99, unitCost: 9999, destination: 'devolucion_proveedor' }); // gestionado: no cuenta
-    await add(20, { quantity: 5, unitCost: 200 });                   // en riesgo 1.000
-    await add(500, { quantity: 50, unitCost: 100 });                 // vigente: no cuenta
-    const borrado = (await add(-3, { quantity: 1, unitCost: 777 })).json().item.id;
+  it('calcula tres cifras: pérdida confirmada (destrucción o avería), en riesgo (sin gestionar) y devuelto a proveedor', async () => {
+    await add(-5, { quantity: 10, unitCost: 1000 });                                          // en riesgo: vencido sin gestionar 10.000
+    await add(-1, { quantity: 2, unitCost: 500.5 });                                          // en riesgo 1.001
+    await add(20, { quantity: 5, unitCost: 200 });                                            // en riesgo: próximo 1.000
+    await add(-9, { quantity: 3, unitCost: 100, destination: 'destruccion_gestor' });          // pérdida confirmada 300
+    await add(100, { quantity: 4, unitCost: 250, destination: 'averia_deterioro' });           // pérdida confirmada 1.000 (aunque no haya vencido)
+    await add(-9, { quantity: 99, unitCost: 10, destination: 'devuelto_proveedor' });          // devuelto 990
+    await add(500, { quantity: 50, unitCost: 100 });                                          // vigente: no cuenta
+    const borrado = (await add(-3, { quantity: 1, unitCost: 777 })).json().item.id;           // borrado: no cuenta
     await send(ctx, 'DELETE', `${base()}/${borrado}`, undefined, t.owner.cookie);
     const res = (await get(ctx, `${base()}/losses`, t.owner.cookie)).json();
     expect(res.moneda).toBe('COP');
-    expect(res.perdidaConfirmada).toEqual({ productos: 2, unidades: 12, valor: 11001 });
-    expect(res.valorEnRiesgo).toEqual({ productos: 1, unidades: 5, valor: 1000 });
+    expect(res.perdidaConfirmada).toEqual({ productos: 2, unidades: 7, valor: 1300 });
+    expect(res.valorEnRiesgo).toEqual({ productos: 3, unidades: 17, valor: 12001 });
+    expect(res.devueltoProveedor).toEqual({ productos: 1, unidades: 99, valor: 990 });
     expect(res.anticipacionDias).toBe(60);
     expect(res.aviso).toMatch(/hipótesis por validar/);
   });
@@ -188,6 +192,7 @@ describe('listado, alertas y pérdidas', () => {
   it('sin productos devuelve ceros', async () => {
     const res = (await get(ctx, `${base()}/losses`, t.owner.cookie)).json();
     expect(res.perdidaConfirmada).toEqual({ productos: 0, unidades: 0, valor: 0 });
+    expect(res.devueltoProveedor.valor).toBe(0);
   });
 });
 
@@ -230,6 +235,6 @@ describe('restricciones de la base de datos', () => {
   it('rechaza cantidad 0 y destino gestionado sin fecha de gestión', async () => {
     const id = (await add(10)).json().item.id;
     await expect(ctx.pool.query('UPDATE expiration_products SET quantity = 0 WHERE id=$1', [id])).rejects.toThrow(/quantity/);
-    await expect(ctx.pool.query("UPDATE expiration_products SET destination = 'otro' WHERE id=$1", [id])).rejects.toThrow(/managed_ck/);
+    await expect(ctx.pool.query("UPDATE expiration_products SET destination = 'averia_deterioro' WHERE id=$1", [id])).rejects.toThrow(/managed_ck/);
   });
 });

@@ -8,8 +8,9 @@ import { ExpirationsPage } from './pages/ExpirationsPage';
 import { WastePage } from './pages/WastePage';
 import { SegregationPage } from './pages/SegregationPage';
 import { StaffPage } from './pages/StaffPage';
-import { ActionsPage } from './pages/ActionsPage';
-import { DiagnosesPage } from './pages/DiagnosesPage';
+import { DiagnosticoPage } from './pages/DiagnosticoPage';
+import { ReportPage } from './pages/ReportPage';
+import { NormativaPage } from './pages/NormativaPage';
 import { ImportsPage } from './pages/ImportsPage';
 import { LocalMigrationPage } from './pages/LocalMigrationPage';
 import { MembersPage, SettingsPage } from './pages/MembersPage';
@@ -42,8 +43,10 @@ export default function App() {
             <Route path="residuos" element={<WastePage />} />
             <Route path="segregacion" element={<SegregationPage />} />
             <Route path="personal" element={<StaffPage />} />
-            <Route path="plan" element={<ActionsPage />} />
-            <Route path="diagnostico" element={<DiagnosesPage />} />
+            <Route path="plan" element={<Navigate to="../diagnostico?v=mejoras" replace />} />
+            <Route path="diagnostico" element={<DiagnosticoPage />} />
+            <Route path="reporte" element={<ReportPage />} />
+            <Route path="normativa" element={<NormativaPage />} />
             <Route path="importar" element={<ImportsPage />} />
             <Route path="migrar" element={<LocalMigrationPage />} />
             <Route path="miembros" element={<MembersPage />} />

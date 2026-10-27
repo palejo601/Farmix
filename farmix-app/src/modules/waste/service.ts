@@ -18,6 +18,9 @@ function toDto(r: typeof t.$inferSelect): WasteDto {
     unit: r.unit as WasteDto['unit'],
     origin: r.origin as WasteDto['origin'],
     notes: r.notes,
+    wasteType: r.wasteType,
+    handling: r.handling,
+    supportRef: r.supportRef,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
   };
@@ -56,7 +59,7 @@ async function find(db: Db, m: Membership, id: string) {
 
 export const get = async (db: Db, m: Membership, id: string) => toDto(await find(db, m, id));
 
-type Input = { recordedOn?: string; classification?: string; quantity?: number; unit?: string; origin?: string | null; notes?: string | null };
+type Input = { recordedOn?: string; classification?: string; quantity?: number; unit?: string; origin?: string | null; notes?: string | null; wasteType?: string | null; handling?: string | null; supportRef?: string | null };
 
 export async function create(
   db: Db, m: Membership, userId: string,
@@ -68,7 +71,8 @@ export async function create(
     .insert(t)
     .values({
       drugstoreId: m.drugstore.id, recordedOn: input.recordedOn, classification: input.classification, quantity: String(input.quantity),
-      unit: input.unit, origin: input.origin ?? null, notes: input.notes ?? null, createdBy: userId, updatedBy: userId,
+      unit: input.unit, origin: input.origin ?? null, notes: input.notes ?? null,
+      wasteType: input.wasteType ?? null, handling: input.handling ?? null, supportRef: input.supportRef ?? null, createdBy: userId, updatedBy: userId,
     })
     .returning();
   await audit(db, { userId, action: 'waste.create', resource: 'waste_records', resourceId: row!.id, outcome: 'success', requestId });
@@ -89,6 +93,9 @@ export async function update(db: Db, m: Membership, userId: string, id: string, 
   if (input.unit !== undefined) patch.unit = input.unit;
   if (input.origin !== undefined) patch.origin = input.origin;
   if (input.notes !== undefined) patch.notes = input.notes;
+  if (input.wasteType !== undefined) patch.wasteType = input.wasteType;
+  if (input.handling !== undefined) patch.handling = input.handling;
+  if (input.supportRef !== undefined) patch.supportRef = input.supportRef;
   const [row] = await db.update(t).set({ ...patch, updatedBy: userId, updatedAt: new Date() }).where(and(scope(m.drugstore.id), eq(t.id, id))).returning();
   await audit(db, { userId, action: 'waste.update', resource: 'waste_records', resourceId: id, outcome: 'success', requestId });
   return toDto(row!);
@@ -100,19 +107,52 @@ export async function remove(db: Db, m: Membership, userId: string, id: string, 
   await audit(db, { userId, action: 'waste.delete', resource: 'waste_records', resourceId: id, outcome: 'success', requestId });
 }
 
-/** Kilogramos por clasificación en un periodo (los gramos se convierten a kg). */
+/**
+ * Kilogramos por clasificación en un periodo (los gramos se convierten a kg). Los registros en «unidades» NO se
+ * convierten ni se suman a los kilogramos: se informan aparte (como el prototipo).
+ */
 export async function summary(db: Db, m: Membership, range: { from: string; to: string }) {
+  const inRange = and(scope(m.drugstore.id), gte(t.recordedOn, range.from), lte(t.recordedOn, range.to));
   const kg = sql<string>`coalesce(sum(CASE WHEN ${t.unit} = 'g' THEN ${t.quantity} / 1000 ELSE ${t.quantity} END), 0)`;
   const rows = await db
     .select({ classification: t.classification, registros: sql<number>`count(*)::int`, kg })
     .from(t)
-    .where(and(scope(m.drugstore.id), gte(t.recordedOn, range.from), lte(t.recordedOn, range.to)))
+    .where(and(inRange, sql`${t.unit} IN ('kg', 'g')`))
     .groupBy(t.classification);
+  const [u] = await db
+    .select({ registros: sql<number>`count(*)::int`, cantidad: sql<string>`coalesce(sum(${t.quantity}), 0)` })
+    .from(t)
+    .where(and(inRange, eq(t.unit, 'unidades')));
   const round = (n: number) => Math.round(n * 1000) / 1000;
   const porClasificacion = rows.map((r) => ({ clasificacion: r.classification, registros: r.registros, kg: round(Number(r.kg)) })).sort((a, b) => a.clasificacion.localeCompare(b.clasificacion));
   return {
     registros: porClasificacion.reduce((a, r) => a + r.registros, 0),
     totalKg: round(porClasificacion.reduce((a, r) => a + r.kg, 0)),
     porClasificacion,
+    enUnidades: { registros: u?.registros ?? 0, cantidad: Number(u?.cantidad ?? 0) },
   };
+}
+
+const CLASSES = ['riesgo_biologico', 'peligroso_quimico', 'aprovechable', 'organico_aprovechable', 'no_aprovechable'] as const;
+
+/** Kilogramos por mes y clasificación en los últimos `months` meses (incluye el mes en curso, hora de Colombia). */
+export async function monthlySeries(db: Db, m: Membership, months = 6) {
+  const r = await db.execute(sql`
+    SELECT to_char(mm, 'YYYY-MM') AS mes, w.classification AS clasificacion,
+           coalesce(sum(CASE WHEN w.unit = 'g' THEN w.quantity / 1000 ELSE w.quantity END), 0) AS kg
+    FROM generate_series(
+           date_trunc('month', (now() AT TIME ZONE 'America/Bogota')::date) - make_interval(months => ${months - 1}),
+           date_trunc('month', (now() AT TIME ZONE 'America/Bogota')::date),
+           interval '1 month') AS mm
+    LEFT JOIN waste_records w
+      ON date_trunc('month', w.recorded_on) = mm AND w.drugstore_id = ${m.drugstore.id}
+     AND w.deleted_at IS NULL AND w.unit IN ('kg', 'g')
+    GROUP BY mm, w.classification ORDER BY mm`);
+  const byMonth = new Map<string, Record<string, number>>();
+  for (const row of r.rows as { mes: string; clasificacion: string | null; kg: string }[]) {
+    const o = byMonth.get(row.mes) ?? Object.fromEntries(CLASSES.map((c) => [c, 0]));
+    if (row.clasificacion) o[row.clasificacion] = Math.round(Number(row.kg) * 1000) / 1000;
+    byMonth.set(row.mes, o);
+  }
+  return [...byMonth.entries()].map(([mes, kg]) => ({ mes, kg }));
 }

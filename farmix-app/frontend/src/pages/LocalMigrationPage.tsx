@@ -6,7 +6,7 @@ import { label } from '../format';
 
 const SAMPLE = JSON.stringify({
   expirations: [{ productName: 'Producto local (simulado)', batch: 'LOC-1', expiresOn: '2027-03-31', quantity: 5, unitCost: 1200 }],
-  waste: [{ recordedOn: '2026-01-10', classification: 'aprovechable', quantity: 1.5, unit: 'kg' }],
+  waste: [{ recordedOn: '2026-01-10', classification: 'aprovechable', quantity: 1.5, unit: 'kg', wasteType: 'Cartón' }],
   segregation: [{ checkedOn: '2026-01-10', location: 'Bodega', itemsReviewed: 10, itemsCorrect: 9 }],
 }, null, 2);
 

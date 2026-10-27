@@ -87,7 +87,7 @@ describe('confirmar y revertir', () => {
     expect((await act(id, 'confirm')).statusCode).toBe(409);
     expect(await count('expiration_products')).toBe(2);
     const losses = (await get(ctx, `/drugstores/${t.id}/expirations/losses`, t.owner.cookie)).json();
-    expect(losses.perdidaConfirmada.productos).toBe(1);
+    expect(losses.valorEnRiesgo.productos).toBe(1);
   });
 
   it('revierte solo lo que la migración creó (borrado lógico)', async () => {

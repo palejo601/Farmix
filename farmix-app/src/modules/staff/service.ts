@@ -84,10 +84,11 @@ export async function createTopic(db: Db, m: Membership, userId: string, input: 
 }
 
 // ---------- Capacitaciones ----------
-/** Única fuente del estado: sin fecha de realización = pendiente; vigencia pasada = vencida; si no, vigente. */
-const statusExpr = sql<'vigente' | 'pendiente' | 'vencida'>`CASE
+/** Única fuente del estado: sin fecha = pendiente; vigencia pasada = vencida; sin soporte = sin_soporte; si no, vigente. */
+const statusExpr = sql<'vigente' | 'pendiente' | 'vencida' | 'sin_soporte'>`CASE
   WHEN ${tr.trainedOn} IS NULL THEN 'pendiente'
   WHEN ${tr.validUntil} < ${todaySql} THEN 'vencida'
+  WHEN ${tr.supportFileId} IS NULL THEN 'sin_soporte'
   ELSE 'vigente' END`;
 
 const trScope = (id: string) => and(eq(tr.drugstoreId, id), isNull(tr.deletedAt));
@@ -200,14 +201,44 @@ export async function removeTraining(db: Db, m: Membership, userId: string, id: 
   await audit(db, { userId, action: 'staff.training_delete', resource: 'trainings', resourceId: id, outcome: 'success', requestId });
 }
 
+/** Cruce trabajador × tema de la droguería con el estado de cada par (sin registro = pendiente). */
+export async function teamMatrix(db: Db, m: Membership) {
+  const rows = await db
+    .select({
+      workerId: w.id, workerName: w.fullName, jobTitle: w.jobTitle, workerCode: w.workerCode,
+      topicId: topics.id, topicName: topics.topicName, status: statusExpr, trainedOn: tr.trainedOn, validUntil: tr.validUntil,
+    })
+    .from(w)
+    .innerJoin(topics, and(eq(topics.drugstoreId, w.drugstoreId), isNull(topics.deletedAt)))
+    .leftJoin(tr, and(eq(tr.drugstoreId, w.drugstoreId), eq(tr.workerId, w.id), eq(tr.topicId, topics.id), isNull(tr.deletedAt)))
+    .where(wScope(m.drugstore.id))
+    .orderBy(asc(w.fullName), asc(topics.topicName));
+  const byWorker = new Map<string, { workerId: string; nombre: string; cargo: string | null; temas: { tema: string; estado: string }[] }>();
+  for (const r of rows) {
+    const e = byWorker.get(r.workerId) ?? { workerId: r.workerId, nombre: r.workerName, cargo: r.jobTitle, temas: [] };
+    e.temas.push({ tema: r.topicName, estado: r.status });
+    byWorker.set(r.workerId, e);
+  }
+  return [...byWorker.values()];
+}
+
+/** Resumen del equipo: cada par trabajador × tema cuenta una vez (sin registro = pendiente), como el prototipo. */
 export async function trainingCounts(db: Db, m: Membership) {
-  const c = (st: string) => sql<number>`(count(*) FILTER (WHERE ${statusExpr} = ${st}))::int`;
-  const [row] = await db
-    .select({ total: sql<number>`count(*)::int`, vigente: c('vigente'), pendiente: c('pendiente'), vencida: c('vencida') })
-    .from(tr)
-    .innerJoin(w, and(eq(w.drugstoreId, tr.drugstoreId), eq(w.id, tr.workerId), isNull(w.deletedAt)))
-    .innerJoin(topics, and(eq(topics.drugstoreId, tr.drugstoreId), eq(topics.id, tr.topicId), isNull(topics.deletedAt)))
-    .where(trScope(m.drugstore.id));
+  const team = await teamMatrix(db, m);
   const [wc] = await db.select({ n: sql<number>`count(*)::int` }).from(w).where(wScope(m.drugstore.id));
-  return { trabajadores: wc?.n ?? 0, capacitaciones: row! };
+  const pairs = team.flatMap((e) => e.temas.map((t) => t.estado));
+  const count = (st: string) => pairs.filter((x) => x === st).length;
+  const equipo = team.map((e) => {
+    const alDia = e.temas.filter((t) => t.estado === 'vigente').length;
+    return {
+      workerId: e.workerId, nombre: e.nombre, cargo: e.cargo, alDia, total: e.temas.length,
+      faltan: e.temas.filter((t) => t.estado !== 'vigente').map((t) => ({ tema: t.tema, estado: t.estado })),
+    };
+  });
+  return {
+    trabajadores: wc?.n ?? 0,
+    trabajadoresAlDia: equipo.filter((e) => e.total > 0 && e.alDia === e.total).length,
+    capacitaciones: { total: pairs.length, vigente: count('vigente'), pendiente: count('pendiente'), vencida: count('vencida'), sinSoporte: count('sin_soporte') },
+    equipo,
+  };
 }

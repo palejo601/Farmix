@@ -55,20 +55,21 @@ describe('flujo completo de un usuario nuevo', () => {
     expect((await api('POST', `${d}/expirations`, { productName: 'Producto simulado', batch: 'H-1', expiresOn: day(-3), quantity: 5, unitCost: 1000 })).status).toBe(201);
     expect((await api('POST', `${d}/waste-records`, { recordedOn: day(-1), classification: 'aprovechable', quantity: 2, unit: 'kg' })).status).toBe(201);
     expect((await api('POST', `${d}/segregation-checks`, { checkedOn: day(-1), itemsReviewed: 10, itemsCorrect: 9, location: 'Bodega' })).status).toBe(201);
-    expect((await api('GET', `${d}/expirations/losses`)).json.perdidaConfirmada.valor).toBe(5000);
+    expect((await api('GET', `${d}/expirations/losses`)).json.valorEnRiesgo.valor).toBe(5000); // vencido sin gestionar
   });
 
   it('personal, capacitación, plan de mejoramiento y diagnóstico', async () => {
     const d = `/drugstores/${state.d}`;
     const w = (await api('POST', `${d}/workers`, { workerCode: 'H1', fullName: 'Persona de Humo' })).json.item.id;
     const tp = (await api('POST', `${d}/training-topics`, { topicName: 'Tema de humo' })).json.item.id;
-    expect((await api('POST', `${d}/trainings`, { workerId: w, topicId: tp, trainedOn: day(-5) })).json.item.status).toBe('vigente');
+    expect((await api('POST', `${d}/trainings`, { workerId: w, topicId: tp, trainedOn: day(-5) })).json.item.status).toBe('sin_soporte');
     expect((await api('POST', `${d}/improvement-actions`, { finding: 'Hallazgo de humo', correctiveAction: 'Acción de humo', responsible: 'Responsable', dueOn: day(15) })).status).toBe(201);
     const inst = (await api('GET', `${d}/diagnoses/instrument/current`)).json.instrument;
     const first = inst.areas[0].items[0].id;
-    const diag = await api('POST', `${d}/diagnoses`, { performedOn: day(0), answers: [{ itemId: first, score: 4 }] });
+    const diag = await api('POST', `${d}/diagnoses`, { performedOn: day(0), answers: [{ itemId: inst.obligatorios[0].id, response: 'no' }, { itemId: first, response: 'si' }] });
     expect(diag.status).toBe(201);
-    expect(diag.json.item.overallScore).toBe(4);
+    expect(diag.json.item.overallScore).toBe(5);
+    expect(diag.json.item.obligatorios.noCumple[0].code).toBe('OB-01');
   });
 
   it('sube y descarga un soporte', async () => {
@@ -107,7 +108,8 @@ describe('flujo completo de un usuario nuevo', () => {
     expect(r.residuos.totalKg).toBe(2);
     expect(r.segregacion.porcentajeCorrecto).toBe(90);
     expect(r.personal.trabajadores).toBe(1);
-    expect(r.diagnostico.puntajeGlobal).toBe(4);
+    expect(r.diagnostico.ultimo.puntajeGlobal).toBe(5);
+    expect(r.diagnostico.ultimo.obligatorios.pendientes).toBe(1);
     expect(r.aviso).toMatch(/hipótesis por validar/);
   });
 

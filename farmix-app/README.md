@@ -1,8 +1,12 @@
 # FARMIX · backend
 
-Backend de **FARMIX**, un **producto mínimo viable (MVP) en estudio** que apoya la gestión de residuos, vencimientos de medicamentos, segregación, personal, capacitaciones, diagnóstico y reportes en droguerías independientes de Sincelejo, Colombia. Los indicadores son **hipótesis por validar**; los datos de demostración son **simulados**.
+Backend y web de **FARMIX**, un **producto mínimo viable (MVP) en estudio** que apoya la gestión de residuos, vencimientos de medicamentos, segregación, personal, capacitaciones, diagnóstico y reportes en droguerías independientes de Sincelejo, Colombia. Los indicadores son **hipótesis por validar**; los datos de demostración son **simulados**.
 
 Node.js 20+, TypeScript estricto, Fastify 5, Zod 4, Drizzle ORM, PostgreSQL 16.
+
+## Orientación al PGIRASA
+
+FARMIX apoya el **registro y el seguimiento del PGIRASA** de una droguería (no lo sustituye): diagnóstico con **11 requisitos obligatorios** (con su fundamento normativo) y **17 preguntas de madurez**, vencimientos y pérdidas, residuos por clasificación (Res. 591 de 2024), capacitación del personal con soporte, plan de mejora, reporte de gestión y marco normativo. Ver [`docs/08-alineacion-pgirasa.md`](docs/08-alineacion-pgirasa.md).
 
 ## Demostración en línea
 
@@ -38,7 +42,7 @@ Ver [`docs/06-frontend.md`](docs/06-frontend.md).
 
 ```bash
 export TEST_DATABASE_URL=postgres://USUARIO:CLAVE@localhost:5432/NOMBRE_BD_PRUEBAS   # base desechable
-npm test     # 368 pruebas; recrea el esquema public de esa base
+npm test     # 391 pruebas; recrea el esquema public de esa base
 ```
 
 ## Documentación (`docs/`)

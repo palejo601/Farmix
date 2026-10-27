@@ -1,6 +1,6 @@
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { Db } from '../../db/client.js';
-import { drugstoreMembers as members, drugstores, users } from '../../db/schema.js';
+import { drugstoreMembers as members, drugstores, trainingTopics, users } from '../../db/schema.js';
 import { audit } from '../../shared/audit.js';
 import { AppError } from '../../shared/errors.js';
 import type { Membership } from './guard.js';
@@ -14,6 +14,8 @@ export function toDrugstoreDto(d: DrugstoreRow, role: Role) {
     name: d.name,
     city: d.city,
     expiryAlertDays: d.expiryAlertDays,
+    employeeCount: d.employeeCount,
+    isDemo: d.isDemo,
     role,
     createdAt: d.createdAt.toISOString(),
     updatedAt: d.updatedAt.toISOString(),
@@ -30,20 +32,29 @@ export async function listForUser(db: Db, userId: string) {
   return rows.map((r) => toDrugstoreDto(r.d, r.role));
 }
 
-export async function create(db: Db, userId: string, input: { name: string; city?: string; expiryAlertDays?: number }, requestId: string) {
+/** Temas de capacitación que cada droguería recibe al crearse (se pueden agregar más). */
+export const BASE_TOPICS = [
+  'Gestión integral de residuos (PGIRASA)',
+  'Control de vencimientos y rotación de lotes',
+  'Procedimientos del servicio farmacéutico',
+  'Bioseguridad',
+];
+
+export async function create(db: Db, userId: string, input: { name: string; city?: string; expiryAlertDays?: number; employeeCount?: number | null; isDemo?: boolean }, requestId: string) {
   const d = await db.transaction(async (tx) => {
     const [row] = await tx
       .insert(drugstores)
-      .values({ name: input.name, city: input.city, expiryAlertDays: input.expiryAlertDays, createdBy: userId, updatedBy: userId })
+      .values({ name: input.name, city: input.city, expiryAlertDays: input.expiryAlertDays, employeeCount: input.employeeCount ?? null, isDemo: input.isDemo ?? false, createdBy: userId, updatedBy: userId })
       .returning();
     await tx.insert(members).values({ drugstoreId: row!.id, userId, memberRole: 'propietario', createdBy: userId, updatedBy: userId });
+    await tx.insert(trainingTopics).values(BASE_TOPICS.map((topicName) => ({ drugstoreId: row!.id, topicName, createdBy: userId, updatedBy: userId })));
     return row!;
   });
   await audit(db, { userId, action: 'drugstores.create', resource: 'drugstores', resourceId: d.id, outcome: 'success', requestId });
   return toDrugstoreDto(d, 'propietario');
 }
 
-export async function update(db: Db, m: Membership, userId: string, patch: { name?: string; city?: string; expiryAlertDays?: number }, requestId: string) {
+export async function update(db: Db, m: Membership, userId: string, patch: { name?: string; city?: string; expiryAlertDays?: number; employeeCount?: number | null }, requestId: string) {
   const [row] = await db
     .update(drugstores)
     .set({ ...patch, updatedBy: userId, updatedAt: new Date() })

@@ -60,6 +60,28 @@ describe('crear y consultar', () => {
   });
 });
 
+describe('tipo, manejo, soporte y unidades', () => {
+  it('guarda tipo de residuo, cómo se manejó y el soporte (n.° de certificado)', async () => {
+    const res = await add({ classification: 'peligroso_quimico', wasteType: 'Medicamentos vencidos', handling: 'Entrega a gestor autorizado', supportRef: 'CERT-SIM-001' });
+    expect(res.statusCode).toBe(201);
+    expect(res.json().item).toMatchObject({ wasteType: 'Medicamentos vencidos', handling: 'Entrega a gestor autorizado', supportRef: 'CERT-SIM-001' });
+  });
+
+  it('acepta la unidad «unidades» (p. ej. luminarias) y no la mezcla con los kilogramos', async () => {
+    const res = await add({ classification: 'peligroso_quimico', quantity: 2, unit: 'unidades', wasteType: 'Luminarias' });
+    expect(res.statusCode).toBe(201);
+    expect(res.json().item.unit).toBe('unidades');
+    const kg = await ctx.pool.query("SELECT count(*)::int AS n FROM waste_records WHERE unit IN ('kg','g')");
+    expect(kg.rows[0].n).toBe(0);
+  });
+
+  it('rechaza unidades desconocidas y campos demasiado largos', async () => {
+    expect((await add({ unit: 'libras' })).statusCode).toBe(400);
+    expect((await add({ handling: 'x'.repeat(201) })).statusCode).toBe(400);
+    expect((await add({ supportRef: 'x'.repeat(121) })).statusCode).toBe(400);
+  });
+});
+
 describe('medicamentos vencidos no son riesgo biológico', () => {
   it('rechaza origen medicamento_vencido con riesgo_biologico', async () => {
     const res = await add({ classification: 'riesgo_biologico', origin: 'medicamento_vencido' });

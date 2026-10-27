@@ -7,13 +7,13 @@ import { date } from '../format';
 const KINDS: Record<string, { label: string; columns: string; sample: string }> = {
   expirations: {
     label: 'Vencimientos',
-    columns: 'producto, lote, vencimiento, cantidad (obligatorias) · registro_sanitario, titular, costo, destino (opcionales)',
-    sample: 'producto,lote,registro_sanitario,titular,vencimiento,cantidad,costo,destino\nProducto de ejemplo (simulado),LOTE-EJ-1,,,2027-06-30,10,1500,pendiente\n',
+    columns: 'producto, lote, vencimiento, cantidad (obligatorias) · registro_sanitario, titular, costo, soporte, destino (pendiente, devuelto_proveedor, destruccion_gestor o averia_deterioro)',
+    sample: 'producto,lote,registro_sanitario,titular,vencimiento,cantidad,costo,soporte,destino\nProducto de ejemplo (simulado),LOTE-EJ-1,,,2027-06-30,10,1500,,pendiente\n',
   },
   waste: {
     label: 'Residuos',
-    columns: 'fecha, clasificacion, cantidad, unidad (obligatorias) · origen, notas (opcionales)',
-    sample: 'fecha,clasificacion,cantidad,unidad,origen,notas\n2026-01-15,aprovechable,2.5,kg,,Ejemplo simulado\n',
+    columns: 'fecha, clasificacion, cantidad, unidad: kg, g o unidades (obligatorias) · tipo, manejo, soporte, origen, notas (opcionales)',
+    sample: 'fecha,clasificacion,cantidad,unidad,tipo,manejo,soporte,origen,notas\n2026-01-15,aprovechable,2.5,kg,Cartón,Entrega a recicladores,,,Ejemplo simulado\n',
   },
   segregation: {
     label: 'Segregación',

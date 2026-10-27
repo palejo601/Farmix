@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const STATUSES = ['vigente', 'proximo_a_vencer', 'vencido', 'gestionado'] as const;
-export const DESTINATIONS = ['pendiente', 'devolucion_proveedor', 'disposicion_final', 'otro'] as const;
+export const DESTINATIONS = ['pendiente', 'devuelto_proveedor', 'destruccion_gestor', 'averia_deterioro'] as const;
 
 export const params = z.object({ id: z.uuid(), expirationId: z.uuid() });
 export const drugstoreParams = z.object({ id: z.uuid() });
@@ -23,6 +23,7 @@ export const createBody = z.object({
   quantity: z.number().int().min(1).max(1_000_000),
   unitCost: money.optional(),
   destination: z.enum(DESTINATIONS).optional(),
+  supportRef: text(120).nullish(),
 });
 
 export const updateBody = createBody
@@ -47,6 +48,7 @@ export const productDto = z.object({
   unitCost: z.number(),
   totalCost: z.number(),
   destination: z.enum(DESTINATIONS),
+  supportRef: z.string().nullable(),
   managedAt: z.iso.datetime().nullable(),
   status: z.enum(STATUSES),
   createdAt: z.iso.datetime(),
@@ -67,8 +69,12 @@ export const alertsResponse = z.object({
 const bucket = z.object({ productos: z.number().int(), unidades: z.number().int(), valor: z.number() });
 export const lossesResponse = z.object({
   moneda: z.literal('COP'),
+  /** Destruida por gestor autorizado o con avería/deterioro: ya se perdió. */
   perdidaConfirmada: bucket,
+  /** Pendiente de gestión y vencida o próxima a vencer. */
   valorEnRiesgo: bucket,
+  /** Devuelta al proveedor: valor recuperado. */
+  devueltoProveedor: bucket,
   anticipacionDias: z.number().int(),
   aviso: z.string(),
 });

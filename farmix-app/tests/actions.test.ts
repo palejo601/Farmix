@@ -43,6 +43,23 @@ describe('crear y consultar', () => {
   });
 });
 
+describe('acción, responsable y fecha por definir', () => {
+  it('permite registrar solo el problema detectado y completar el resto después', async () => {
+    const res = await send(ctx, 'POST', `/drugstores/${t.id}/improvement-actions`, { finding: 'Falta rotular los recipientes' }, t.op.cookie);
+    expect(res.statusCode).toBe(201);
+    expect(res.json().item).toMatchObject({ correctiveAction: null, responsible: null, dueOn: null, overdue: false, state: 'pendiente' });
+    const list = (await get(ctx, `/drugstores/${t.id}/improvement-actions?overdue=false`, t.owner.cookie)).json();
+    expect(list.total).toBe(1);
+    expect((await get(ctx, `/drugstores/${t.id}/improvement-actions?overdue=true`, t.owner.cookie)).json().total).toBe(0);
+  });
+
+  it('se puede borrar un dato opcional (null) al editar', async () => {
+    const id = (await add({})).json().item.id;
+    const up = await send(ctx, 'PATCH', `${base()}/${id}`, { responsible: null, dueOn: null }, t.owner.cookie);
+    expect(up.json().item).toMatchObject({ responsible: null, dueOn: null });
+  });
+});
+
 describe('estados y fecha de cierre', () => {
   it('una acción cerrada exige fecha de cierre', async () => {
     const res = await add({ state: 'cerrada' });

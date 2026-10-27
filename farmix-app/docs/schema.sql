@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict nNXZBcCfofQAJ36rqtiw4gDa3wfGRwHclgaWA71cLVsLZFPls0a0hEXPfv4zn4S
+\restrict gPnzzyTcOJrMuBWVq1aFRAsH9m4LwFdSuQtCNbfcoWyDM9W5pc2mkYwCJ1Jixzk
 
 -- Dumped from database version 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)
 -- Dumped by pg_dump version 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)
@@ -17,6 +17,20 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
+
+--
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON SCHEMA public IS '';
+
 
 SET default_tablespace = '';
 
@@ -119,11 +133,14 @@ CREATE TABLE public.diagnosis_answers (
     diagnosis_id uuid NOT NULL,
     version_id uuid NOT NULL,
     item_id uuid NOT NULL,
-    score smallint NOT NULL,
+    score smallint,
     created_by uuid,
     updated_by uuid,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    response text,
+    CONSTRAINT diagnosis_answers_one_value_ck CHECK (((score IS NULL) <> (response IS NULL))),
+    CONSTRAINT diagnosis_answers_response_check CHECK ((response = ANY (ARRAY['si'::text, 'no'::text, 'na'::text]))),
     CONSTRAINT diagnosis_answers_score_check CHECK (((score >= 1) AND (score <= 5)))
 );
 
@@ -138,7 +155,7 @@ CREATE TABLE public.diagnosis_area_scores (
     area_score numeric(2,1) NOT NULL,
     answered_count integer NOT NULL,
     CONSTRAINT diagnosis_area_scores_answered_count_check CHECK ((answered_count >= 1)),
-    CONSTRAINT diagnosis_area_scores_area_check CHECK ((area = ANY (ARRAY['residuos'::text, 'vencimientos'::text, 'segregacion'::text, 'personal_capacitacion'::text, 'documentacion'::text]))),
+    CONSTRAINT diagnosis_area_scores_area_check CHECK ((area = ANY (ARRAY['residuos'::text, 'vencimientos'::text, 'segregacion'::text, 'personal_capacitacion'::text, 'documentacion'::text, 'vencimientos_perdidas'::text, 'capacitacion_documentos'::text, 'seguimiento_mejora'::text]))),
     CONSTRAINT diagnosis_area_scores_area_score_check CHECK (((area_score >= (1)::numeric) AND (area_score <= (5)::numeric)))
 );
 
@@ -175,7 +192,10 @@ CREATE TABLE public.drugstores (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
+    employee_count integer,
+    is_demo boolean DEFAULT false NOT NULL,
     CONSTRAINT drugstores_city_check CHECK (((char_length(city) >= 2) AND (char_length(city) <= 80))),
+    CONSTRAINT drugstores_employee_count_check CHECK (((employee_count IS NULL) OR ((employee_count >= 0) AND (employee_count <= 10000)))),
     CONSTRAINT drugstores_expiry_alert_days_check CHECK (((expiry_alert_days >= 1) AND (expiry_alert_days <= 365))),
     CONSTRAINT drugstores_name_check CHECK (((char_length(name) >= 2) AND (char_length(name) <= 120)))
 );
@@ -202,14 +222,16 @@ CREATE TABLE public.expiration_products (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
+    support_ref text,
     CONSTRAINT expiration_products_batch_check CHECK (((char_length(batch) >= 1) AND (char_length(batch) <= 60))),
-    CONSTRAINT expiration_products_destination_check CHECK ((destination = ANY (ARRAY['pendiente'::text, 'devolucion_proveedor'::text, 'disposicion_final'::text, 'otro'::text]))),
+    CONSTRAINT expiration_products_destination_check CHECK ((destination = ANY (ARRAY['pendiente'::text, 'devuelto_proveedor'::text, 'destruccion_gestor'::text, 'averia_deterioro'::text]))),
     CONSTRAINT expiration_products_expires_on_check CHECK (((expires_on >= '2000-01-01'::date) AND (expires_on <= '2100-12-31'::date))),
     CONSTRAINT expiration_products_holder_check CHECK (((holder IS NULL) OR ((char_length(holder) >= 1) AND (char_length(holder) <= 120)))),
     CONSTRAINT expiration_products_managed_ck CHECK (((destination = 'pendiente'::text) = (managed_at IS NULL))),
     CONSTRAINT expiration_products_product_name_check CHECK (((char_length(product_name) >= 1) AND (char_length(product_name) <= 160))),
     CONSTRAINT expiration_products_quantity_check CHECK (((quantity >= 1) AND (quantity <= 1000000))),
     CONSTRAINT expiration_products_sanitary_registry_check CHECK (((sanitary_registry IS NULL) OR ((char_length(sanitary_registry) >= 1) AND (char_length(sanitary_registry) <= 60)))),
+    CONSTRAINT expiration_products_support_ref_check CHECK (((support_ref IS NULL) OR ((char_length(support_ref) >= 1) AND (char_length(support_ref) <= 120)))),
     CONSTRAINT expiration_products_unit_cost_check CHECK ((unit_cost >= (0)::numeric))
 );
 
@@ -256,9 +278,9 @@ CREATE TABLE public.improvement_actions (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     drugstore_id uuid NOT NULL,
     finding text NOT NULL,
-    corrective_action text NOT NULL,
-    responsible text NOT NULL,
-    due_on date NOT NULL,
+    corrective_action text,
+    responsible text,
+    due_on date,
     progress_state text DEFAULT 'pendiente'::text NOT NULL,
     closed_on date,
     created_by uuid,
@@ -266,6 +288,7 @@ CREATE TABLE public.improvement_actions (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
+    origin_item_id uuid,
     CONSTRAINT improvement_actions_closed_ck CHECK (((progress_state = 'cerrada'::text) = (closed_on IS NOT NULL))),
     CONSTRAINT improvement_actions_corrective_action_check CHECK (((char_length(corrective_action) >= 3) AND (char_length(corrective_action) <= 500))),
     CONSTRAINT improvement_actions_due_on_check CHECK (((due_on >= '2000-01-01'::date) AND (due_on <= '2100-12-31'::date))),
@@ -286,7 +309,10 @@ CREATE TABLE public.instrument_items (
     item_code text NOT NULL,
     prompt_text text NOT NULL,
     "position" integer NOT NULL,
-    CONSTRAINT instrument_items_area_check CHECK ((area = ANY (ARRAY['residuos'::text, 'vencimientos'::text, 'segregacion'::text, 'personal_capacitacion'::text, 'documentacion'::text]))),
+    item_kind text DEFAULT 'madurez'::text NOT NULL,
+    legal_basis text,
+    CONSTRAINT instrument_items_area_check CHECK ((area = ANY (ARRAY['residuos'::text, 'vencimientos'::text, 'segregacion'::text, 'personal_capacitacion'::text, 'documentacion'::text, 'obligatorios'::text, 'vencimientos_perdidas'::text, 'capacitacion_documentos'::text, 'seguimiento_mejora'::text]))),
+    CONSTRAINT instrument_items_item_kind_check CHECK ((item_kind = ANY (ARRAY['obligatorio'::text, 'madurez'::text]))),
     CONSTRAINT instrument_items_position_check CHECK (("position" >= 1))
 );
 
@@ -302,6 +328,8 @@ CREATE TABLE public.instrument_versions (
     description text,
     is_current boolean DEFAULT false NOT NULL,
     published_at timestamp with time zone DEFAULT now() NOT NULL,
+    scoring text DEFAULT 'likert_avg'::text NOT NULL,
+    CONSTRAINT instrument_versions_scoring_check CHECK ((scoring = ANY (ARRAY['likert_avg'::text, 'compliance_ratio'::text]))),
     CONSTRAINT instrument_versions_version_number_check CHECK ((version_number >= 1))
 );
 
@@ -504,13 +532,19 @@ CREATE TABLE public.waste_records (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
+    waste_type text,
+    handling text,
+    support_ref text,
     CONSTRAINT waste_records_classification_check CHECK ((classification = ANY (ARRAY['riesgo_biologico'::text, 'peligroso_quimico'::text, 'aprovechable'::text, 'organico_aprovechable'::text, 'no_aprovechable'::text]))),
     CONSTRAINT waste_records_expired_med_ck CHECK ((NOT ((origin = 'medicamento_vencido'::text) AND (classification = 'riesgo_biologico'::text)))),
+    CONSTRAINT waste_records_handling_check CHECK (((handling IS NULL) OR ((char_length(handling) >= 1) AND (char_length(handling) <= 200)))),
     CONSTRAINT waste_records_notes_check CHECK (((notes IS NULL) OR (char_length(notes) <= 500))),
     CONSTRAINT waste_records_origin_check CHECK ((origin = ANY (ARRAY['medicamento_vencido'::text, 'otro'::text]))),
     CONSTRAINT waste_records_quantity_check CHECK (((quantity > (0)::numeric) AND (quantity <= (100000)::numeric))),
     CONSTRAINT waste_records_recorded_on_check CHECK (((recorded_on >= '2000-01-01'::date) AND (recorded_on <= '2100-12-31'::date))),
-    CONSTRAINT waste_records_unit_check CHECK ((unit = ANY (ARRAY['kg'::text, 'g'::text])))
+    CONSTRAINT waste_records_support_ref_check CHECK (((support_ref IS NULL) OR ((char_length(support_ref) >= 1) AND (char_length(support_ref) <= 120)))),
+    CONSTRAINT waste_records_unit_check CHECK ((unit = ANY (ARRAY['kg'::text, 'g'::text, 'unidades'::text]))),
+    CONSTRAINT waste_records_waste_type_check CHECK (((waste_type IS NULL) OR ((char_length(waste_type) >= 1) AND (char_length(waste_type) <= 120))))
 );
 
 
@@ -1210,6 +1244,14 @@ ALTER TABLE ONLY public.improvement_actions
 
 
 --
+-- Name: improvement_actions improvement_actions_origin_item_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.improvement_actions
+    ADD CONSTRAINT improvement_actions_origin_item_id_fkey FOREIGN KEY (origin_item_id) REFERENCES public.instrument_items(id) ON DELETE SET NULL;
+
+
+--
 -- Name: improvement_actions improvement_actions_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1421,5 +1463,5 @@ ALTER TABLE ONLY public.workers
 -- PostgreSQL database dump complete
 --
 
-\unrestrict nNXZBcCfofQAJ36rqtiw4gDa3wfGRwHclgaWA71cLVsLZFPls0a0hEXPfv4zn4S
+\unrestrict gPnzzyTcOJrMuBWVq1aFRAsH9m4LwFdSuQtCNbfcoWyDM9W5pc2mkYwCJ1Jixzk
 

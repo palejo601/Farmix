@@ -136,7 +136,7 @@ describe('confirmación', () => {
     const a = await ctx.pool.query('SELECT action FROM audit_logs WHERE resource_id=$1 ORDER BY id', [id]);
     expect(a.rows.map((x) => x.action)).toEqual(['imports.preview', 'imports.confirm']);
     const list = (await get(ctx, `/drugstores/${t.id}/expirations/losses`, t.owner.cookie)).json();
-    expect(list.perdidaConfirmada.productos).toBe(1);
+    expect(list.valorEnRiesgo.productos).toBe(1);
   });
 
   it('no se puede confirmar dos veces', async () => {

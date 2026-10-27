@@ -76,3 +76,27 @@ export function Bar({ value, max = 100, tone = 'ok' }: { value: number; max?: nu
     </div>
   );
 }
+
+export function Kpi({ value, label: text, tone, sub }: { value: ReactNode; label: ReactNode; tone?: 'good' | 'warn' | 'bad'; sub?: ReactNode }) {
+  return (
+    <div className={`kpi ${tone ?? ''}`}>
+      <div className="n">{value}</div>
+      <div className="l">{text}</div>
+      {sub && <div className="s">{sub}</div>}
+    </div>
+  );
+}
+
+export function Chip({ active, count, onClick, children }: { active: boolean; count?: number; onClick: () => void; children: ReactNode }) {
+  return (
+    <button type="button" className={`chip ${active ? 'active' : ''}`} aria-pressed={active} onClick={onClick}>
+      {children}{count !== undefined && <span className="c">{count}</span>}
+    </button>
+  );
+}
+
+export function Tag({ kind, children }: { kind: 'law' | 'prop' | 'pend' | 'hyp'; children: ReactNode }) {
+  return <span className={`tag t-${kind}`}>{children}</span>;
+}
+
+export const DemoNote = () => <div className="demo-note">DATOS SIMULADOS: no corresponden a un establecimiento real ni a resultados de FARMIX.</div>;

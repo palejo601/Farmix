@@ -9,13 +9,18 @@ const finding = z.string().trim().min(3).max(500);
 const action = z.string().trim().min(3).max(500);
 const responsible = z.string().trim().min(2).max(120);
 
+// Acción, responsable y fecha pueden quedar «por definir» (p. ej. una mejora creada desde un incumplimiento del diagnóstico).
 export const createBody = z.object({
-  finding, correctiveAction: action, responsible, dueOn: date,
+  finding,
+  correctiveAction: action.nullish(),
+  responsible: responsible.nullish(),
+  dueOn: date.nullish(),
   state: z.enum(STATES).optional(),
   closedOn: date.nullish(),
+  originItemId: z.uuid().nullish(),
 });
 export const updateBody = z
-  .object({ finding, correctiveAction: action, responsible, dueOn: date, state: z.enum(STATES), closedOn: date.nullable() })
+  .object({ finding, correctiveAction: action.nullable(), responsible: responsible.nullable(), dueOn: date.nullable(), state: z.enum(STATES), closedOn: date.nullable() })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Debe enviar al menos un campo');
 
@@ -27,7 +32,8 @@ export const listQuery = z.object({
 });
 
 export const actionDto = z.object({
-  id: z.uuid(), finding: z.string(), correctiveAction: z.string(), responsible: z.string(), dueOn: z.string(),
+  id: z.uuid(), finding: z.string(), correctiveAction: z.string().nullable(), responsible: z.string().nullable(), dueOn: z.string().nullable(),
+  originItemId: z.uuid().nullable(),
   state: z.enum(STATES), closedOn: z.string().nullable(), overdue: z.boolean(),
   createdAt: z.iso.datetime(), updatedAt: z.iso.datetime(),
 });

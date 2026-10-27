@@ -46,6 +46,7 @@ const expirations: Kind = {
     quantity: ['cantidad'],
     unitCost: ['costo', 'costo_unitario'],
     destination: ['destino'],
+    supportRef: ['soporte'],
   },
   required: ['productName', 'batch', 'expiresOn', 'quantity'],
   numeric: ['quantity', 'unitCost'],
@@ -61,7 +62,7 @@ const expirations: Kind = {
     const [row] = await tx.insert(expirationProducts).values({
       drugstoreId, productName: r.productName, batch: r.batch, sanitaryRegistry: r.sanitaryRegistry ?? null, holder: r.holder ?? null,
       expiresOn: r.expiresOn, quantity: r.quantity, unitCost: Number(r.unitCost ?? 0).toFixed(2), destination: dest,
-      managedAt: dest === 'pendiente' ? null : new Date(), createdBy: userId, updatedBy: userId,
+      supportRef: r.supportRef ?? null, managedAt: dest === 'pendiente' ? null : new Date(), createdBy: userId, updatedBy: userId,
     }).returning({ id: expirationProducts.id });
     return row!.id;
   },
@@ -79,6 +80,9 @@ const waste: Kind = {
     unit: ['unidad'],
     origin: ['origen'],
     notes: ['notas', 'observaciones'],
+    wasteType: ['tipo', 'tipo_de_residuo'],
+    handling: ['manejo', 'como_se_manejo'],
+    supportRef: ['soporte'],
   },
   required: ['recordedOn', 'classification', 'quantity', 'unit'],
   numeric: ['quantity'],
@@ -95,7 +99,8 @@ const waste: Kind = {
   async insert(tx, drugstoreId, userId, r) {
     const [row] = await tx.insert(wasteRecords).values({
       drugstoreId, recordedOn: r.recordedOn, classification: r.classification, quantity: String(r.quantity), unit: r.unit,
-      origin: r.origin ?? null, notes: r.notes ?? null, createdBy: userId, updatedBy: userId,
+      origin: r.origin ?? null, notes: r.notes ?? null, wasteType: r.wasteType ?? null, handling: r.handling ?? null, supportRef: r.supportRef ?? null,
+      createdBy: userId, updatedBy: userId,
     }).returning({ id: wasteRecords.id });
     return row!.id;
   },

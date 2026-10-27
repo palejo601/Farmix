@@ -5,13 +5,14 @@ import { audit } from '../../shared/audit.js';
 import { invalid, isFutureDate, notFound, todaySql } from '../../shared/crud.js';
 import type { Membership } from '../drugstores/guard.js';
 
-const overdueExpr = sql<boolean>`(${t.progressState} <> 'cerrada' AND ${t.dueOn} < ${todaySql})`;
+// Sin fecha límite no hay atraso (coalesce evita un NULL).
+const overdueExpr = sql<boolean>`coalesce(${t.progressState} <> 'cerrada' AND ${t.dueOn} < ${todaySql}, false)`;
 const scope = (id: string) => and(eq(t.drugstoreId, id), isNull(t.deletedAt));
 const select = (db: Db) => db.select({ ...getTableColumns(t), overdue: overdueExpr }).from(t);
 type Row = Awaited<ReturnType<typeof select>>[number];
 
 const toDto = (r: Row) => ({
-  id: r.id, finding: r.finding, correctiveAction: r.correctiveAction, responsible: r.responsible, dueOn: r.dueOn,
+  id: r.id, finding: r.finding, correctiveAction: r.correctiveAction, responsible: r.responsible, dueOn: r.dueOn, originItemId: r.originItemId,
   state: r.progressState as 'pendiente' | 'en_curso' | 'cerrada', closedOn: r.closedOn, overdue: r.overdue,
   createdAt: r.createdAt.toISOString(), updatedAt: r.updatedAt.toISOString(),
 });
@@ -47,14 +48,14 @@ async function resolveClosure(db: Db, state: string, closedOn: string | null | u
 
 export async function create(
   db: Db, m: Membership, userId: string,
-  input: { finding: string; correctiveAction: string; responsible: string; dueOn: string; state?: string; closedOn?: string | null },
+  input: { finding: string; correctiveAction?: string | null; responsible?: string | null; dueOn?: string | null; state?: string; closedOn?: string | null; originItemId?: string | null },
   requestId: string,
 ) {
   const state = input.state ?? 'pendiente';
   const closedOn = await resolveClosure(db, state, input.closedOn);
   const [row] = await db
     .insert(t)
-    .values({ drugstoreId: m.drugstore.id, finding: input.finding, correctiveAction: input.correctiveAction, responsible: input.responsible, dueOn: input.dueOn, progressState: state, closedOn, createdBy: userId, updatedBy: userId })
+    .values({ drugstoreId: m.drugstore.id, finding: input.finding, correctiveAction: input.correctiveAction ?? null, responsible: input.responsible ?? null, dueOn: input.dueOn ?? null, originItemId: input.originItemId ?? null, progressState: state, closedOn, createdBy: userId, updatedBy: userId })
     .returning({ id: t.id });
   await audit(db, { userId, action: 'actions.create', resource: 'improvement_actions', resourceId: row!.id, outcome: 'success', requestId });
   return get(db, m, row!.id);
@@ -62,7 +63,7 @@ export async function create(
 
 export async function update(
   db: Db, m: Membership, userId: string, id: string,
-  input: { finding?: string; correctiveAction?: string; responsible?: string; dueOn?: string; state?: string; closedOn?: string | null },
+  input: { finding?: string; correctiveAction?: string | null; responsible?: string | null; dueOn?: string | null; state?: string; closedOn?: string | null },
   requestId: string,
 ) {
   const cur = await find(db, m, id);
@@ -92,4 +93,13 @@ export async function counts(db: Db, m: Membership) {
     .from(t)
     .where(scope(m.drugstore.id));
   return row!;
+}
+
+/** Mejoras sin cerrar, las más próximas primero (las que no tienen fecha, al final). */
+export async function pending(db: Db, m: Membership) {
+  const rows = await select(db)
+    .where(and(scope(m.drugstore.id), sql`${t.progressState} <> 'cerrada'`))
+    .orderBy(sql`${t.dueOn} ASC NULLS LAST`, asc(t.id))
+    .limit(100);
+  return rows.map((r) => ({ id: r.id, hallazgo: r.finding, accion: r.correctiveAction, responsable: r.responsible, fechaLimite: r.dueOn, atrasada: r.overdue }));
 }
