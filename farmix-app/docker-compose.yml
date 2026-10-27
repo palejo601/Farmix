@@ -1,0 +1,12 @@
+# Solo PostgreSQL 16 para desarrollo. Defina POSTGRES_PASSWORD en su entorno.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: farmix
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD}
+      POSTGRES_DB: farmix
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+volumes:
+  pgdata:
