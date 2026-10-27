@@ -4,6 +4,10 @@ Backend de **FARMIX**, un **producto mínimo viable (MVP) en estudio** que apoya
 
 Node.js 20+, TypeScript estricto, Fastify 5, Zod 4, Drizzle ORM, PostgreSQL 16.
 
+## Demostración en línea
+
+https://farmix.onrender.com (plan gratuito de Render: la primera visita tras un rato de inactividad puede tardar cerca de un minuto). Cuenta de demostración con datos **simulados**: `demo@ejemplo.test`; la contraseña es la variable `DEMO_PASSWORD` del servicio en Render. Es un producto mínimo viable en estudio: no registre datos reales.
+
 ## Inicio rápido
 
 ```bash
