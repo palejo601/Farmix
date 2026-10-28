@@ -1,0 +1,30 @@
+erDiagram
+  drugstores {
+    uuid id PK
+    text name
+    text city
+    integer expiry_alert_days
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+    integer employee_count  "opcional"
+    boolean is_demo
+  }
+  drugstore_members {
+    uuid id PK
+    uuid drugstore_id FK,UK
+    uuid user_id FK,UK
+    text member_role
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+  }
+  users {
+    uuid id PK "ver otra área"
+  }
+  drugstores ||--o{ drugstore_members : "drugstore_id"
+  users ||--o{ drugstore_members : "user_id"

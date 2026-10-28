@@ -1,0 +1,160 @@
+erDiagram
+  audit_logs {
+    bigint id PK
+    uuid user_id FK "opcional"
+  }
+  dev_mailbox {
+    bigint id PK
+  }
+  diagnoses {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    uuid instrument_version_id FK,UK
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+  }
+  diagnosis_answers {
+    uuid id PK
+    uuid diagnosis_id FK,UK
+    uuid version_id FK
+    uuid item_id FK,UK
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+  }
+  diagnosis_area_scores {
+    uuid diagnosis_id PK,FK
+    text area PK
+  }
+  drugstore_members {
+    uuid id PK
+    uuid drugstore_id FK,UK
+    uuid user_id FK,UK
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+  }
+  drugstores {
+    uuid id PK
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+  }
+  expiration_products {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    text product_name UK
+    text batch UK
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+  }
+  imports {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+  }
+  improvement_actions {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    uuid origin_item_id FK "opcional"
+  }
+  instrument_items {
+    uuid id PK,UK
+    uuid version_id FK,UK
+    text item_code UK
+  }
+  instrument_versions {
+    uuid id PK
+    integer version_number UK
+  }
+  local_migrations {
+    uuid id PK
+    uuid user_id FK,UK
+    uuid drugstore_id FK
+    text content_hash UK
+    boolean is_demo UK
+  }
+  password_resets {
+    uuid id PK
+    uuid user_id FK
+    text token_hash UK
+  }
+  schema_migrations {
+    text filename PK
+  }
+  segregation_checks {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+  }
+  sessions {
+    uuid id PK
+    uuid user_id FK
+    text token_hash UK
+  }
+  support_files {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    text stored_name UK
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+  }
+  training_topics {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    text topic_name UK
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+  }
+  trainings {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    uuid worker_id FK,UK
+    uuid topic_id FK,UK
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    uuid support_file_id FK "opcional"
+  }
+  users {
+    uuid id PK
+    text email UK
+  }
+  waste_records {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+  }
+  workers {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    text worker_code UK
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+  }
+  users |o--o{ audit_logs : "user_id"
+  drugstores ||--o{ diagnoses : "drugstore_id"
+  instrument_versions ||--o{ diagnoses : "instrument_version_id"
+  diagnoses ||--o{ diagnosis_answers : "diagnosis_id, version_id"
+  instrument_items ||--o{ diagnosis_answers : "version_id, item_id"
+  diagnoses ||--o{ diagnosis_area_scores : "diagnosis_id"
+  drugstores ||--o{ drugstore_members : "drugstore_id"
+  users ||--o{ drugstore_members : "user_id"
+  drugstores ||--o{ expiration_products : "drugstore_id"
+  drugstores ||--o{ imports : "drugstore_id"
+  drugstores ||--o{ improvement_actions : "drugstore_id"
+  instrument_items |o--o{ improvement_actions : "origin_item_id"
+  instrument_versions ||--o{ instrument_items : "version_id"
+  drugstores ||--o{ local_migrations : "drugstore_id"
+  users ||--o{ local_migrations : "user_id"
+  users ||--o{ password_resets : "user_id"
+  drugstores ||--o{ segregation_checks : "drugstore_id"
+  users ||--o{ sessions : "user_id"
+  drugstores ||--o{ support_files : "drugstore_id"
+  drugstores ||--o{ training_topics : "drugstore_id"
+  training_topics ||--o{ trainings : "drugstore_id, topic_id"
+  workers ||--o{ trainings : "drugstore_id, worker_id"
+  support_files |o--o{ trainings : "drugstore_id, support_file_id"
+  drugstores ||--o{ waste_records : "drugstore_id"
+  drugstores ||--o{ workers : "drugstore_id"

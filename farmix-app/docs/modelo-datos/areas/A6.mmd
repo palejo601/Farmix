@@ -1,0 +1,50 @@
+erDiagram
+  imports {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    text kind
+    text file_name
+    text phase
+    integer total_rows
+    integer valid_rows
+    integer invalid_rows
+    integer duplicate_rows
+    jsonb row_results
+    integer inserted_count  "opcional"
+    timestamptz expires_at
+    timestamptz confirmed_at  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+  }
+  local_migrations {
+    uuid id PK
+    uuid user_id FK,UK
+    uuid drugstore_id FK
+    text content_hash UK
+    boolean is_demo UK
+    text phase
+    jsonb payload
+    jsonb summary
+    jsonb inserted_ids  "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz confirmed_at  "opcional"
+    timestamptz reverted_at  "opcional"
+  }
+  schema_migrations {
+    text filename PK
+    text checksum
+    timestamptz applied_at
+  }
+  drugstores {
+    uuid id PK "ver otra área"
+  }
+  users {
+    uuid id PK "ver otra área"
+  }
+  drugstores ||--o{ imports : "drugstore_id"
+  drugstores ||--o{ local_migrations : "drugstore_id"
+  users ||--o{ local_migrations : "user_id"

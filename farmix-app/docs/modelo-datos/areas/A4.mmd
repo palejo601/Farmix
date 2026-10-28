@@ -1,0 +1,62 @@
+erDiagram
+  workers {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    text worker_code UK
+    text full_name
+    text job_title  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+  }
+  training_topics {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    text topic_name UK
+    integer validity_months
+    text description  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+  }
+  trainings {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    uuid worker_id FK,UK
+    uuid topic_id FK,UK
+    date trained_on  "opcional"
+    date valid_until  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+    uuid support_file_id FK "opcional"
+  }
+  support_files {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    text original_name
+    text stored_name UK
+    text mime_type
+    integer size_bytes
+    text sha256
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+  }
+  drugstores {
+    uuid id PK "ver otra área"
+  }
+  drugstores ||--o{ workers : "drugstore_id"
+  drugstores ||--o{ training_topics : "drugstore_id"
+  training_topics ||--o{ trainings : "drugstore_id, topic_id"
+  workers ||--o{ trainings : "drugstore_id, worker_id"
+  support_files |o--o{ trainings : "drugstore_id, support_file_id"
+  drugstores ||--o{ support_files : "drugstore_id"

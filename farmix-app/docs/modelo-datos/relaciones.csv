@@ -1,0 +1,52 @@
+﻿tabla_origen;columnas_fk;tabla_destino;columnas_referenciadas;on_delete;on_update;obligatoria;cardinalidad;restriccion;tipo
+audit_logs;user_id;users;id;SET NULL;NO ACTION;no;N:0..1;audit_logs_user_id_fkey;simple
+diagnoses;created_by;users;id;SET NULL;NO ACTION;no;N:0..1;diagnoses_created_by_fkey;auditoría
+diagnoses;drugstore_id;drugstores;id;CASCADE;NO ACTION;sí;N:1;diagnoses_drugstore_id_fkey;simple
+diagnoses;instrument_version_id;instrument_versions;id;RESTRICT;NO ACTION;sí;N:1;diagnoses_instrument_version_id_fkey;simple
+diagnoses;updated_by;users;id;SET NULL;NO ACTION;no;N:0..1;diagnoses_updated_by_fkey;auditoría
+diagnosis_answers;created_by;users;id;SET NULL;NO ACTION;no;N:0..1;diagnosis_answers_created_by_fkey;auditoría
+diagnosis_answers;diagnosis_id, version_id;diagnoses;id, instrument_version_id;CASCADE;NO ACTION;sí;N:1;diagnosis_answers_diagnosis_id_version_id_fkey;compuesta
+diagnosis_answers;updated_by;users;id;SET NULL;NO ACTION;no;N:0..1;diagnosis_answers_updated_by_fkey;auditoría
+diagnosis_answers;version_id, item_id;instrument_items;version_id, id;NO ACTION;NO ACTION;sí;N:1;diagnosis_answers_version_id_item_id_fkey;compuesta
+diagnosis_area_scores;diagnosis_id;diagnoses;id;CASCADE;NO ACTION;sí;N:1;diagnosis_area_scores_diagnosis_id_fkey;simple
+drugstore_members;created_by;users;id;SET NULL;NO ACTION;no;N:0..1;drugstore_members_created_by_fkey;auditoría
+drugstore_members;drugstore_id;drugstores;id;CASCADE;NO ACTION;sí;N:1;drugstore_members_drugstore_id_fkey;simple
+drugstore_members;updated_by;users;id;SET NULL;NO ACTION;no;N:0..1;drugstore_members_updated_by_fkey;auditoría
+drugstore_members;user_id;users;id;CASCADE;NO ACTION;sí;N:1;drugstore_members_user_id_fkey;simple
+drugstores;created_by;users;id;SET NULL;NO ACTION;no;N:0..1;drugstores_created_by_fkey;auditoría
+drugstores;updated_by;users;id;SET NULL;NO ACTION;no;N:0..1;drugstores_updated_by_fkey;auditoría
+expiration_products;created_by;users;id;SET NULL;NO ACTION;no;N:0..1;expiration_products_created_by_fkey;auditoría
+expiration_products;drugstore_id;drugstores;id;CASCADE;NO ACTION;sí;N:1;expiration_products_drugstore_id_fkey;simple
+expiration_products;updated_by;users;id;SET NULL;NO ACTION;no;N:0..1;expiration_products_updated_by_fkey;auditoría
+imports;created_by;users;id;SET NULL;NO ACTION;no;N:0..1;imports_created_by_fkey;auditoría
+imports;drugstore_id;drugstores;id;CASCADE;NO ACTION;sí;N:1;imports_drugstore_id_fkey;simple
+imports;updated_by;users;id;SET NULL;NO ACTION;no;N:0..1;imports_updated_by_fkey;auditoría
+improvement_actions;created_by;users;id;SET NULL;NO ACTION;no;N:0..1;improvement_actions_created_by_fkey;auditoría
+improvement_actions;drugstore_id;drugstores;id;CASCADE;NO ACTION;sí;N:1;improvement_actions_drugstore_id_fkey;simple
+improvement_actions;origin_item_id;instrument_items;id;SET NULL;NO ACTION;no;N:0..1;improvement_actions_origin_item_id_fkey;simple
+improvement_actions;updated_by;users;id;SET NULL;NO ACTION;no;N:0..1;improvement_actions_updated_by_fkey;auditoría
+instrument_items;version_id;instrument_versions;id;RESTRICT;NO ACTION;sí;N:1;instrument_items_version_id_fkey;simple
+local_migrations;drugstore_id;drugstores;id;CASCADE;NO ACTION;sí;N:1;local_migrations_drugstore_id_fkey;simple
+local_migrations;user_id;users;id;CASCADE;NO ACTION;sí;N:1;local_migrations_user_id_fkey;simple
+password_resets;user_id;users;id;CASCADE;NO ACTION;sí;N:1;password_resets_user_id_fkey;simple
+segregation_checks;created_by;users;id;SET NULL;NO ACTION;no;N:0..1;segregation_checks_created_by_fkey;auditoría
+segregation_checks;drugstore_id;drugstores;id;CASCADE;NO ACTION;sí;N:1;segregation_checks_drugstore_id_fkey;simple
+segregation_checks;updated_by;users;id;SET NULL;NO ACTION;no;N:0..1;segregation_checks_updated_by_fkey;auditoría
+sessions;user_id;users;id;CASCADE;NO ACTION;sí;N:1;sessions_user_id_fkey;simple
+support_files;created_by;users;id;SET NULL;NO ACTION;no;N:0..1;support_files_created_by_fkey;auditoría
+support_files;drugstore_id;drugstores;id;CASCADE;NO ACTION;sí;N:1;support_files_drugstore_id_fkey;simple
+support_files;updated_by;users;id;SET NULL;NO ACTION;no;N:0..1;support_files_updated_by_fkey;auditoría
+training_topics;created_by;users;id;SET NULL;NO ACTION;no;N:0..1;training_topics_created_by_fkey;auditoría
+training_topics;drugstore_id;drugstores;id;CASCADE;NO ACTION;sí;N:1;training_topics_drugstore_id_fkey;simple
+training_topics;updated_by;users;id;SET NULL;NO ACTION;no;N:0..1;training_topics_updated_by_fkey;auditoría
+trainings;created_by;users;id;SET NULL;NO ACTION;no;N:0..1;trainings_created_by_fkey;auditoría
+trainings;drugstore_id, topic_id;training_topics;drugstore_id, id;CASCADE;NO ACTION;sí;N:1;trainings_drugstore_id_topic_id_fkey;compuesta
+trainings;drugstore_id, worker_id;workers;drugstore_id, id;CASCADE;NO ACTION;sí;N:1;trainings_drugstore_id_worker_id_fkey;compuesta
+trainings;drugstore_id, support_file_id;support_files;drugstore_id, id;NO ACTION;NO ACTION;no;N:0..1;trainings_support_file_fk;compuesta
+trainings;updated_by;users;id;SET NULL;NO ACTION;no;N:0..1;trainings_updated_by_fkey;auditoría
+waste_records;created_by;users;id;SET NULL;NO ACTION;no;N:0..1;waste_records_created_by_fkey;auditoría
+waste_records;drugstore_id;drugstores;id;CASCADE;NO ACTION;sí;N:1;waste_records_drugstore_id_fkey;simple
+waste_records;updated_by;users;id;SET NULL;NO ACTION;no;N:0..1;waste_records_updated_by_fkey;auditoría
+workers;created_by;users;id;SET NULL;NO ACTION;no;N:0..1;workers_created_by_fkey;auditoría
+workers;drugstore_id;drugstores;id;CASCADE;NO ACTION;sí;N:1;workers_drugstore_id_fkey;simple
+workers;updated_by;users;id;SET NULL;NO ACTION;no;N:0..1;workers_updated_by_fkey;auditoría
