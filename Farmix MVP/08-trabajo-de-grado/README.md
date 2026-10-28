@@ -33,4 +33,6 @@ Cada afirmación de esta guía distingue lo verificado de lo pendiente para faci
 | 2 | Etapa 1 · modelo de datos | Modelos estructural, lógico y físico, diccionario y SQL para drawDB (importación sin verificar en el sitio) |
 | 3 | Guía por capas | Esta carpeta; 14 de 15 scripts verificados (`docker-local.sh` sin verificar) |
 
-**Pendiente del estudiante:** rúbrica o lineamientos de la universidad, versión actualizada del documento, revisión de los 3 Excel de la Clínica Las Peñitas en la raíz del repositorio (que es público) y prueba de `farmix-drawdb.sql` en drawDB.
+**Pendiente del estudiante:** rúbrica o lineamientos de la universidad, versión actualizada del documento, y prueba de `farmix-drawdb.sql` en drawDB.
+
+**Alcance acordado:** FARMIX es solo para droguerías, farmacias independientes y droguerías de cadena. La Clínica Las Peñitas **no** hace parte del alcance; los 3 Excel que hay en la raíz del repositorio (que es público) no se usan en esta guía.
