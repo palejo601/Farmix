@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" width="1000" height="680" font-family="Arial,Helvetica,sans-serif">
+<rect width="1000" height="680" fill="#fff"/>
+<text x="10" y="18" font-size="14" font-weight="bold" fill="#333">WIREFRAME · Migrar datos guardados en el navegador (X3)</text>
+<text x="10" y="34" font-size="11" fill="#777">Baja fidelidad. Reconstruido a partir del sistema construido; campos tomados del esquema de datos. Nota amarilla = regla de negocio.</text>
+<g transform="translate(0,40)">
+<rect x="0.5" y="0.5" width="999" height="639" fill="#fafafa" stroke="#999"/>
+<rect x="0" y="0" width="1000" height="22" fill="#eee" stroke="#999"/>
+<text x="500.0" y="14.333333333333334" font-size="10" fill="#444" text-anchor="middle">Banner: producto mínimo viable en estudio · datos de demostración simulados</text>
+<rect x="0" y="22" width="170" height="618" fill="#f0f0f0" stroke="#999"/>
+<text x="14" y="50" font-size="13" fill="#444" font-weight="bold">FARMIX (logo)</text>
+<text x="14" y="72" font-size="11" fill="#444">← Mis droguerías</text>
+<text x="16" y="106" font-size="12" fill="#444">Inicio</text>
+<text x="16" y="136" font-size="12" fill="#444">Diagnóstico</text>
+<text x="16" y="166" font-size="12" fill="#444">Vencimientos</text>
+<text x="16" y="196" font-size="12" fill="#444">Residuos</text>
+<text x="16" y="226" font-size="12" fill="#444">Personal</text>
+<text x="16" y="256" font-size="12" fill="#444">Reporte</text>
+<text x="16" y="286" font-size="12" fill="#444">Normativa</text>
+<text x="16" y="316" font-size="12" fill="#444">Importar</text>
+<rect x="6" y="328" width="158" height="26" fill="#d9d9d9" stroke="#888"/>
+<text x="14" y="345.0" font-size="12" fill="#444" text-anchor="start" font-weight="bold">Migrar</text>
+<text x="16" y="376" font-size="12" fill="#444">Miembros</text>
+<text x="16" y="406" font-size="12" fill="#444">Configuración</text>
+<text x="14" y="600" font-size="11" fill="#444">Usuario · Rol</text>
+<text x="14" y="616" font-size="10" fill="#444">Mi cuenta · Cerrar sesión</text>
+<text x="190" y="62" font-size="20" fill="#444" font-weight="bold">Migrar datos guardados en el navegador</text>
+<text x="190" y="80" font-size="11" fill="#777">Vista previa, confirmar y, si hace falta, revertir</text>
+<text x="190" y="100" font-size="11" fill="#444">Contenido JSON (vencimientos, residuos, segregación) · o cargar un archivo .json</text>
+<rect x="190" y="108" width="790" height="150" fill="#fff" stroke="#999"/>
+<text x="198" y="187.0" font-size="12" fill="#444" text-anchor="start">{ ... }</text>
+<rect x="190" y="268" width="170" height="28" fill="#bbb" stroke="#999"/>
+<text x="275.0" y="285.6666666666667" font-size="11" fill="#444" text-anchor="middle" font-weight="bold">Crear vista previa</text>
+<rect x="190" y="314" width="790" height="190" fill="#fff" stroke="#999"/>
+<text x="204" y="336" font-size="13" fill="#444" font-weight="bold">Migración (estado: pendiente / confirmada / revertida)</text>
+<rect x="204" y="348" width="762" height="24" fill="#e6e6e6" stroke="#999"/>
+<text x="210.0" y="364.0" font-size="11" fill="#444" font-weight="bold">Tipo</text>
+<text x="362.4" y="364.0" font-size="11" fill="#444" font-weight="bold">Recibidas</text>
+<text x="514.8" y="364.0" font-size="11" fill="#444" font-weight="bold">Válidas</text>
+<text x="667.2" y="364.0" font-size="11" fill="#444" font-weight="bold">Inválidas</text>
+<text x="819.6" y="364.0" font-size="11" fill="#444" font-weight="bold">Duplicadas</text>
+<rect x="204" y="372" width="762" height="24" fill="#fff" stroke="#999"/>
+<rect x="210.0" y="381" width="83.82000000000001" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="362.4" y="381" width="83.82000000000001" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="514.8" y="381" width="83.82000000000001" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="667.2" y="381" width="83.82000000000001" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="819.6" y="381" width="83.82000000000001" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="204" y="396" width="762" height="24" fill="#fff" stroke="#999"/>
+<rect x="210.0" y="405" width="83.82000000000001" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="362.4" y="405" width="83.82000000000001" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="514.8" y="405" width="83.82000000000001" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="667.2" y="405" width="83.82000000000001" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="819.6" y="405" width="83.82000000000001" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="204" y="420" width="762" height="24" fill="#fff" stroke="#999"/>
+<rect x="210.0" y="429" width="83.82000000000001" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="362.4" y="429" width="83.82000000000001" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="514.8" y="429" width="83.82000000000001" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="667.2" y="429" width="83.82000000000001" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="819.6" y="429" width="83.82000000000001" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="640" y="460" width="150" height="28" fill="#bbb" stroke="#999"/>
+<text x="715.0" y="477.6666666666667" font-size="11" fill="#444" text-anchor="middle" font-weight="bold">Confirmar migración</text>
+<rect x="806" y="460" width="160" height="28" fill="#eee" stroke="#999"/>
+<text x="886.0" y="477.6666666666667" font-size="11" fill="#444" text-anchor="middle">Revertir</text>
+<rect x="190" y="530" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="198" y="550.3333333333334" font-size="10" fill="#444" text-anchor="start">Revertir archiva solo lo que creó esta migración</text>
+<rect x="460" y="530" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="468" y="550.3333333333334" font-size="10" fill="#444" text-anchor="start">El mismo contenido no se carga dos veces</text>
+<rect x="730" y="530" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="738" y="550.3333333333334" font-size="10" fill="#444" text-anchor="start">Máximo 1000 filas por tipo</text>
+</g>
+</svg>

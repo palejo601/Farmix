@@ -103,11 +103,11 @@
 <rect x="190.0" y="462" width="250.0" height="26" fill="#fff" stroke="#999"/>
 <text x="460.0" y="456" font-size="11" fill="#444">Soporte: certificado o lista (PDF/imagen, máx. 5 MB)</text>
 <rect x="460.0" y="462" width="250.0" height="26" fill="#fff" stroke="#999"/>
-<rect x="190" y="520" width="250" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<rect x="190" y="520" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
 <text x="198" y="540.3333333333334" font-size="10" fill="#444" text-anchor="start">Sin fecha = pendiente; vigencia pasada = vencida</text>
-<rect x="460" y="520" width="250" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<rect x="460" y="520" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
 <text x="468" y="540.3333333333334" font-size="10" fill="#444" text-anchor="start">Sin soporte = estado «Sin soporte»</text>
-<rect x="730" y="520" width="250" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<rect x="730" y="520" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
 <text x="738" y="540.3333333333334" font-size="10" fill="#444" text-anchor="start">Un registro por trabajador y tema</text>
 </g>
 </svg>

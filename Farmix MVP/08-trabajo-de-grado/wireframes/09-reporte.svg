@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" width="1000" height="680" font-family="Arial,Helvetica,sans-serif">
+<rect width="1000" height="680" fill="#fff"/>
+<text x="10" y="18" font-size="14" font-weight="bold" fill="#333">WIREFRAME · Reporte de gestión (R4)</text>
+<text x="10" y="34" font-size="11" fill="#777">Baja fidelidad. Reconstruido a partir del sistema construido; campos tomados del esquema de datos. Nota amarilla = regla de negocio.</text>
+<g transform="translate(0,40)">
+<rect x="0.5" y="0.5" width="999" height="639" fill="#fafafa" stroke="#999"/>
+<rect x="0" y="0" width="1000" height="22" fill="#eee" stroke="#999"/>
+<text x="500.0" y="14.333333333333334" font-size="10" fill="#444" text-anchor="middle">Banner: producto mínimo viable en estudio · datos de demostración simulados</text>
+<rect x="0" y="22" width="170" height="618" fill="#f0f0f0" stroke="#999"/>
+<text x="14" y="50" font-size="13" fill="#444" font-weight="bold">FARMIX (logo)</text>
+<text x="14" y="72" font-size="11" fill="#444">← Mis droguerías</text>
+<text x="16" y="106" font-size="12" fill="#444">Inicio</text>
+<text x="16" y="136" font-size="12" fill="#444">Diagnóstico</text>
+<text x="16" y="166" font-size="12" fill="#444">Vencimientos</text>
+<text x="16" y="196" font-size="12" fill="#444">Residuos</text>
+<text x="16" y="226" font-size="12" fill="#444">Personal</text>
+<rect x="6" y="238" width="158" height="26" fill="#d9d9d9" stroke="#888"/>
+<text x="14" y="255.0" font-size="12" fill="#444" text-anchor="start" font-weight="bold">Reporte</text>
+<text x="16" y="286" font-size="12" fill="#444">Normativa</text>
+<text x="16" y="316" font-size="12" fill="#444">Importar</text>
+<text x="16" y="346" font-size="12" fill="#444">Migrar</text>
+<text x="16" y="376" font-size="12" fill="#444">Miembros</text>
+<text x="16" y="406" font-size="12" fill="#444">Configuración</text>
+<text x="14" y="600" font-size="11" fill="#444">Usuario · Rol</text>
+<text x="14" y="616" font-size="10" fill="#444">Mi cuenta · Cerrar sesión</text>
+<text x="190" y="62" font-size="20" fill="#444" font-weight="bold">Reporte de gestión</text>
+<text x="190" y="80" font-size="11" fill="#777">Diagnóstico, vencimientos y pérdidas, residuos, capacitación y mejoras</text>
+<text x="190" y="100" font-size="11" fill="#444">Residuos y segregación desde</text>
+<rect x="190" y="106" width="140" height="26" fill="#fff" stroke="#999"/>
+<text x="345" y="100" font-size="11" fill="#444">Hasta</text>
+<rect x="345" y="106" width="140" height="26" fill="#fff" stroke="#999"/>
+<rect x="500" y="105" width="170" height="28" fill="#bbb" stroke="#999"/>
+<text x="585.0" y="122.66666666666667" font-size="11" fill="#444" text-anchor="middle" font-weight="bold">Imprimir / guardar PDF</text>
+<rect x="210" y="146" width="740" height="458" fill="#fff" stroke="#999"/>
+<text x="226" y="170" font-size="10" fill="#777">FARMIX · Gestión de vencimientos, residuos y mejora continua</text>
+<text x="226" y="194" font-size="20" fill="#444" font-weight="bold">Reporte de gestión</text>
+<rect x="226" y="206" width="708" height="24" fill="#e6e6e6" stroke="#999"/>
+<text x="232.0" y="222.0" font-size="11" fill="#444" font-weight="bold">Establecimiento · Ciudad · Fecha de generación · Código · Generado con</text>
+<rect x="226" y="232" width="708" height="22" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="580.0" y="246.33333333333334" font-size="10" fill="#444" text-anchor="middle">DATOS SIMULADOS (aviso, solo en demostración)</text>
+<text x="226" y="278" font-size="12" fill="#444" font-weight="bold">01 Resumen (6 indicadores)</text>
+<line x1="226" y1="284" x2="934" y2="284" stroke="#999"/>
+<rect x="226" y="290" width="340" height="8" fill="#ddd" stroke="#ddd"/>
+<text x="226" y="326" font-size="12" fill="#444" font-weight="bold">02 Diagnóstico: línea base vs último, obligatorios pendientes, madurez por área</text>
+<line x1="226" y1="332" x2="934" y2="332" stroke="#999"/>
+<rect x="226" y="338" width="340" height="8" fill="#ddd" stroke="#ddd"/>
+<text x="226" y="374" font-size="12" fill="#444" font-weight="bold">03 Vencimientos y pérdidas</text>
+<line x1="226" y1="380" x2="934" y2="380" stroke="#999"/>
+<rect x="226" y="386" width="340" height="8" fill="#ddd" stroke="#ddd"/>
+<text x="226" y="422" font-size="12" fill="#444" font-weight="bold">04 Residuos y segregación (según el subtítulo)</text>
+<line x1="226" y1="428" x2="934" y2="428" stroke="#999"/>
+<rect x="226" y="434" width="340" height="8" fill="#ddd" stroke="#ddd"/>
+<text x="226" y="470" font-size="12" fill="#444" font-weight="bold">05 Capacitación (según el subtítulo)</text>
+<line x1="226" y1="476" x2="934" y2="476" stroke="#999"/>
+<rect x="226" y="482" width="340" height="8" fill="#ddd" stroke="#ddd"/>
+<text x="226" y="518" font-size="12" fill="#444" font-weight="bold">06 Mejoras (según el subtítulo)</text>
+<line x1="226" y1="524" x2="934" y2="524" stroke="#999"/>
+<rect x="226" y="530" width="340" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="690" y="540" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="698" y="560.3333333333334" font-size="10" fill="#444" text-anchor="start">Cifras descriptivas, no demuestran reducción</text>
+</g>
+</svg>

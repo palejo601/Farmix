@@ -16,7 +16,7 @@
 <text x="350" y="350" font-size="11" fill="#555">¿Olvidó su contraseña?  ·  Crear cuenta</text>
 <text x="350" y="390" font-size="10" fill="#777">Registro: nombre, correo, contraseña (mín. 10) y</text>
 <text x="350" y="404" font-size="10" fill="#777">☐ Acepto el aviso de privacidad (obligatorio)</text>
-<rect x="690" y="300" width="250" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<rect x="690" y="300" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
 <text x="698" y="320.3333333333333" font-size="10" fill="#444" text-anchor="start">Tras 5 intentos fallidos: bloqueo de 15 minutos</text>
 </g>
 </svg>

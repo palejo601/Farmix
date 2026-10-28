@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" width="1000" height="680" font-family="Arial,Helvetica,sans-serif">
+<rect width="1000" height="680" fill="#fff"/>
+<text x="10" y="18" font-size="14" font-weight="bold" fill="#333">WIREFRAME · Importar desde Excel o CSV (X2)</text>
+<text x="10" y="34" font-size="11" fill="#777">Baja fidelidad. Reconstruido a partir del sistema construido; campos tomados del esquema de datos. Nota amarilla = regla de negocio.</text>
+<g transform="translate(0,40)">
+<rect x="0.5" y="0.5" width="999" height="639" fill="#fafafa" stroke="#999"/>
+<rect x="0" y="0" width="1000" height="22" fill="#eee" stroke="#999"/>
+<text x="500.0" y="14.333333333333334" font-size="10" fill="#444" text-anchor="middle">Banner: producto mínimo viable en estudio · datos de demostración simulados</text>
+<rect x="0" y="22" width="170" height="618" fill="#f0f0f0" stroke="#999"/>
+<text x="14" y="50" font-size="13" fill="#444" font-weight="bold">FARMIX (logo)</text>
+<text x="14" y="72" font-size="11" fill="#444">← Mis droguerías</text>
+<text x="16" y="106" font-size="12" fill="#444">Inicio</text>
+<text x="16" y="136" font-size="12" fill="#444">Diagnóstico</text>
+<text x="16" y="166" font-size="12" fill="#444">Vencimientos</text>
+<text x="16" y="196" font-size="12" fill="#444">Residuos</text>
+<text x="16" y="226" font-size="12" fill="#444">Personal</text>
+<text x="16" y="256" font-size="12" fill="#444">Reporte</text>
+<text x="16" y="286" font-size="12" fill="#444">Normativa</text>
+<rect x="6" y="298" width="158" height="26" fill="#d9d9d9" stroke="#888"/>
+<text x="14" y="315.0" font-size="12" fill="#444" text-anchor="start" font-weight="bold">Importar</text>
+<text x="16" y="346" font-size="12" fill="#444">Migrar</text>
+<text x="16" y="376" font-size="12" fill="#444">Miembros</text>
+<text x="16" y="406" font-size="12" fill="#444">Configuración</text>
+<text x="14" y="600" font-size="11" fill="#444">Usuario · Rol</text>
+<text x="14" y="616" font-size="10" fill="#444">Mi cuenta · Cerrar sesión</text>
+<text x="190" y="62" font-size="20" fill="#444" font-weight="bold">Importar desde Excel o CSV</text>
+<text x="190" y="80" font-size="11" fill="#777">Primero vista previa; no se guarda nada hasta confirmar</text>
+<text x="190.0" y="108" font-size="11" fill="#444">¿Qué va a importar? (vencimientos, residuos o segregación)</text>
+<rect x="190.0" y="114" width="380.0" height="26" fill="#fff" stroke="#999"/>
+<text x="190.0" y="162" font-size="11" fill="#444">Archivo (.xlsx o .csv, máx. 2 MB y 1000 filas)</text>
+<rect x="190.0" y="168" width="380.0" height="26" fill="#fff" stroke="#999"/>
+<rect x="190" y="214" width="170" height="28" fill="#eee" stroke="#999"/>
+<text x="275.0" y="231.66666666666666" font-size="11" fill="#444" text-anchor="middle">Descargar plantilla CSV</text>
+<rect x="380" y="214" width="190" height="28" fill="#bbb" stroke="#999"/>
+<text x="475.0" y="231.66666666666666" font-size="11" fill="#444" text-anchor="middle" font-weight="bold">Vista previa</text>
+<rect x="190" y="262" width="790" height="250" fill="#fff" stroke="#999"/>
+<text x="204" y="284" font-size="13" fill="#444" font-weight="bold">Resultado de la vista previa</text>
+<rect x="204" y="296" width="180" height="46" fill="#fff" stroke="#999"/>
+<text x="294.0" y="322.6666666666667" font-size="11" fill="#444" text-anchor="middle">Filas</text>
+<rect x="394" y="296" width="180" height="46" fill="#fff" stroke="#999"/>
+<text x="484.0" y="322.6666666666667" font-size="11" fill="#444" text-anchor="middle">Válidas</text>
+<rect x="584" y="296" width="180" height="46" fill="#fff" stroke="#999"/>
+<text x="674.0" y="322.6666666666667" font-size="11" fill="#444" text-anchor="middle">Inválidas</text>
+<rect x="774" y="296" width="180" height="46" fill="#fff" stroke="#999"/>
+<text x="864.0" y="322.6666666666667" font-size="11" fill="#444" text-anchor="middle">Duplicadas</text>
+<rect x="204" y="354" width="762" height="24" fill="#e6e6e6" stroke="#999"/>
+<text x="210.0" y="370.0" font-size="11" fill="#444" font-weight="bold">Fila</text>
+<text x="464.0" y="370.0" font-size="11" fill="#444" font-weight="bold">Estado</text>
+<text x="718.0" y="370.0" font-size="11" fill="#444" font-weight="bold">Detalle del error</text>
+<rect x="204" y="378" width="762" height="24" fill="#fff" stroke="#999"/>
+<rect x="210.0" y="387" width="139.70000000000002" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="464.0" y="387" width="139.70000000000002" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="718.0" y="387" width="139.70000000000002" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="204" y="402" width="762" height="24" fill="#fff" stroke="#999"/>
+<rect x="210.0" y="411" width="139.70000000000002" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="464.0" y="411" width="139.70000000000002" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="718.0" y="411" width="139.70000000000002" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="204" y="426" width="762" height="24" fill="#fff" stroke="#999"/>
+<rect x="210.0" y="435" width="139.70000000000002" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="464.0" y="435" width="139.70000000000002" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="718.0" y="435" width="139.70000000000002" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="780" y="470" width="186" height="28" fill="#bbb" stroke="#999"/>
+<text x="873.0" y="487.6666666666667" font-size="11" fill="#444" text-anchor="middle" font-weight="bold">Confirmar e importar</text>
+<rect x="190" y="530" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="198" y="550.3333333333334" font-size="10" fill="#444" text-anchor="start">La vista previa caduca a las 24 horas</text>
+<rect x="460" y="530" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="468" y="550.3333333333334" font-size="10" fill="#444" text-anchor="start">Al confirmar se vuelve a validar cada fila</text>
+<rect x="730" y="530" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="738" y="550.3333333333334" font-size="10" fill="#444" text-anchor="start">Un duplicado no se inserta</text>
+</g>
+</svg>

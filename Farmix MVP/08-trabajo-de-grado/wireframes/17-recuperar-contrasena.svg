@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" width="1000" height="680" font-family="Arial,Helvetica,sans-serif">
+<rect width="1000" height="680" fill="#fff"/>
+<text x="10" y="18" font-size="14" font-weight="bold" fill="#333">WIREFRAME · Recuperar contraseña (R6)</text>
+<text x="10" y="34" font-size="11" fill="#777">Baja fidelidad. Reconstruido a partir del sistema construido; campos tomados del esquema de datos. Nota amarilla = regla de negocio.</text>
+<g transform="translate(0,40)">
+<rect x="0.5" y="0.5" width="999" height="639" fill="#fafafa" stroke="#999"/>
+<rect x="130" y="90" width="340" height="300" fill="#fff" stroke="#999"/>
+<text x="150" y="122" font-size="14" fill="#444" font-weight="bold">Paso 1 · Solicitar</text>
+<text x="150.0" y="148" font-size="11" fill="#444">Correo de la cuenta</text>
+<rect x="150.0" y="154" width="300.0" height="26" fill="#fff" stroke="#999"/>
+<rect x="150" y="206" width="200" height="28" fill="#bbb" stroke="#999"/>
+<text x="250.0" y="223.66666666666666" font-size="11" fill="#444" text-anchor="middle" font-weight="bold">Enviar instrucciones</text>
+<text x="150" y="260" font-size="10" fill="#777">Siempre responde lo mismo, exista o no la cuenta</text>
+<rect x="530" y="90" width="340" height="300" fill="#fff" stroke="#999"/>
+<text x="550" y="122" font-size="14" fill="#444" font-weight="bold">Paso 2 · Restablecer</text>
+<text x="550.0" y="148" font-size="11" fill="#444">Código recibido</text>
+<rect x="550.0" y="154" width="300.0" height="26" fill="#fff" stroke="#999"/>
+<text x="550.0" y="202" font-size="11" fill="#444">Nueva contraseña (mín. 10)</text>
+<rect x="550.0" y="208" width="300.0" height="26" fill="#fff" stroke="#999"/>
+<rect x="550" y="252" width="160" height="28" fill="#bbb" stroke="#999"/>
+<text x="630.0" y="269.6666666666667" font-size="11" fill="#444" text-anchor="middle" font-weight="bold">Restablecer</text>
+<rect x="130" y="420" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="138" y="440.3333333333333" font-size="10" fill="#444" text-anchor="start">El código vale 1 hora y se usa una sola vez</text>
+<rect x="530" y="420" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="538" y="440.3333333333333" font-size="10" fill="#444" text-anchor="start">En desarrollo el correo es simulado</text>
+</g>
+</svg>
