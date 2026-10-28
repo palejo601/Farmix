@@ -44,8 +44,8 @@ Requisitos tomados de lo que me indicaste (funciones esenciales, cuentas/roles, 
 | O3 | Base de datos | — | — | 23 tablas | `migrations.test.ts` | ✔ (Etapa 1) |
 | O4 | Sistema de apoyo | todas | 15 módulos | — | 391 pruebas | ✔ |
 | O5 | Demostración en entorno relevante | Render | — | — | 22 pasos con datos simulados | ◐ técnica ✔; **usuarios y SUS pendientes** |
-| **Extras (no estaban en tus funciones esenciales)** | | | | | | |
-| X1 | Personal y capacitaciones | `/personal` | `staff` | `workers`, `training_topics`, `trainings`, `support_files` | `staff.test.ts`, `files.test.ts` | ✔ — [I] conviene justificarlas ante el director |
+| **Funciones de la propuesta (Fase 2) y extras** | | | | | | |
+| X1 | Personal y capacitaciones (**sí está en la propuesta**) | `/personal` | `staff` | `workers`, `training_topics`, `trainings`, `support_files` | `staff.test.ts`, `files.test.ts` | ✔ |
 | X2 | Importar Excel/CSV | `/importar` | `imports` | `imports` | `imports.test.ts` | ✔ |
 | X3 | Migrar datos locales | `/migrar` | `local-migrations` | `local_migrations` | `local-migrations.test.ts` | ✔ (solo 3 tipos; A6-1) |
 | X4 | Marco legal | `/normativa` | — (datos en `frontend/src/normativa.ts`) | — | paso «normativa…» | ✔ [H] contenido estático en el frontend |
@@ -58,7 +58,7 @@ Requisitos tomados de lo que me indicaste (funciones esenciales, cuentas/roles, 
 1. **PWA sin publicar (R10):** existe en una rama aparte. Hace falta unirla a la rama de Render y comprobar la instalación en un celular real (lo que probé fue por pruebas automáticas).
 2. **Requerimientos formales (O2):** `rutas.md` es una propuesta; falta la lista de requerimientos validada con usuarios.
 3. **Evidencia de campo (O1, O5):** el diagnóstico real y la evaluación de usabilidad (SUS) no están en el repositorio.
-4. **Alcance ampliado (X1–X4):** hay módulos que tu propuesta no enumera como esenciales; no son un problema, pero conviene que el director los conozca.
+4. **Fuera de la propuesta (X2, X3):** importar y migrar datos locales no aparecen en ella; no son un problema, pero conviene que el director los conozca. (Personal y capacitaciones **sí** están en la propuesta; lo corregí en la Etapa 4.)
 5. **Datos personales de trabajadores (R12 ◐):** relacionada con A4-4.
 
 ## 4. Cruce con la Etapa 2
