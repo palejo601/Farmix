@@ -62,6 +62,22 @@ DEMO_PASSWORD='<la que imprimió seed:demo>' SHOTS=/tmp/capturas node frontend/e
 ```
 (Crea datos de ejemplo en la droguería de demostración: úsela con una base desechable.)
 
+## Aplicación instalable (PWA)
+
+La interfaz se puede instalar en el celular o el computador («Agregar a pantalla de inicio» / «Instalar FARMIX») y abre en su propia ventana.
+
+| Archivo (`frontend/public/`) | Para qué sirve |
+|---|---|
+| `manifest.webmanifest` | Nombre, colores, modo `standalone` e íconos: con él el navegador ofrece «Instalar». |
+| `icons/` | Íconos de 192 y 512 px, uno *maskable* (Android recorta la forma) y `apple-touch-icon` para iPhone. |
+| `sw.js` | Service worker. Interfaz: `/assets/*` primero de la caché (tienen hash, no cambian); navegación primero de la red y, sin conexión, `offline.html`. **Nunca intercepta ni guarda `/api/*`**: los datos de cada droguería no quedan copiados en el dispositivo y siempre se consultan actualizados. |
+| `offline.html` + `offline.css` | Página que se muestra sin internet (sin scripts ni estilos en línea, por la CSP). |
+
+- El service worker solo se registra en producción (`npm run build`); en `npm run dev` no, para no ocultar cambios con la caché.
+- Al modificar `sw.js`, suba `VERSION` para que los navegadores descarten las cachés anteriores.
+- Verificado en Chromium contra el servidor real: el service worker controla la página, Chrome no reporta errores de instalabilidad, en caché solo quedan archivos de la interfaz y, sin conexión, se muestra `offline.html`.
+- Límite: no hay modo de trabajo sin conexión (registrar datos offline y sincronizar después); FARMIX sigue necesitando internet para leer y guardar.
+
 ## Límites (honestidad)
 
 - El prototipo original no estuvo disponible: esta interfaz está hecha **contra esta API**, no contra el diseño del prototipo; no replica su aspecto ni sus flujos.

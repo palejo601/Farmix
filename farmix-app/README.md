@@ -42,7 +42,7 @@ Ver [`docs/06-frontend.md`](docs/06-frontend.md).
 
 ```bash
 export TEST_DATABASE_URL=postgres://USUARIO:CLAVE@localhost:5432/NOMBRE_BD_PRUEBAS   # base desechable
-npm test     # 391 pruebas; recrea el esquema public de esa base
+npm test     # 399 pruebas; recrea el esquema public de esa base
 ```
 
 ## Documentación (`docs/`)

@@ -32,7 +32,8 @@ afterAll(() => closeCtx(ctx));
 
 describe('flujo completo de un usuario nuevo', () => {
   const state: Record<string, string> = {};
-  const day = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+  // Fecha en hora de Colombia, igual que el servidor; en UTC, después de las 7 p. m. ya sería el día siguiente
+  const day = (n: number) => new Date(Date.now() + n * 86_400_000).toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
 
   it('health responde con X-Request-Id y cabeceras de seguridad', async () => {
     const r = await api('GET', '/health');

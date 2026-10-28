@@ -2,7 +2,7 @@
 
 ## Resumen
 
-- **391 pruebas automáticas, 391 en verde, 0 fallidas**, en 21 archivos (criterio del encargo: mínimo 108).
+- **399 pruebas automáticas, 399 en verde, 0 fallidas**, en 22 archivos (criterio del encargo: mínimo 108).
 - Comando: `npm test` (Vitest 5.0.5). Duración aproximada: 2 minutos (el hash Argon2id es deliberadamente lento).
 - Entorno: Node.js 22.22.0, PostgreSQL 16.15 local, Linux. `tsc --noEmit` sin errores. `npm audit`: 0 vulnerabilidades.
 - Las pruebas **borran y recrean el esquema** de la base de pruebas (`TEST_DATABASE_URL`).
@@ -27,7 +27,8 @@
 | `protected-routes.test.ts` | 66 | 66 rutas protegidas responden 401 sin sesión |
 | `reports.test.ts` | 12 | Reporte vacío sin cifras inventadas, consolidación con cifras coherentes, periodo, permisos, aislamiento, aviso |
 | `segregation.test.ts` | 19 | Porcentaje calculado al consultar, correct <= reviewed en API y base, resumen filtrado, aislamiento |
-| `smoke.test.ts` | 8 | Servidor real por HTTP: flujo completo de un usuario nuevo de extremo a extremo |
+| `pwa.test.ts` | 8 | PWA: manifest instalable, íconos con el tamaño declarado, enlaces en index.html, el service worker no intercepta `/api`, archivos precargados existentes, tipos y caché del manifest y de `sw.js`, página sin conexión sin scripts ni estilos en línea |
+| `smoke.test.ts` | 8 | Servidor real por HTTP: flujo completo de un usuario nuevo de extremo a extremo. Las fechas se calculan en hora de Colombia, como el servidor (antes usaban UTC y fallaban entre las 7 p. m. y la medianoche) |
 | `static.test.ts` | 9 | Frontend servido por el backend: SPA, 404 JSON en /api, caché, CSP propia del frontend y estricta en la API, recorrido de rutas, sin STATIC_DIR |
 | `staff.test.ts` | 26 | Trabajadores, temas, capacitaciones (pendiente/vigente/vencida), vigencia nula rechazada con 400, unicidad por droguería, FK compuestas, aislamiento |
 | `users-personal-data.test.ts` | 8 | Perfil, aviso de privacidad, descarga de datos, eliminación con 15 días de gracia, cancelación y depuración |

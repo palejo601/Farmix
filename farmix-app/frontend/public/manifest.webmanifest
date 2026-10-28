@@ -1,0 +1,19 @@
+{
+  "name": "FARMIX · gestión de residuos y vencimientos",
+  "short_name": "FARMIX",
+  "description": "Producto mínimo viable en estudio para apoyar el PGIRASA de droguerías independientes.",
+  "lang": "es-CO",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#1f7a5c",
+  "categories": ["medical", "productivity"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
