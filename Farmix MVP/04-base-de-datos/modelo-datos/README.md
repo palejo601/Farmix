@@ -69,6 +69,8 @@ Si la importación falla, anote el mensaje de error: puede deberse a una versió
 
 ## Cómo regenerar todo
 
+Forma corta: `bash ../scripts/generar-modelos.sh` (usa su base local). Forma manual:
+
 ```bash
 psql "$DATABASE_URL" -At -f catalogo.sql > catalogo.json   # base local con las migraciones aplicadas
 python3 generar.py                                         # requiere openpyxl para el Excel

@@ -8,7 +8,7 @@ Se publicó en Vercel y **solo se usó para demostración**: no contiene ni gest
 | `index.html` | La aplicación completa en un solo archivo (interfaz, lógica y almacenamiento). |
 | `presentacion.html` | Página de presentación del producto, con cifras simuladas. |
 
-## En qué se diferencia de la versión actual (`farmix-app/`)
+## En qué se diferencia de la versión actual ([`farmix-app`](../../farmix-app))
 
 | | Prototipo v1 | Versión actual (v2) |
 |---|---|---|
