@@ -20,7 +20,7 @@ En su propuesta, corresponden a la **Fase 4: pruebas funcionales con datos simul
 | `drugstores.test.ts` | Matriz de roles; una cuenta ajena recibe `404` en todas las rutas con id |
 | `smoke.test.ts` | Servidor real: el flujo completo de un usuario nuevo |
 
-La lista completa, con resultados y pendientes, está en [`farmix-app/docs/05-resultado-de-pruebas.md`](../../farmix-app/docs/05-resultado-de-pruebas.md).
+La **matriz de casos de prueba** completa (391 casos, 22 pasos e incidencias) está en [`matriz-casos-de-prueba.md`](matriz-casos-de-prueba.md). La lista con resultados y pendientes, está en [`farmix-app/docs/05-resultado-de-pruebas.md`](../../farmix-app/docs/05-resultado-de-pruebas.md).
 
 ## Cómo leer el resultado
 - `✓` u `ok`: la prueba pasó. `×` o `FAIL`: falló, y debajo aparece el archivo, la línea y lo esperado frente a lo recibido.

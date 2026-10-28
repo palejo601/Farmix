@@ -108,7 +108,7 @@ A3-4, A3-7, A4-6, A4-7, A5-4, A5-7, A6-4, A6-5, A6-6, A2-6. Son consistencia y d
 | AC1 | Alta | Matriz de requisitos normativos y funcionales (Fase 1) | Estudiante + director; yo ayudo a ordenarla |
 | AC2 | Alta | Consentimiento informado y procedimiento ético (Fase 5) | Estudiante + director |
 | AC3 | Alta | Evaluación de usabilidad: ≥ 5 participantes, tareas, SUS | Estudiante |
-| AC4 | Media | Matriz de casos de prueba e incidencias (Fase 4) | **Yo**, desde las pruebas existentes |
+| AC4 | Media | Matriz de casos de prueba e incidencias (Fase 4) | ✅ **Hecha** (`../05-pruebas/matriz-casos-de-prueba.md`); falta tu revisión |
 | AC5 | Media | Wireframes y flujos con capturas del sistema real (Fase 2) | **Yo** (capturas con Playwright), tú revisas |
 | AC6 | Media | Confirmar por escrito con el director: sin cadenas, sin la Clínica Las Peñitas | Estudiante |
 
