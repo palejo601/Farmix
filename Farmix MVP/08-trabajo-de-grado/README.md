@@ -35,4 +35,4 @@ Cada afirmación de esta guía distingue lo verificado de lo pendiente para faci
 
 **Pendiente del estudiante:** rúbrica o lineamientos de la universidad, versión actualizada del documento, y prueba de `farmix-drawdb.sql` en drawDB.
 
-**Alcance acordado:** FARMIX es solo para droguerías, farmacias independientes y droguerías de cadena. La Clínica Las Peñitas **no** hace parte del alcance; los 3 Excel que hay en la raíz del repositorio (que es público) no se usan en esta guía.
+**Alcance acordado:** FARMIX es solo para droguerías, farmacias independientes y droguerías de cadena. Los archivos de la Clínica Las Peñitas que estaban en la raíz del repositorio se retiraron de esta rama porque quedan fuera de ese alcance (siguen en el historial de Git).
