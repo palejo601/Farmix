@@ -34,5 +34,14 @@
 | 14 | ¿Cómo debe declararse el **uso de asistentes de IA** en el informe? (La propuesta lo permite como apoyo revisado por el investigador.) | Una sección que lo describa y diga qué revisó el investigador | |
 | 15 | ¿Puedo recibir la **rúbrica** y la versión actualizada del documento? | — | |
 
+## E. Registro del establecimiento (propuesta nueva)
+Hay un borrador, **sin aplicar**, para guardar los datos legales de la droguería: NIT con dígito de verificación, razón social, CIIU, régimen tributario, representante legal, director técnico, concepto sanitario, área del local y resolución de facturación electrónica (`../propuestas/registro-drogueria/`).
+| # | Pregunta | Recomendación ★ | Respuesta |
+|---|---|---|---|
+| 16 | Estos datos **no están en la propuesta**. ¿Se incluyen en el MVP? | Solo los que la gestión de residuos necesite (nombre, ciudad, director técnico); dejar NIT, CIIU, régimen y facturación electrónica como trabajo futuro | |
+| 17 | Si se incluyen, ¿el **área mínima del local (20 m²)** y que el nombre comercial lleve la palabra **«Droguería»** son requisitos legales? No pude confirmarlos en la norma (Res. 1403 y 2955 de 2007; Decreto 780 de 2016). ¿Con qué texto o con qué secretaría de salud se verifican? | No bloquear el registro por esas reglas hasta tener la cita exacta; mostrarlas como aviso | |
+| 18 | La dirección técnica de una droguería puede ser un Químico Farmacéutico, un Tecnólogo en Regencia de Farmacia **o un Expendedor de Drogas** (según una guía de la Alcaldía de Barranquilla). ¿Debe admitirse este último perfil? | Sí, si hay droguerías así en Sincelejo | |
+| 19 | Los datos del representante legal y del director técnico son **personales de terceros** (Ley 1581). ¿Qué consentimiento y qué restricciones de acceso exige la universidad? | Acceso solo para propietario y administrador, sin registrarlos en el historial de auditoría | |
+
 ## Resumen en una frase
-Las preguntas **1, 3, 4 y 6** son las que más cambian el trabajo; el resto puede quedar como trabajo futuro sin afectar los objetivos.
+Las preguntas **1, 3, 4, 6 y 16** son las que más cambian el trabajo; el resto puede quedar como trabajo futuro sin afectar los objetivos.
