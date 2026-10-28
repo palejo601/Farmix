@@ -28,7 +28,7 @@ Reúne los **48 hallazgos** de `A1` a `A6`. Es solo lectura: **no se aplicó nin
 | A2-5 | No existe el concepto de **cadena** (varias sedes); cada sede sería una droguería aparte | [H] ausencia; [I] relevancia | **Director** |
 | A4-3 | Los soportes se manejan de dos formas: `trainings` usa FK a `support_files`; vencimientos y residuos usan texto libre (`support_ref`) | [H] | Equipo |
 | A3-1 | `support_ref` sin FK: puede apuntar a un soporte inexistente o de otra droguería | [H] falta FK; [I] riesgo | Equipo |
-| A3-3 | `unit` mezcla `kg`, `g` y `unidades`: sumar sin convertir da totales sin sentido. No se revisaron los reportes | [H]; [I] riesgo | Verificar |
+| A3-3 | `unit` mezcla `kg`, `g` y `unidades`: sumar sin convertir da totales sin sentido. El recorrido en navegador incluye «unidades no se suman a kg» (Etapa 3); falta revisar el reporte y la API | [H]; [I] riesgo | Verificar |
 | A3-5 | `unit_cost` vale 0 por defecto: pérdida de valor 0 sin aviso | [H]; [I] efecto en reportes | Equipo |
 | A3-8 | `ON DELETE CASCADE` desde `drugstores`: borrar una droguería borra físicamente sus registros (la app usa borrado lógico) | [H] | Equipo (con respaldo previo) |
 | A4-4 | `workers` guarda nombres de terceros sin marca de consentimiento (posible requisito de la Ley 1581) | [H] ausencia; [I] requisito legal | **Director** |

@@ -32,6 +32,8 @@ Cada afirmación de esta guía distingue lo verificado de lo pendiente para faci
 | 1 | Prototipo v1 | Identificado como primera iteración (solo demostración); no tiene módulo de segregación |
 | 2 | Etapa 1 · modelo de datos | Modelos estructural, lógico y físico, diccionario y SQL para drawDB (importación sin verificar en el sitio) |
 | 3 | Guía por capas | Esta carpeta; 14 de 15 scripts verificados (`docker-local.sh` sin verificar) |
+| 4–9 | Etapa 2 · calidad del modelo | 6 áreas y 48 hallazgos sin aplicar: [`analisis/`](../04-base-de-datos/analisis/hallazgos-consolidados.md) |
+| 10 | Etapa 3 · trazabilidad | [`etapa-3-matriz-de-trazabilidad.md`](etapa-3-matriz-de-trazabilidad.md) |
 
 **Pendiente del estudiante:** rúbrica o lineamientos de la universidad, versión actualizada del documento, y prueba de `farmix-drawdb.sql` en drawDB.
 
