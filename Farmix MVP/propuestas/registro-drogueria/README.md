@@ -19,7 +19,7 @@ El JSON se reparte así, en vez de ampliar `drugstores` (que ya tiene datos y 12
 - `drugstore_legal_profiles`: organización, ubicación y control sanitario (1 por droguería activa).
 - `drugstore_responsibles`: representante legal y director técnico (`rol`; el director exige perfil y tarjeta/RETHUS).
 - `drugstore_einvoice_resolutions`: resoluciones de facturación (1:N, conserva el historial al renovar).
-Sigue las convenciones de las migraciones 0001–0013 (uuid, auditoría, `deleted_at`, `UNIQUE (drugstore_id, id)`). Probé que acepta un registro válido y **rechaza**: director sin perfil, rango final menor que el inicial y un segundo perfil activo para la misma droguería. (Mi prueba del «segundo director» falló por otro motivo —tarjeta demasiado corta— y no la repetí con datos correctos, así que **esa unicidad por rol no está verificada**.)
+Sigue las convenciones de las migraciones 0001–0013 (uuid, auditoría, `deleted_at`, `UNIQUE (drugstore_id, id)`). Probé que acepta un registro válido y **rechaza**: director sin perfil, rango final menor que el inicial, un segundo perfil activo para la misma droguería y un segundo director técnico activo (índice `drugstore_responsibles_rol_uq`).
 
 ## 3 · Recomendación para `area_local_m2 ≥ 20` y «Droguería» en el nombre
 **Cómo validar (ya implementado en el esquema):**
