@@ -13,6 +13,7 @@ Convención: **[H]** hecho confirmado leyendo código/documentos · **[I]** infe
 | Roles | `propietario`, `administrador`, `operador`; quien no es miembro recibe `404`. [H] |
 | Pantallas | **14 páginas** en `frontend/src/pages` y **18 rutas de navegación** en `App.tsx` (login, registro, recuperar, inicio, cuenta, y 12 dentro de `/d/:id`). [H] |
 | Pruebas | 21 archivos en `tests/` + recorrido de navegador de **22 pasos**. [H] |
+| Alcance | MVP para **droguerías y farmacias independientes**; cadenas fuera del alcance (decisión del estudiante). [H] |
 | Pagos | Búsqueda de «pago/payment/stripe» en `src` y `frontend/src`: **sin resultados**. Cumple «sin pagos». [H] |
 | PWA | Existe solo en la rama `pwa-instalable`; **la rama que publica Render no la tiene**. [H] |
 

@@ -7,7 +7,7 @@ Convención: **[H]** hecho confirmado · **[I]** inferencia · **[R]** recomenda
 ## 4.5 · Explicación por tabla
 
 ### `drugstores` — «la ficha del establecimiento»
-Una fila = una droguería o farmacia (independiente o de cadena). 11 columnas, 4 CHECK, 2 FK (solo auditoría).
+Una fila = una droguería o farmacia (independiente; las cadenas están fuera del alcance del MVP). 11 columnas, 4 CHECK, 2 FK (solo auditoría).
 
 | Columna(s) | Para qué sirve |
 |---|---|
@@ -52,8 +52,8 @@ Reglas del código (no están en la base) [H]:
 | 1 | El índice garantiza **a lo sumo un** propietario, pero **no al menos uno**: la base permite una droguería activa sin propietario (por ejemplo, retirando la fila). La protección está solo en el código | [H] índice; [I] riesgo si alguien escribe directo en la base | P2 (hoy lo cubre el código; evaluar con el director) |
 | 2 | No hay transferencia de propiedad en el código leído (el propietario no se puede modificar ni retirar; no encontré «transfer»). Si el propietario quiere salir, solo queda eliminar su cuenta, lo que **archiva** la droguería | [H] búsqueda sin resultados; [I] limitación funcional | P2 (decidir si es requisito) |
 | 3 | Al ejecutarse el borrado de una cuenta: las droguerías de las que era propietario se **archivan**, pero sus miembros pierden acceso y los datos quedan sin dueño. Se borra físicamente la fila de membresía del usuario (`CASCADE`) | [H] código y FK | P3 (informar al usuario antes de borrar) |
-| 4 | `drugstores.name` no es único ni tiene verificación de duplicados; puede haber nombres repetidos en la misma ciudad (p. ej. cadenas con varias sedes) | [H] | Observación: puede ser correcto para cadenas |
-| 5 | **No existe el concepto de cadena**: una droguería de cadena con varias sedes se modela como droguerías separadas, sin tabla de agrupación. Dado el alcance acordado (independientes y de cadena), conviene confirmar si cada sede es una cuenta distinta | [H] ausencia de tabla; [I] relevancia | **P2** (decisión de alcance con el director) |
+| 4 | `drugstores.name` no es único ni tiene verificación de duplicados; puede haber nombres repetidos en la misma ciudad (p. ej. cadenas con varias sedes) | [H] | Observación |
+| 5 | **Cadenas fuera del alcance (decisión del estudiante):** el modelo no tiene sedes ni agrupación de droguerías. Para un MVP de droguerías independientes es coherente; se documenta como **limitación**, no como defecto | [H] ausencia de tabla; decisión de alcance | Cerrado como limitación |
 | 6 | `city` por defecto `'Sincelejo'`: coherente con la propuesta, pero un valor por defecto fijo puede ocultar errores al ampliar a otras ciudades | [H] | P3 |
 | 7 | `drugstore_members.user_id` y `drugstore_id` ya tienen índice útil; `drugstores` solo tiene la PK, suficiente a esta escala | [H] | Sin acción |
 | 8 | Sin triggers: `updated_at` lo escribe la aplicación (el código leído lo hace) | [H] | Sin acción |
@@ -69,4 +69,4 @@ Cumple 1FN/2FN/3FN. `drugstore_members` es la separación correcta para un mucho
 ## Autoevaluación
 1. ¿Por qué el índice `owner_uq` lleva `WHERE member_role = 'propietario' AND deleted_at IS NULL`?
 2. ¿Qué diferencia hay entre que la base impida dos propietarios y que impida cero propietarios?
-3. ¿Cómo modelarías una cadena con tres sedes sin crear tablas nuevas, y qué limitación tendría?
+3. ¿Por qué excluir las cadenas simplifica el modelo y qué tendría que cambiar si más adelante se incluyeran?

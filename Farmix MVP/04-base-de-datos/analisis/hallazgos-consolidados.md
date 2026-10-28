@@ -1,6 +1,6 @@
 # Hallazgos consolidados de la Etapa 2 (ordenados por prioridad)
 
-Reúne los **48 hallazgos** de `A1` a `A6`. Es solo lectura: **no se aplicó ningún cambio**. El detalle y la evidencia de cada uno están en el documento de su área.
+Reúne los **48 hallazgos** (47 abiertos y 1 cerrado por decisión de alcance: las cadenas no entran en el MVP) de `A1` a `A6`. Es solo lectura: **no se aplicó ningún cambio**. El detalle y la evidencia de cada uno están en el documento de su área.
 
 - **Tipo:** [H] hecho confirmado en el catálogo o el código · [I] inferencia por verificar.
 - **Quién decide:** **Director** = decisión de alcance o metodología · **Verificar** = falta comprobarlo (código, Render o datos) · **Equipo** = decisión técnica que se acuerda antes de aplicar.
@@ -11,9 +11,10 @@ Reúne los **48 hallazgos** de `A1` a `A6`. Es solo lectura: **no se aplicó nin
 |---|---|
 | P0 | 0 |
 | P1 | 2 |
-| P2 | 17 |
+| P2 | 16 |
 | P3 | 21 |
 | Observación (sin acción) | 8 |
+| Cerrado por alcance (A2-5, cadenas) | 1 |
 | **Total** | **48** |
 
 ## P1 — Riesgo importante
@@ -25,7 +26,6 @@ Reúne los **48 hallazgos** de `A1` a `A6`. Es solo lectura: **no se aplicó nin
 ## P2 — Mejora importante
 | Ref. | Qué pasa | Tipo | Quién decide |
 |---|---|---|---|
-| A2-5 | No existe el concepto de **cadena** (varias sedes); cada sede sería una droguería aparte | [H] ausencia; [I] relevancia | **Director** |
 | A4-3 | Los soportes se manejan de dos formas: `trainings` usa FK a `support_files`; vencimientos y residuos usan texto libre (`support_ref`) | [H] | Equipo |
 | A3-1 | `support_ref` sin FK: puede apuntar a un soporte inexistente o de otra droguería | [H] falta FK; [I] riesgo | Equipo |
 | A3-3 | `unit` mezcla `kg`, `g` y `unidades`: sumar sin convertir da totales sin sentido. El recorrido en navegador incluye «unidades no se suman a kg» (Etapa 3); falta revisar el reporte y la API | [H]; [I] riesgo | Verificar |
@@ -69,17 +69,16 @@ Reúne los **48 hallazgos** de `A1` a `A6`. Es solo lectura: **no se aplicó nin
 | A6-6 | «Quién cargó» se registra con criterios distintos en `imports` y `local_migrations` | Equipo |
 
 ## Observaciones (sin acción)
-A1-8, A2-4, A2-7, A2-8, A4-2, A4-8, A5-8, A6-7: describen decisiones correctas o hechos neutros (por ejemplo, `drugstores.name` no único, que puede ser correcto para cadenas).
+A1-8, A2-4, A2-7, A2-8, A4-2, A4-8, A5-8, A6-7: describen decisiones correctas o hechos neutros (por ejemplo, `drugstores.name` no único).
 
-## Decisiones que necesitan al director (8)
-1. Modelo de **cadena** (A2-5).
-2. **Transferencia de propiedad** (A2-2).
-3. **Trazabilidad lote → residuo** (A3-2).
-4. ¿La propuesta exige **quién revisó** en segregación? (A3-6).
-5. **Consentimiento** del personal / Ley 1581 (A4-4).
-6. Vincular el **plan de mejora** a un diagnóstico y exigir responsable (A5-5, A5-6).
-7. ¿Debe **migrarse el prototipo v1** o basta como demostración? (A6-1).
-8. **Retención** de datos cargados y ¿usuarios reales en Render? (A6-2, A4-1).
+## Decisiones que necesitan al director (7)
+1. **Transferencia de propiedad** (A2-2).
+2. **Trazabilidad lote → residuo** (A3-2).
+3. ¿La propuesta exige **quién revisó** en segregación? (A3-6).
+4. **Consentimiento** del personal / Ley 1581 (A4-4).
+5. Vincular el **plan de mejora** a un diagnóstico y exigir responsable (A5-5, A5-6).
+6. ¿Debe **migrarse el prototipo v1** o basta como demostración? (A6-1).
+7. **Retención** de datos cargados y ¿usuarios reales en Render? (A6-2, A4-1).
 
 ## Pendiente de verificar sin tocar producción (5)
 A1-1 (`MAIL_MODE` en Render), A1-7 (quién llama a `purgeDueAccounts`), A3-3 (reportes con unidades), A5-1 y A5-2 (coherencia y edición de respuestas).
