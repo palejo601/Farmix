@@ -1,6 +1,7 @@
 # Flujos de usuario y capturas del sistema (Fase 2 · diseño)
 
 La propuesta (Fase 2) pide «flujos de usuario, wireframes y prototipo visual». Esta carpeta aporta **capturas del sistema ya construido** (no son wireframes previos al desarrollo) y los flujos reconstruidos desde las rutas y el recorrido de pruebas.
+**Wireframes:** ver [`wireframes/`](wireframes) (6 pantallas, reconstruidas).
 **Honestidad sobre el origen:** los wireframes originales no existen en el repositorio; estas capturas documentan el **resultado**. Si la universidad exige wireframes previos, habría que dibujarlos aparte.
 Todas las capturas usan **datos simulados** (droguería «de demostración», marcada en pantalla) en una base local desechable; no hay datos reales ni producción. Las cifras que se ven (p. ej. 84,1 % de segregación) son de ejemplo.
 
