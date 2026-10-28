@@ -6,6 +6,10 @@ Reúne los **48 hallazgos** (47 abiertos y 1 cerrado por decisión de alcance: l
 - **Quién decide:** **Director** = decisión de alcance o metodología · **Verificar** = falta comprobarlo (código, Render o datos) · **Equipo** = decisión técnica que se acuerda antes de aplicar.
 - Prioridad **P0** (falla grave): **ninguna encontrada**. Las prioridades son sugerencias, no verdades cerradas.
 
+## ⚡ Actualización tras la Fase 0 (ver `08-trabajo-de-grado/etapa-5-plan-de-mejora.md`)
+Cerrados por verificación en el código: **A1-7, A3-3, A5-2, A3-7**. Degradado a P3: **A5-1**. Nuevo: **F0-1** (P2, el historial por trabajador no conserva ciclos previos).
+Conteo vigente: P0 0 · P1 2 · P2 13 · P3 21 · observaciones 8 · cerrados 5 · total **49**. Las tablas de abajo son la versión original de la Etapa 2.
+
 ## Resumen
 | Prioridad | Cantidad |
 |---|---|

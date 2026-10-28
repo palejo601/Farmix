@@ -31,6 +31,22 @@ Convención: **[H]** hecho · **[I]** inferencia · «Quién decide»: **Directo
 | V6 | Si una recapacitación conserva el historial anterior (Etapa 4) | Leer `staff/service.ts` | Yo |
 | V7 | Si `updated_at` lo escribe la app en vencimientos, residuos y segregación (A3-7) | Leer los servicios | Yo |
 
+## ✅ Resultados de la Fase 0 (lectura de código; no se ejecutó ni se cambió nada)
+
+| ID | Resultado | Efecto en el plan |
+|---|---|---|
+| V1 | **Pendiente tuyo:** ver `MAIL_MODE` en el panel de Render | A1-1 sigue P1 hasta saberlo |
+| V2 | `server.ts` ejecuta `purgeDueAccounts` con `setInterval` **cada hora** (3 600 000 ms) y la detiene al apagar. [H] No corre al arrancar: la primera pasada ocurre una hora después. [H] En el plan gratuito de Render el servicio se duerme por inactividad, así que la depuración solo corre mientras está despierto [I, por documentación] | **A1-7 cerrado:** el disparador existe. Queda una nota de documentación |
+| V3 | `waste.summary` suma **solo `kg` y `g`** (los gramos se convierten a kg) y cuenta las `unidades` aparte; la serie mensual también filtra `kg`/`g`. El reporte usa `waste.summary` y `monthlySeries`. [H] | **A3-3 cerrado:** no se mezclan unidades |
+| V4 | `applyAnswers` **rechaza** `score` en instrumentos `compliance_ratio` y `response` en `likert_avg`, y que el ítem sea de otra versión. [H] La base sigue sin imponerlo (solo la API) | **A5-1 baja a P3** (defensa en profundidad) |
+| V5 | Editar respuestas ejecuta `recomputeScores` **en la misma transacción**. [H] | **A5-2 cerrado:** las notas se recalculan |
+| V6 | Un segundo registro para el mismo trabajador y tema se **rechaza con 409**; para recapacitar hay que editar la fila, y los valores anteriores solo quedan como evento en `audit_logs` (sin los datos viejos). [H por lectura; no ejecuté el caso] | **Hallazgo nuevo F0-1 (P2):** el historial por trabajador no conserva ciclos previos. Afecta la función «consulta del historial por trabajador» de la propuesta. Decisión del director |
+| V7 | `updated_at` se escribe en `update` y `remove` de vencimientos, residuos y segregación. [H] | **A3-7 cerrado** |
+
+**Balance:** 4 hallazgos cerrados por verificación (A1-7, A3-3, A5-2, A3-7), 1 degradado (A5-1 → P3) y 1 nuevo (F0-1).
+**Conteo actualizado:** P0 = 0 · P1 = 2 · **P2 = 13** · **P3 = 21** · observaciones = 8 · cerrados = 5 (A2-5 por alcance + 4 por verificación) · total = **49**.
+En los paquetes de abajo, los IDs cerrados ya no requieren acción; **PM-5** gana F0-1.
+
 ## Paquetes de trabajo
 Cada paquete indica el tipo de cambio: **Doc** (solo documentación), **Código**, **Migración** (cambia la base).
 
@@ -75,7 +91,7 @@ Cada paquete indica el tipo de cambio: **Doc** (solo documentación), **Código*
 | A5-5, A5-6 (P2/P3) | ¿Plan de mejora ligado a un diagnóstico y con responsable obligatorio? | Migración + código |
 | A6-1 (P2) | ¿Migrar el prototipo v1 o dejarlo como demostración? | Código (conversor) o solo Doc |
 | A4-5 (P3) | ¿Fecha y motivo de retiro de trabajadores? | Migración |
-| V6 | Si el historial por trabajador se pierde al recapacitar | Código/Migración |
+| F0-1 (V6) | El historial por trabajador no conserva ciclos previos al recapacitar | Código/Migración (p. ej. permitir varias filas por ciclo) |
 
 ### PM-6 · Calidad menor (P3, sin urgencia)
 A3-4, A3-7, A4-6, A4-7, A5-4, A5-7, A6-4, A6-5, A6-6, A2-6. Son consistencia y documentación: se agrupan en una sola ronda de limpieza al final, o se dejan documentados como **limitaciones conocidas** en el informe.
