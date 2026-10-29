@@ -69,6 +69,12 @@ mkdir -p ~/.claude/skills/reverse-engineer-anything && cp "Farmix MVP/skills-pro
 ```
   Pide confirmar autorización antes de analizar, trabaja en solo lectura y etiqueta hecho/inferencia/recomendación. No se probó en un caso real.
 
+- **Plugin `ingenieria-inversa`** (propio, 8 skills `re-*`: alcance, repositorio, binario/paquete, API, web/Electron, base de datos, formato de archivo, informe): vive en `Farmix MVP/plugins/ingenieria-inversa/`. Reinstalar como skills sueltas, desde la raíz del repositorio:
+```bash
+cp -r "Farmix MVP/plugins/ingenieria-inversa/skills/"* ~/.claude/skills/
+```
+  O probarlo como plugin con `claude --plugin-dir "Farmix MVP/plugins/ingenieria-inversa"`. Solo se validó la sintaxis de los archivos (JSON y cabeceras YAML); no se probó en un caso real.
+
 ## 3 · Plugins (se activan desde la tarjeta en la conversación, no por línea de comandos)
 | Plugin | Estado conocido | Pendiente |
 |---|---|---|

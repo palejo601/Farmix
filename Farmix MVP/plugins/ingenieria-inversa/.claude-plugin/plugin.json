@@ -1,0 +1,6 @@
+{
+  "name": "ingenieria-inversa",
+  "version": "0.1.0",
+  "description": "Skills para reconstruir cómo funciona un sistema a partir de lo observable: repositorios, binarios y paquetes, APIs, apps web/Electron, bases de datos y formatos de archivo. Solo lectura, con autorización y con hallazgos etiquetados.",
+  "author": { "name": "Alejandro Pacheco Montes" }
+}
