@@ -55,6 +55,14 @@ GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 https://github.com/DietrichGebert/pony
 cp -r /home/user/dietrichgebert/ponytail/skills/ponytail* ~/.claude/skills/
 ```
   Puede chocar con el modo tutor (Ponytail pide respuestas cortas): si chocan, indicar cuál manda.
+- **Remotion** (12 skills `remotion-*`; `remotion-best-practices` es solo un enrutador hacia las otras 11, por eso se instalan todas): se copiaron a mano desde el repositorio oficial. En la nube, desde la raíz de trabajo:
+```bash
+GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 https://github.com/remotion-dev/skills /home/user/remotion-dev/skills
+```
+```bash
+cp -r /home/user/remotion-dev/skills/skills/remotion-* ~/.claude/skills/
+```
+  También existe como plugin en el catálogo (se activa desde la tarjeta). Para generar videos se necesita Node y las dependencias de Remotion; no se probó ninguna.
 
 ## 3 · Plugins (se activan desde la tarjeta en la conversación, no por línea de comandos)
 | Plugin | Estado conocido | Pendiente |
