@@ -46,6 +46,13 @@ Abre **http://localhost:5173** en el navegador e ingresa con el correo y la cont
 Haz las **7 tareas** del [protocolo SUS](../08-trabajo-de-grado/usabilidad-sus/protocolo-sus.md) como si fueras un participante y anota tiempo y dudas: te sirve de **piloto** y para calibrar los tiempos máximos.
 También puedes crear una cuenta nueva desde `/registro` para ver el primer uso.
 
+## Maqueta conectada (rama `maqueta-conectada`)
+Una pantalla sencilla que usa la **API real**, en `http://localhost:3000/maqueta/`. Se sirve desde el mismo servidor, así que hay que compilar y servir en modo producción local:
+```bash
+bash "Farmix MVP/06-despliegue/scripts/produccion-local.sh"
+```
+Ingresa con una cuenta de la base local. Limitación: no sube el soporte de las capacitaciones.
+
 ## Si algo falla
 | Síntoma | Qué probar |
 |---|---|
