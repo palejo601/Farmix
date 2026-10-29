@@ -63,6 +63,11 @@ GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 https://github.com/remotion-dev/skills
 cp -r /home/user/remotion-dev/skills/skills/remotion-* ~/.claude/skills/
 ```
   También existe como plugin en el catálogo (se activa desde la tarjeta). Para generar videos se necesita Node y las dependencias de Remotion; no se probó ninguna.
+- **reverse-engineer-anything** (skill propia, escrita desde cero; no es el proyecto «REA» de GitHub, que no se pudo revisar): la copia durable está en `Farmix MVP/skills-propias/reverse-engineer-anything/SKILL.md`. Para reinstalarla, desde la raíz del repositorio:
+```bash
+mkdir -p ~/.claude/skills/reverse-engineer-anything && cp "Farmix MVP/skills-propias/reverse-engineer-anything/SKILL.md" ~/.claude/skills/reverse-engineer-anything/
+```
+  Pide confirmar autorización antes de analizar, trabaja en solo lectura y etiqueta hecho/inferencia/recomendación. No se probó en un caso real.
 
 ## 3 · Plugins (se activan desde la tarjeta en la conversación, no por línea de comandos)
 | Plugin | Estado conocido | Pendiente |
