@@ -38,6 +38,7 @@ Cada afirmación de esta guía distingue lo verificado de lo pendiente para faci
 | 18 | Capturas y flujos (Fase 2) | [`flujos-y-capturas.md`](flujos-y-capturas.md) |
 | 14 | Etapa 5 · plan de mejora | [`etapa-5-plan-de-mejora.md`](etapa-5-plan-de-mejora.md) |
 | 19 | Reunión con el director y protocolo SUS (borradores) | [`guia-reunion-director.md`](guia-reunion-director.md), [`usabilidad-sus/`](usabilidad-sus/protocolo-sus.md) |
+| 20 | Matriz de requisitos normativos y funcionales (borrador) | [`matriz-de-requisitos.md`](matriz-de-requisitos.md) |
 
 **Pendiente del estudiante:** rúbrica o lineamientos de la universidad, versión actualizada del documento, y prueba de `farmix-drawdb.sql` en drawDB.
 
