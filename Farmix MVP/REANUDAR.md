@@ -4,7 +4,7 @@ Las sesiones en la nube son temporales: al reclamarse el contenedor se pierden l
 
 ## 1 · Código y entorno (siempre, en este orden)
 ```bash
-cd farmix-app && git fetch origin modelo-datos && git checkout modelo-datos
+git fetch origin modelo-datos && git checkout modelo-datos
 ```
 ```bash
 service postgresql start
@@ -18,7 +18,7 @@ bash "Farmix MVP/04-base-de-datos/scripts/crear-base-local.sh"
 ```bash
 bash "Farmix MVP/04-base-de-datos/scripts/migrar.sh"
 ```
-(El primer comando se ejecuta desde la raíz del repositorio, no desde `farmix-app`; ajusta la ruta si ya estás dentro.)
+Todos los comandos se ejecutan desde la **raíz del repositorio**.
 Para comprobar que todo quedó bien: `bash "Farmix MVP/07-scripts-generales/verificar-todo.sh"` (último resultado conocido: 391 de 391 pruebas).
 El detalle de cada script está en `07-scripts-generales/README.md`. El archivo `farmix-app/.env` no se sube a Git (lo crea `crear-base-local.sh`).
 
