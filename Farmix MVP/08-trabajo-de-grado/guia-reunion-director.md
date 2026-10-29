@@ -17,10 +17,10 @@
 | **P16** Registro legal de la droguería | ¿Se incluye en el MVP o queda como trabajo futuro? | |
 
 ## Bloque 3 · Documentos que debo pedir (5 min)
-- [ ] **P13** Formatos de consentimiento informado, guía de observación y registro de tareas para el SUS (≥ 5 participantes)
-- [ ] **P15** Rúbrica y versión actualizada del documento
-- [ ] **P12** Plantilla de la matriz de requisitos (si existe)
-- [ ] **P14** Cómo declarar el uso de asistentes de IA
+- ☐ **P13** Formatos de consentimiento informado, guía de observación y registro de tareas para el SUS (≥ 5 participantes)
+- ☐ **P15** Rúbrica y versión actualizada del documento
+- ☐ **P12** Plantilla de la matriz de requisitos (si existe)
+- ☐ **P14** Cómo declarar el uso de asistentes de IA
 
 ## Las demás preguntas
 P2, P5, P7–P11, P17–P19: enviarlas por correo con la recomendación ★ y pedir «de acuerdo» o la corrección.
