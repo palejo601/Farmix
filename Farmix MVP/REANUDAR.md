@@ -57,6 +57,13 @@ Notas:
 
 **Red del entorno:** se permitieron `mcp.figma.com`, `api.figma.com` y `figma.com`. `www.figma.com` seguía bloqueado.
 
+### claude-mem (memoria entre sesiones)
+- Se instaló en la sesión anterior con `CLAUDE_MEM_ONLINE_OPTIN=false npx claude-mem install --provider claude`, con la **sincronización en la nube apagada**, la **telemetría desactivada** (`npx claude-mem telemetry disable`) y el servicio arrancado con `npx claude-mem start`.
+- **No se transfiere a una sesión nueva:** vive en `~/.claude-mem` del contenedor temporal y se pierde con él. En la sesión nueva no habrá memoria previa.
+- Para que sirva de verdad, instálalo **en tu computador** (misma línea, ejecutada allí). Con `--provider claude` cada resumen **consume cuota de tu plan**.
+- Comandos útiles: `npx claude-mem status`, `stop`, `doctor` y `uninstall`. Visor local: `http://127.0.0.1:37700` (solo dentro del equipo donde corra).
+- La fuente de continuidad confiable sigue siendo este archivo, que está en Git.
+
 ## 4 · Dónde quedó el trabajo
 | Qué | Dónde |
 |---|---|
