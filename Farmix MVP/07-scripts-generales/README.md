@@ -13,5 +13,7 @@ Atajos que combinan los scripts de cada capa. Todos se ejecutan con `bash` desde
 - `set -euo pipefail` (en `_comun.sh`) hace que el script **se detenga ante el primer error** en lugar de seguir con un resultado engañoso.
 - Las variables de la terminal tienen prioridad sobre `farmix-app/.env`. Ejemplo: `FARMIX_DB_DEV=otra_base bash 04-base-de-datos/scripts/migrar.sh` (si su `.env` no define `DATABASE_URL`).
 
+¿Primera vez en tu computador? Sigue [`probar-en-mi-computador.md`](probar-en-mi-computador.md).
+
 ## Requisitos
 Node.js 22, PostgreSQL 16 y bash (en Windows: **Git Bash** o **WSL**; en PowerShell no funcionan).
