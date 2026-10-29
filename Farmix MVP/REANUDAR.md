@@ -47,6 +47,14 @@ Notas:
 - `npx impeccable install` **falló en la nube** porque el proxy bloquea `impeccable.style`; por eso la copia manual.
 - La skill `tutor` y las de sesión no están en estos repositorios: viven en `~/.claude/skills/tutor`. Si falta, pide que se recree desde la conversación (se creó para el modo tutor de FARMIX).
 - No instalé el hook de Impeccable; se puede añadir con `/impeccable hooks on`.
+- **Ponytail** (6 skills: `ponytail`, `-review`, `-audit`, `-debt`, `-gain`, `-help`): se copiaron a mano **sin hooks**. En tu computador, la instalación oficial son dos mensajes separados en Claude Code: `/plugin marketplace add DietrichGebert/ponytail` y luego `/plugin install ponytail@ponytail`. En la nube, desde la raíz de trabajo:
+```bash
+GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 https://github.com/DietrichGebert/ponytail /home/user/dietrichgebert/ponytail
+```
+```bash
+cp -r /home/user/dietrichgebert/ponytail/skills/ponytail* ~/.claude/skills/
+```
+  Puede chocar con el modo tutor (Ponytail pide respuestas cortas): si chocan, indicar cuál manda.
 
 ## 3 · Plugins (se activan desde la tarjeta en la conversación, no por línea de comandos)
 | Plugin | Estado conocido | Pendiente |
