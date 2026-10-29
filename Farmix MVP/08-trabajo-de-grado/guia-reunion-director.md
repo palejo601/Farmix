@@ -1,7 +1,7 @@
 # Guía de reunión con el director — FARMIX (15 minutos)
 
 **Estudiante:** Alejandro Pacheco Montes · **Director:** David Galvan Borja
-**Apoyo:** [`preguntas-para-el-director.md`](preguntas-para-el-director.md) (19 preguntas, con recomendación ★ en cada una). Los números de abajo son los de esa hoja.
+**Apoyo:** [`preguntas-para-el-director.md`](preguntas-para-el-director.md) (25 preguntas, con recomendación ★ en cada una). Los números de abajo son los de esa hoja.
 
 ## Bloque 1 · Rumbo (5 min)
 | Pregunta | Qué necesito salir sabiendo | Respuesta |
@@ -9,6 +9,8 @@
 | **P1** Alcance | Solo droguerías y farmacias independientes; sin cadenas ni Clínica Las Peñitas. Pedir confirmación **por escrito** | |
 | **P3** Datos simulados o trabajadores reales | De esto depende el consentimiento, el almacenamiento de soportes y la Fase 5 | |
 | **P4** Consentimiento y Ley 1581 | Qué exige la universidad antes de contactar participantes | |
+| **P20** Diagnóstico de campo | Con cuántas droguerías y con quién se hace | |
+| **P21** Participantes del SUS | Cuántos, de dónde y quién los contacta | |
 
 ## Bloque 2 · Lo que cambia el código (5 min)
 | Pregunta | Qué necesito salir sabiendo | Respuesta |
@@ -21,9 +23,10 @@
 - ☐ **P15** Rúbrica y versión actualizada del documento
 - ☐ **P12** Plantilla de la matriz de requisitos (si existe)
 - ☐ **P14** Cómo declarar el uso de asistentes de IA
+- ☐ **P22** Versión en español del SUS que debe citarse
 
 ## Las demás preguntas
-P2, P5, P7–P11, P17–P19: enviarlas por correo con la recomendación ★ y pedir «de acuerdo» o la corrección.
+P2, P5, P7–P11, P17–P19, P23–P25: enviarlas por correo con la recomendación ★ y pedir «de acuerdo» o la corrección.
 
 ## Qué haré según la respuesta
 | Si responde… | Entonces… |

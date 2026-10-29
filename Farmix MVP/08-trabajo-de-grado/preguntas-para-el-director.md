@@ -1,7 +1,7 @@
 # Preguntas para el director — FARMIX (MVP)
 
 **Estudiante:** Alejandro Pacheco Montes · **Director:** David Galvan Borja · **Codirector:** Brayan Javier Anaya Meza
-**Contexto:** el MVP ya funciona con datos simulados (391 pruebas automáticas). Antes de seguir cambiándolo, necesito decidir lo siguiente. Cada pregunta tiene una recomendación mía (marcada ★) que puede aceptarse o cambiarse.
+**Versión final.** **Contexto:** el MVP ya funciona con datos simulados (391 pruebas automáticas); ya existen el borrador de [matriz de requisitos](matriz-de-requisitos.md) y el de [protocolo SUS](usabilidad-sus/protocolo-sus.md), que generan las preguntas 20 a 25. Antes de seguir cambiándolo, necesito decidir lo siguiente. Cada pregunta tiene una recomendación mía (marcada ★) que puede aceptarse o cambiarse.
 
 ## A. Alcance
 | # | Pregunta | Recomendación ★ | Respuesta |
@@ -43,5 +43,15 @@ Hay un borrador, **sin aplicar**, para guardar los datos legales de la droguerí
 | 18 | La dirección técnica de una droguería puede ser un Químico Farmacéutico, un Tecnólogo en Regencia de Farmacia **o un Expendedor de Drogas** (según una guía de la Alcaldía de Barranquilla). ¿Debe admitirse este último perfil? | Sí, si hay droguerías así en Sincelejo | |
 | 19 | Los datos del representante legal y del director técnico son **personales de terceros** (Ley 1581). ¿Qué consentimiento y qué restricciones de acceso exige la universidad? | Acceso solo para propietario y administrador, sin registrarlos en el historial de auditoría | |
 
+## F. Evidencia y validación (Fases 1, 4 y 5)
+| # | Pregunta | Recomendación ★ | Respuesta |
+|---|---|---|---|
+| 20 | El **diagnóstico de campo** (objetivo 1) no tiene evidencia en el repositorio. ¿Con cuántas droguerías y con quién se hace (director, codirector, contactos propios)? | Con las que acuerde la universidad; si no hay acceso, simular casos y declararlo | |
+| 21 | Para la **evaluación SUS**: ¿cuántos participantes (mínimo 5), de dónde salen y quién los contacta? | Entre 5 y 8 personas de droguerías independientes de Sincelejo, contactadas por la universidad o el director, con datos simulados | |
+| 22 | ¿Qué **versión en español del SUS** debe citarse, y qué valor de referencia (68 puntos u otro)? | La que indique la universidad; si no hay, citar una versión validada y su fuente | |
+| 23 | La **matriz de requisitos** sale del sistema construido, no de entrevistas. ¿Quién la valida (profesional farmacéutico, asesor jurídico) y cómo se deja constancia? | Revisión por un profesional farmacéutico y un asesor jurídico, con firma o acta; mientras tanto, presentarla como borrador | |
+| 24 | La demostración, ¿se hace desde **Render** (los soportes subidos se pierden en cada despliegue) o desde una instalación **local**? ¿Debe la **PWA instalable** estar en la versión demostrada? | Instalación local o Render con aviso de la limitación; unir la PWA a la rama de Render antes de la Fase 5 | |
+| 25 | El sistema **pregunta** por los 11 requisitos obligatorios, pero no hace cumplir ninguno. ¿Se presenta como herramienta de **autoevaluación y apoyo**, no de control de cumplimiento? | Sí, con ese aviso visible y en el informe | |
+
 ## Resumen en una frase
-Las preguntas **1, 3, 4, 6 y 16** son las que más cambian el trabajo; el resto puede quedar como trabajo futuro sin afectar los objetivos.
+Las preguntas **1, 3, 4, 6, 16, 20 y 21** son las que más cambian el trabajo; el resto puede quedar como trabajo futuro sin afectar los objetivos. Las respuestas de la 13, la 15 y la 22 desbloquean la evaluación con usuarios.
