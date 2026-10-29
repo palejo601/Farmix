@@ -1,0 +1,52 @@
+erDiagram
+  users {
+    uuid id PK
+    text email UK
+    text password_hash
+    text full_name
+    timestamptz privacy_accepted_at  "opcional"
+    text privacy_version  "opcional"
+    integer failed_login_count
+    timestamptz locked_until  "opcional"
+    timestamptz deletion_requested_at  "opcional"
+    timestamptz deletion_scheduled_at  "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  sessions {
+    uuid id PK
+    uuid user_id FK
+    text token_hash UK
+    timestamptz created_at
+    timestamptz last_seen_at
+    timestamptz expires_at
+    timestamptz revoked_at  "opcional"
+  }
+  password_resets {
+    uuid id PK
+    uuid user_id FK
+    text token_hash UK
+    timestamptz expires_at
+    timestamptz used_at  "opcional"
+    timestamptz created_at
+  }
+  audit_logs {
+    bigint id PK
+    uuid user_id FK "opcional"
+    text action
+    text resource
+    text resource_id  "opcional"
+    text outcome
+    text request_id  "opcional"
+    timestamptz created_at
+  }
+  dev_mailbox {
+    bigint id PK
+    text to_email
+    text subject
+    text body
+    timestamptz created_at
+  }
+  users ||--o{ sessions : "user_id"
+  users ||--o{ password_resets : "user_id"
+  users |o--o{ audit_logs : "user_id"

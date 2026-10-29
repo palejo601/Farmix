@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" width="1000" height="680" font-family="Arial,Helvetica,sans-serif">
+<rect width="1000" height="680" fill="#fff"/>
+<text x="10" y="18" font-size="14" font-weight="bold" fill="#333">WIREFRAME · Configuración de la droguería (R7)</text>
+<text x="10" y="34" font-size="11" fill="#777">Baja fidelidad. Reconstruido a partir del sistema construido; campos tomados del esquema de datos. Nota amarilla = regla de negocio.</text>
+<g transform="translate(0,40)">
+<rect x="0.5" y="0.5" width="999" height="639" fill="#fafafa" stroke="#999"/>
+<rect x="0" y="0" width="1000" height="22" fill="#eee" stroke="#999"/>
+<text x="500.0" y="14.333333333333334" font-size="10" fill="#444" text-anchor="middle">Banner: producto mínimo viable en estudio · datos de demostración simulados</text>
+<rect x="0" y="22" width="170" height="618" fill="#f0f0f0" stroke="#999"/>
+<text x="14" y="50" font-size="13" fill="#444" font-weight="bold">FARMIX (logo)</text>
+<text x="14" y="72" font-size="11" fill="#444">← Mis droguerías</text>
+<text x="16" y="106" font-size="12" fill="#444">Inicio</text>
+<text x="16" y="136" font-size="12" fill="#444">Diagnóstico</text>
+<text x="16" y="166" font-size="12" fill="#444">Vencimientos</text>
+<text x="16" y="196" font-size="12" fill="#444">Residuos</text>
+<text x="16" y="226" font-size="12" fill="#444">Personal</text>
+<text x="16" y="256" font-size="12" fill="#444">Reporte</text>
+<text x="16" y="286" font-size="12" fill="#444">Normativa</text>
+<text x="16" y="316" font-size="12" fill="#444">Importar</text>
+<text x="16" y="346" font-size="12" fill="#444">Migrar</text>
+<text x="16" y="376" font-size="12" fill="#444">Miembros</text>
+<rect x="6" y="388" width="158" height="26" fill="#d9d9d9" stroke="#888"/>
+<text x="14" y="405.0" font-size="12" fill="#444" text-anchor="start" font-weight="bold">Configuración</text>
+<text x="14" y="600" font-size="11" fill="#444">Usuario · Rol</text>
+<text x="14" y="616" font-size="10" fill="#444">Mi cuenta · Cerrar sesión</text>
+<text x="190" y="62" font-size="20" fill="#444" font-weight="bold">Configuración</text>
+<text x="190" y="80" font-size="11" fill="#777">Datos del establecimiento</text>
+<text x="190.0" y="112" font-size="11" fill="#444">Nombre</text>
+<rect x="190.0" y="118" width="385.0" height="26" fill="#fff" stroke="#999"/>
+<text x="595.0" y="112" font-size="11" fill="#444">Ciudad</text>
+<rect x="595.0" y="118" width="385.0" height="26" fill="#fff" stroke="#999"/>
+<text x="190.0" y="166" font-size="11" fill="#444">Días de anticipación del aviso de vencimiento</text>
+<rect x="190.0" y="172" width="385.0" height="26" fill="#fff" stroke="#999"/>
+<text x="595.0" y="166" font-size="11" fill="#444">Número de empleados</text>
+<rect x="595.0" y="172" width="385.0" height="26" fill="#fff" stroke="#999"/>
+<rect x="190" y="220" width="100" height="28" fill="#bbb" stroke="#999"/>
+<text x="240.0" y="237.66666666666666" font-size="11" fill="#444" text-anchor="middle" font-weight="bold">Guardar</text>
+<rect x="190" y="300" width="790" height="110" fill="#fdf0ef" stroke="#c0392b"/>
+<text x="204" y="326" font-size="13" fill="#a33" font-weight="bold">Zona de riesgo</text>
+<text x="204" y="350" font-size="11" fill="#444">Eliminar esta droguería (solo el propietario)</text>
+<rect x="204" y="364" width="190" height="28" fill="#eee" stroke="#999"/>
+<text x="299.0" y="381.6666666666667" font-size="11" fill="#444" text-anchor="middle">Eliminar esta droguería</text>
+<rect x="190" y="430" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="198" y="450.3333333333333" font-size="10" fill="#444" text-anchor="start">Los días de aviso definen las alertas</text>
+<rect x="460" y="430" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="468" y="450.3333333333333" font-size="10" fill="#444" text-anchor="start">Eliminar archiva (borrado lógico) la droguería</text>
+</g>
+</svg>

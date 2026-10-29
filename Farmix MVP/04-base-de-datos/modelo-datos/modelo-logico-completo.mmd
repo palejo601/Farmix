@@ -1,0 +1,332 @@
+erDiagram
+  audit_logs {
+    bigint id PK
+    uuid user_id FK "opcional"
+    text action
+    text resource
+    text resource_id  "opcional"
+    text outcome
+    text request_id  "opcional"
+    timestamptz created_at
+  }
+  dev_mailbox {
+    bigint id PK
+    text to_email
+    text subject
+    text body
+    timestamptz created_at
+  }
+  diagnoses {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    uuid instrument_version_id FK,UK
+    date performed_on
+    text notes  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+  }
+  diagnosis_answers {
+    uuid id PK
+    uuid diagnosis_id FK,UK
+    uuid version_id FK
+    uuid item_id FK,UK
+    smallint score  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    text response  "opcional"
+  }
+  diagnosis_area_scores {
+    uuid diagnosis_id PK,FK
+    text area PK
+    numeric area_score
+    integer answered_count
+  }
+  drugstore_members {
+    uuid id PK
+    uuid drugstore_id FK,UK
+    uuid user_id FK,UK
+    text member_role
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+  }
+  drugstores {
+    uuid id PK
+    text name
+    text city
+    integer expiry_alert_days
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+    integer employee_count  "opcional"
+    boolean is_demo
+  }
+  expiration_products {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    text product_name UK
+    text batch UK
+    text sanitary_registry  "opcional"
+    text holder  "opcional"
+    date expires_on
+    integer quantity
+    numeric unit_cost
+    text destination
+    timestamptz managed_at  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+    text support_ref  "opcional"
+  }
+  imports {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    text kind
+    text file_name
+    text phase
+    integer total_rows
+    integer valid_rows
+    integer invalid_rows
+    integer duplicate_rows
+    jsonb row_results
+    integer inserted_count  "opcional"
+    timestamptz expires_at
+    timestamptz confirmed_at  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+  }
+  improvement_actions {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    text finding
+    text corrective_action  "opcional"
+    text responsible  "opcional"
+    date due_on  "opcional"
+    text progress_state
+    date closed_on  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+    uuid origin_item_id FK "opcional"
+  }
+  instrument_items {
+    uuid id PK,UK
+    uuid version_id FK,UK
+    text area
+    text item_code UK
+    text prompt_text
+    integer position
+    text item_kind
+    text legal_basis  "opcional"
+  }
+  instrument_versions {
+    uuid id PK
+    integer version_number UK
+    text title
+    text description  "opcional"
+    boolean is_current
+    timestamptz published_at
+    text scoring
+  }
+  local_migrations {
+    uuid id PK
+    uuid user_id FK,UK
+    uuid drugstore_id FK
+    text content_hash UK
+    boolean is_demo UK
+    text phase
+    jsonb payload
+    jsonb summary
+    jsonb inserted_ids  "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz confirmed_at  "opcional"
+    timestamptz reverted_at  "opcional"
+  }
+  password_resets {
+    uuid id PK
+    uuid user_id FK
+    text token_hash UK
+    timestamptz expires_at
+    timestamptz used_at  "opcional"
+    timestamptz created_at
+  }
+  schema_migrations {
+    text filename PK
+    text checksum
+    timestamptz applied_at
+  }
+  segregation_checks {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    date checked_on
+    integer items_reviewed
+    integer items_correct
+    text location
+    text observations  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+  }
+  sessions {
+    uuid id PK
+    uuid user_id FK
+    text token_hash UK
+    timestamptz created_at
+    timestamptz last_seen_at
+    timestamptz expires_at
+    timestamptz revoked_at  "opcional"
+  }
+  support_files {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    text original_name
+    text stored_name UK
+    text mime_type
+    integer size_bytes
+    text sha256
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+  }
+  training_topics {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    text topic_name UK
+    integer validity_months
+    text description  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+  }
+  trainings {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    uuid worker_id FK,UK
+    uuid topic_id FK,UK
+    date trained_on  "opcional"
+    date valid_until  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+    uuid support_file_id FK "opcional"
+  }
+  users {
+    uuid id PK
+    text email UK
+    text password_hash
+    text full_name
+    timestamptz privacy_accepted_at  "opcional"
+    text privacy_version  "opcional"
+    integer failed_login_count
+    timestamptz locked_until  "opcional"
+    timestamptz deletion_requested_at  "opcional"
+    timestamptz deletion_scheduled_at  "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  waste_records {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    date recorded_on
+    text classification
+    numeric quantity
+    text unit
+    text origin  "opcional"
+    text notes  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+    text waste_type  "opcional"
+    text handling  "opcional"
+    text support_ref  "opcional"
+  }
+  workers {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    text worker_code UK
+    text full_name
+    text job_title  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+  }
+  users |o--o{ audit_logs : "user_id"
+  users |o--o{ diagnoses : "created_by"
+  drugstores ||--o{ diagnoses : "drugstore_id"
+  instrument_versions ||--o{ diagnoses : "instrument_version_id"
+  users |o--o{ diagnoses : "updated_by"
+  users |o--o{ diagnosis_answers : "created_by"
+  diagnoses ||--o{ diagnosis_answers : "diagnosis_id, version_id"
+  users |o--o{ diagnosis_answers : "updated_by"
+  instrument_items ||--o{ diagnosis_answers : "version_id, item_id"
+  diagnoses ||--o{ diagnosis_area_scores : "diagnosis_id"
+  users |o--o{ drugstore_members : "created_by"
+  drugstores ||--o{ drugstore_members : "drugstore_id"
+  users |o--o{ drugstore_members : "updated_by"
+  users ||--o{ drugstore_members : "user_id"
+  users |o--o{ drugstores : "created_by"
+  users |o--o{ drugstores : "updated_by"
+  users |o--o{ expiration_products : "created_by"
+  drugstores ||--o{ expiration_products : "drugstore_id"
+  users |o--o{ expiration_products : "updated_by"
+  users |o--o{ imports : "created_by"
+  drugstores ||--o{ imports : "drugstore_id"
+  users |o--o{ imports : "updated_by"
+  users |o--o{ improvement_actions : "created_by"
+  drugstores ||--o{ improvement_actions : "drugstore_id"
+  instrument_items |o--o{ improvement_actions : "origin_item_id"
+  users |o--o{ improvement_actions : "updated_by"
+  instrument_versions ||--o{ instrument_items : "version_id"
+  drugstores ||--o{ local_migrations : "drugstore_id"
+  users ||--o{ local_migrations : "user_id"
+  users ||--o{ password_resets : "user_id"
+  users |o--o{ segregation_checks : "created_by"
+  drugstores ||--o{ segregation_checks : "drugstore_id"
+  users |o--o{ segregation_checks : "updated_by"
+  users ||--o{ sessions : "user_id"
+  users |o--o{ support_files : "created_by"
+  drugstores ||--o{ support_files : "drugstore_id"
+  users |o--o{ support_files : "updated_by"
+  users |o--o{ training_topics : "created_by"
+  drugstores ||--o{ training_topics : "drugstore_id"
+  users |o--o{ training_topics : "updated_by"
+  users |o--o{ trainings : "created_by"
+  training_topics ||--o{ trainings : "drugstore_id, topic_id"
+  workers ||--o{ trainings : "drugstore_id, worker_id"
+  support_files |o--o{ trainings : "drugstore_id, support_file_id"
+  users |o--o{ trainings : "updated_by"
+  users |o--o{ waste_records : "created_by"
+  drugstores ||--o{ waste_records : "drugstore_id"
+  users |o--o{ waste_records : "updated_by"
+  users |o--o{ workers : "created_by"
+  drugstores ||--o{ workers : "drugstore_id"
+  users |o--o{ workers : "updated_by"

@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" width="1000" height="680" font-family="Arial,Helvetica,sans-serif">
+<rect width="1000" height="680" fill="#fff"/>
+<text x="10" y="18" font-size="14" font-weight="bold" fill="#333">WIREFRAME · Vencimientos (R2, R3)</text>
+<text x="10" y="34" font-size="11" fill="#777">Baja fidelidad. Reconstruido a partir del sistema construido; campos tomados del esquema de datos. Nota amarilla = regla de negocio.</text>
+<g transform="translate(0,40)">
+<rect x="0.5" y="0.5" width="999" height="639" fill="#fafafa" stroke="#999"/>
+<rect x="0" y="0" width="1000" height="22" fill="#eee" stroke="#999"/>
+<text x="500.0" y="14.333333333333334" font-size="10" fill="#444" text-anchor="middle">Banner: producto mínimo viable en estudio · datos de demostración simulados</text>
+<rect x="0" y="22" width="170" height="618" fill="#f0f0f0" stroke="#999"/>
+<text x="14" y="50" font-size="13" fill="#444" font-weight="bold">FARMIX (logo)</text>
+<text x="14" y="72" font-size="11" fill="#444">← Mis droguerías</text>
+<text x="16" y="106" font-size="12" fill="#444">Inicio</text>
+<text x="16" y="136" font-size="12" fill="#444">Diagnóstico</text>
+<rect x="6" y="148" width="158" height="26" fill="#d9d9d9" stroke="#888"/>
+<text x="14" y="165.0" font-size="12" fill="#444" text-anchor="start" font-weight="bold">Vencimientos</text>
+<text x="16" y="196" font-size="12" fill="#444">Residuos</text>
+<text x="16" y="226" font-size="12" fill="#444">Personal</text>
+<text x="16" y="256" font-size="12" fill="#444">Reporte</text>
+<text x="16" y="286" font-size="12" fill="#444">Normativa</text>
+<text x="16" y="316" font-size="12" fill="#444">Importar</text>
+<text x="16" y="346" font-size="12" fill="#444">Migrar</text>
+<text x="16" y="376" font-size="12" fill="#444">Miembros</text>
+<text x="16" y="406" font-size="12" fill="#444">Configuración</text>
+<text x="14" y="600" font-size="11" fill="#444">Usuario · Rol</text>
+<text x="14" y="616" font-size="10" fill="#444">Mi cuenta · Cerrar sesión</text>
+<text x="190" y="62" font-size="20" fill="#444" font-weight="bold">Vencimientos</text>
+<text x="190" y="80" font-size="11" fill="#777">Productos con fecha de vencimiento</text>
+<rect x="840" y="44" width="140" height="32" fill="#ddd" stroke="#999"/>
+<text x="910.0" y="63.666666666666664" font-size="11" fill="#444" text-anchor="middle">+ Nuevo producto</text>
+<rect x="190" y="96" width="255" height="58" fill="#fff" stroke="#999"/>
+<text x="317.5" y="128.66666666666666" font-size="11" fill="#444" text-anchor="middle">Pérdida confirmada</text>
+<rect x="455" y="96" width="255" height="58" fill="#fff" stroke="#999"/>
+<text x="582.5" y="128.66666666666666" font-size="11" fill="#444" text-anchor="middle">En riesgo sin gestionar</text>
+<rect x="720" y="96" width="255" height="58" fill="#fff" stroke="#999"/>
+<text x="847.5" y="128.66666666666666" font-size="11" fill="#444" text-anchor="middle">Devuelto a proveedor</text>
+<text x="190" y="182" font-size="11" fill="#444">Filtros:  [Todos]  [Vencidos]  [Por vencer]  [Vigentes]  [Gestionados]   (cada uno con su conteo)</text>
+<rect x="190" y="198" width="790" height="26" fill="#e6e6e6" stroke="#999"/>
+<text x="196.0" y="215.0" font-size="11" fill="#444" font-weight="bold">Producto</text>
+<text x="308.8571428571429" y="215.0" font-size="11" fill="#444" font-weight="bold">Lote</text>
+<text x="421.7142857142857" y="215.0" font-size="11" fill="#444" font-weight="bold">Vence</text>
+<text x="534.5714285714286" y="215.0" font-size="11" fill="#444" font-weight="bold">Cantidad</text>
+<text x="647.4285714285714" y="215.0" font-size="11" fill="#444" font-weight="bold">Costo</text>
+<text x="760.2857142857143" y="215.0" font-size="11" fill="#444" font-weight="bold">Estado</text>
+<text x="873.1428571428571" y="215.0" font-size="11" fill="#444" font-weight="bold">Destino</text>
+<rect x="190" y="224" width="790" height="26" fill="#fff" stroke="#999"/>
+<rect x="196.0" y="233" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="308.8571428571429" y="233" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="421.7142857142857" y="233" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="534.5714285714286" y="233" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="647.4285714285714" y="233" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="760.2857142857143" y="233" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="873.1428571428571" y="233" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="190" y="250" width="790" height="26" fill="#fff" stroke="#999"/>
+<rect x="196.0" y="259" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="308.8571428571429" y="259" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="421.7142857142857" y="259" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="534.5714285714286" y="259" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="647.4285714285714" y="259" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="760.2857142857143" y="259" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="873.1428571428571" y="259" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="190" y="276" width="790" height="26" fill="#fff" stroke="#999"/>
+<rect x="196.0" y="285" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="308.8571428571429" y="285" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="421.7142857142857" y="285" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="534.5714285714286" y="285" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="647.4285714285714" y="285" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="760.2857142857143" y="285" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="873.1428571428571" y="285" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="190" y="302" width="790" height="26" fill="#fff" stroke="#999"/>
+<rect x="196.0" y="311" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="308.8571428571429" y="311" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="421.7142857142857" y="311" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="534.5714285714286" y="311" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="647.4285714285714" y="311" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="760.2857142857143" y="311" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="873.1428571428571" y="311" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="190" y="328" width="790" height="26" fill="#fff" stroke="#999"/>
+<rect x="196.0" y="337" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="308.8571428571429" y="337" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="421.7142857142857" y="337" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="534.5714285714286" y="337" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="647.4285714285714" y="337" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="760.2857142857143" y="337" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="873.1428571428571" y="337" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="190" y="354" width="790" height="26" fill="#fff" stroke="#999"/>
+<rect x="196.0" y="363" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="308.8571428571429" y="363" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="421.7142857142857" y="363" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="534.5714285714286" y="363" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="647.4285714285714" y="363" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="760.2857142857143" y="363" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="873.1428571428571" y="363" width="62.07142857142858" height="8" fill="#ddd" stroke="#ddd"/>
+<text x="190" y="400" font-size="12" fill="#444" font-weight="bold">Formulario «Nuevo producto» (ventana):</text>
+<text x="190.0" y="422" font-size="11" fill="#444">Producto *</text>
+<rect x="190.0" y="428" width="182.5" height="26" fill="#fff" stroke="#999"/>
+<text x="392.5" y="422" font-size="11" fill="#444">Lote *</text>
+<rect x="392.5" y="428" width="182.5" height="26" fill="#fff" stroke="#999"/>
+<text x="595.0" y="422" font-size="11" fill="#444">Registro sanitario</text>
+<rect x="595.0" y="428" width="182.5" height="26" fill="#fff" stroke="#999"/>
+<text x="797.5" y="422" font-size="11" fill="#444">Titular</text>
+<rect x="797.5" y="428" width="182.5" height="26" fill="#fff" stroke="#999"/>
+<text x="190.0" y="476" font-size="11" fill="#444">Fecha de vencimiento *</text>
+<rect x="190.0" y="482" width="182.5" height="26" fill="#fff" stroke="#999"/>
+<text x="392.5" y="476" font-size="11" fill="#444">Cantidad *</text>
+<rect x="392.5" y="482" width="182.5" height="26" fill="#fff" stroke="#999"/>
+<text x="595.0" y="476" font-size="11" fill="#444">Costo unitario</text>
+<rect x="595.0" y="482" width="182.5" height="26" fill="#fff" stroke="#999"/>
+<text x="797.5" y="476" font-size="11" fill="#444">Destino (4 opciones)</text>
+<rect x="797.5" y="482" width="182.5" height="26" fill="#fff" stroke="#999"/>
+<rect x="190" y="530" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="198" y="550.3333333333334" font-size="10" fill="#444" text-anchor="start">Mismo producto y lote activos no se repiten</text>
+<rect x="460" y="530" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="468" y="550.3333333333334" font-size="10" fill="#444" text-anchor="start">Estado se calcula; no se guarda</text>
+<rect x="730" y="530" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="738" y="550.3333333333334" font-size="10" fill="#444" text-anchor="start">Destino ≠ pendiente exige fecha de gestión</text>
+</g>
+</svg>

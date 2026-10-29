@@ -1,0 +1,58 @@
+erDiagram
+  expiration_products {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    text product_name UK
+    text batch UK
+    text sanitary_registry  "opcional"
+    text holder  "opcional"
+    date expires_on
+    integer quantity
+    numeric unit_cost
+    text destination
+    timestamptz managed_at  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+    text support_ref  "opcional"
+  }
+  waste_records {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    date recorded_on
+    text classification
+    numeric quantity
+    text unit
+    text origin  "opcional"
+    text notes  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+    text waste_type  "opcional"
+    text handling  "opcional"
+    text support_ref  "opcional"
+  }
+  segregation_checks {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    date checked_on
+    integer items_reviewed
+    integer items_correct
+    text location
+    text observations  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+  }
+  drugstores {
+    uuid id PK "ver otra área"
+  }
+  drugstores ||--o{ expiration_products : "drugstore_id"
+  drugstores ||--o{ waste_records : "drugstore_id"
+  drugstores ||--o{ segregation_checks : "drugstore_id"

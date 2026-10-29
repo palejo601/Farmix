@@ -1,0 +1,77 @@
+erDiagram
+  instrument_versions {
+    uuid id PK
+    integer version_number UK
+    text title
+    text description  "opcional"
+    boolean is_current
+    timestamptz published_at
+    text scoring
+  }
+  instrument_items {
+    uuid id PK,UK
+    uuid version_id FK,UK
+    text area
+    text item_code UK
+    text prompt_text
+    integer position
+    text item_kind
+    text legal_basis  "opcional"
+  }
+  diagnoses {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    uuid instrument_version_id FK,UK
+    date performed_on
+    text notes  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+  }
+  diagnosis_answers {
+    uuid id PK
+    uuid diagnosis_id FK,UK
+    uuid version_id FK
+    uuid item_id FK,UK
+    smallint score  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    text response  "opcional"
+  }
+  diagnosis_area_scores {
+    uuid diagnosis_id PK,FK
+    text area PK
+    numeric area_score
+    integer answered_count
+  }
+  improvement_actions {
+    uuid id PK,UK
+    uuid drugstore_id FK,UK
+    text finding
+    text corrective_action  "opcional"
+    text responsible  "opcional"
+    date due_on  "opcional"
+    text progress_state
+    date closed_on  "opcional"
+    uuid created_by FK "opcional"
+    uuid updated_by FK "opcional"
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at  "opcional"
+    uuid origin_item_id FK "opcional"
+  }
+  drugstores {
+    uuid id PK "ver otra área"
+  }
+  instrument_versions ||--o{ instrument_items : "version_id"
+  drugstores ||--o{ diagnoses : "drugstore_id"
+  instrument_versions ||--o{ diagnoses : "instrument_version_id"
+  diagnoses ||--o{ diagnosis_answers : "diagnosis_id, version_id"
+  instrument_items ||--o{ diagnosis_answers : "version_id, item_id"
+  diagnoses ||--o{ diagnosis_area_scores : "diagnosis_id"
+  drugstores ||--o{ improvement_actions : "drugstore_id"
+  instrument_items |o--o{ improvement_actions : "origin_item_id"

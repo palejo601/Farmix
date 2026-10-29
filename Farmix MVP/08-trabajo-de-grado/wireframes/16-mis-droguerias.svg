@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" width="1000" height="680" font-family="Arial,Helvetica,sans-serif">
+<rect width="1000" height="680" fill="#fff"/>
+<text x="10" y="18" font-size="14" font-weight="bold" fill="#333">WIREFRAME · Mis droguerías (R7)</text>
+<text x="10" y="34" font-size="11" fill="#777">Baja fidelidad. Reconstruido a partir del sistema construido; campos tomados del esquema de datos. Nota amarilla = regla de negocio.</text>
+<g transform="translate(0,40)">
+<rect x="0.5" y="0.5" width="999" height="639" fill="#fafafa" stroke="#999"/>
+<rect x="0" y="22" width="1000" height="40" fill="#f0f0f0" stroke="#999"/>
+<text x="8" y="46.0" font-size="12" fill="#444" text-anchor="start">FARMIX  ·  Mi cuenta  ·  Cerrar sesión</text>
+<text x="40" y="100" font-size="20" fill="#444" font-weight="bold">Mis droguerías</text>
+<rect x="800" y="82" width="160" height="28" fill="#bbb" stroke="#999"/>
+<text x="880.0" y="99.66666666666667" font-size="11" fill="#444" text-anchor="middle" font-weight="bold">+ Nueva droguería</text>
+<rect x="40" y="120" width="300" height="110" fill="#fff" stroke="#999"/>
+<text x="54" y="146" font-size="13" fill="#444" font-weight="bold">Nombre de la droguería</text>
+<text x="54" y="168" font-size="11" fill="#777">Ciudad · rol del usuario</text>
+<rect x="54" y="190" width="100" height="24" fill="#eee" stroke="#999"/>
+<text x="104.0" y="205.66666666666666" font-size="11" fill="#444" text-anchor="middle">Abrir</text>
+<rect x="356" y="120" width="300" height="110" fill="#fff" stroke="#999"/>
+<text x="370" y="146" font-size="13" fill="#444" font-weight="bold">Nombre de la droguería</text>
+<text x="370" y="168" font-size="11" fill="#777">Ciudad · rol del usuario</text>
+<rect x="370" y="190" width="100" height="24" fill="#eee" stroke="#999"/>
+<text x="420.0" y="205.66666666666666" font-size="11" fill="#444" text-anchor="middle">Abrir</text>
+<rect x="672" y="120" width="300" height="110" fill="#fff" stroke="#999"/>
+<text x="686" y="146" font-size="13" fill="#444" font-weight="bold">Nombre de la droguería</text>
+<text x="686" y="168" font-size="11" fill="#777">Ciudad · rol del usuario</text>
+<rect x="686" y="190" width="100" height="24" fill="#eee" stroke="#999"/>
+<text x="736.0" y="205.66666666666666" font-size="11" fill="#444" text-anchor="middle">Abrir</text>
+<rect x="40" y="260" width="920" height="250" fill="#fff" stroke="#999" stroke-dasharray="4 3"/>
+<text x="54" y="284" font-size="13" fill="#444" font-weight="bold">Ventana «Nueva droguería»</text>
+<text x="54.0" y="308" font-size="11" fill="#444">Nombre</text>
+<rect x="54.0" y="314" width="207.5" height="26" fill="#fff" stroke="#999"/>
+<text x="281.5" y="308" font-size="11" fill="#444">Ciudad</text>
+<rect x="281.5" y="314" width="207.5" height="26" fill="#fff" stroke="#999"/>
+<text x="509.0" y="308" font-size="11" fill="#444">Anticipación de alerta (días)</text>
+<rect x="509.0" y="314" width="207.5" height="26" fill="#fff" stroke="#999"/>
+<text x="736.5" y="308" font-size="11" fill="#444">Número de empleados</text>
+<rect x="736.5" y="314" width="207.5" height="26" fill="#fff" stroke="#999"/>
+<rect x="704" y="420" width="110" height="28" fill="#eee" stroke="#999"/>
+<text x="759.0" y="437.6666666666667" font-size="11" fill="#444" text-anchor="middle">Cancelar</text>
+<rect x="830" y="420" width="110" height="28" fill="#bbb" stroke="#999"/>
+<text x="885.0" y="437.6666666666667" font-size="11" fill="#444" text-anchor="middle" font-weight="bold">Crear</text>
+<rect x="54" y="460" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="62" y="480.3333333333333" font-size="10" fill="#444" text-anchor="start">Quien crea la droguería queda como propietario</text>
+<rect x="330" y="460" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="338" y="480.3333333333333" font-size="10" fill="#444" text-anchor="start">Una cuenta puede tener varias droguerías</text>
+</g>
+</svg>

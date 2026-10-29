@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" width="1000" height="680" font-family="Arial,Helvetica,sans-serif">
+<rect width="1000" height="680" fill="#fff"/>
+<text x="10" y="18" font-size="14" font-weight="bold" fill="#333">WIREFRAME · Registro de residuos (R1)</text>
+<text x="10" y="34" font-size="11" fill="#777">Baja fidelidad. Reconstruido a partir del sistema construido; campos tomados del esquema de datos. Nota amarilla = regla de negocio.</text>
+<g transform="translate(0,40)">
+<rect x="0.5" y="0.5" width="999" height="639" fill="#fafafa" stroke="#999"/>
+<rect x="0" y="0" width="1000" height="22" fill="#eee" stroke="#999"/>
+<text x="500.0" y="14.333333333333334" font-size="10" fill="#444" text-anchor="middle">Banner: producto mínimo viable en estudio · datos de demostración simulados</text>
+<rect x="0" y="22" width="170" height="618" fill="#f0f0f0" stroke="#999"/>
+<text x="14" y="50" font-size="13" fill="#444" font-weight="bold">FARMIX (logo)</text>
+<text x="14" y="72" font-size="11" fill="#444">← Mis droguerías</text>
+<text x="16" y="106" font-size="12" fill="#444">Inicio</text>
+<text x="16" y="136" font-size="12" fill="#444">Diagnóstico</text>
+<text x="16" y="166" font-size="12" fill="#444">Vencimientos</text>
+<rect x="6" y="178" width="158" height="26" fill="#d9d9d9" stroke="#888"/>
+<text x="14" y="195.0" font-size="12" fill="#444" text-anchor="start" font-weight="bold">Residuos</text>
+<text x="16" y="226" font-size="12" fill="#444">Personal</text>
+<text x="16" y="256" font-size="12" fill="#444">Reporte</text>
+<text x="16" y="286" font-size="12" fill="#444">Normativa</text>
+<text x="16" y="316" font-size="12" fill="#444">Importar</text>
+<text x="16" y="346" font-size="12" fill="#444">Migrar</text>
+<text x="16" y="376" font-size="12" fill="#444">Miembros</text>
+<text x="16" y="406" font-size="12" fill="#444">Configuración</text>
+<text x="14" y="600" font-size="11" fill="#444">Usuario · Rol</text>
+<text x="14" y="616" font-size="10" fill="#444">Mi cuenta · Cerrar sesión</text>
+<text x="190" y="62" font-size="20" fill="#444" font-weight="bold">Residuos</text>
+<text x="190" y="80" font-size="11" fill="#777">Registro por clasificación</text>
+<rect x="840" y="44" width="140" height="32" fill="#ddd" stroke="#999"/>
+<text x="910.0" y="63.666666666666664" font-size="11" fill="#444" text-anchor="middle">+ Nuevo registro</text>
+<rect x="190" y="96" width="380" height="150" fill="#fff" stroke="#999"/>
+<text x="380.0" y="174.66666666666666" font-size="11" fill="#444" text-anchor="middle">Gráfica: kg por clasificación y por mes</text>
+<rect x="590" y="96" width="390" height="150" fill="#fff" stroke="#999"/>
+<text x="785.0" y="174.66666666666666" font-size="11" fill="#444" text-anchor="middle">Totales del periodo (kg) · unidades aparte</text>
+<rect x="190" y="264" width="790" height="26" fill="#e6e6e6" stroke="#999"/>
+<text x="196.0" y="281.0" font-size="11" fill="#444" font-weight="bold">Fecha</text>
+<text x="327.66666666666663" y="281.0" font-size="11" fill="#444" font-weight="bold">Clasificación</text>
+<text x="459.3333333333333" y="281.0" font-size="11" fill="#444" font-weight="bold">Cantidad</text>
+<text x="591.0" y="281.0" font-size="11" fill="#444" font-weight="bold">Unidad</text>
+<text x="722.6666666666666" y="281.0" font-size="11" fill="#444" font-weight="bold">Origen</text>
+<text x="854.3333333333333" y="281.0" font-size="11" fill="#444" font-weight="bold">Tipo / manejo</text>
+<rect x="190" y="290" width="790" height="26" fill="#fff" stroke="#999"/>
+<rect x="196.0" y="299" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="327.66666666666663" y="299" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="459.3333333333333" y="299" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="591.0" y="299" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="722.6666666666666" y="299" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="854.3333333333333" y="299" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="190" y="316" width="790" height="26" fill="#fff" stroke="#999"/>
+<rect x="196.0" y="325" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="327.66666666666663" y="325" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="459.3333333333333" y="325" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="591.0" y="325" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="722.6666666666666" y="325" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="854.3333333333333" y="325" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="190" y="342" width="790" height="26" fill="#fff" stroke="#999"/>
+<rect x="196.0" y="351" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="327.66666666666663" y="351" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="459.3333333333333" y="351" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="591.0" y="351" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="722.6666666666666" y="351" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="854.3333333333333" y="351" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="190" y="368" width="790" height="26" fill="#fff" stroke="#999"/>
+<rect x="196.0" y="377" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="327.66666666666663" y="377" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="459.3333333333333" y="377" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="591.0" y="377" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="722.6666666666666" y="377" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<rect x="854.3333333333333" y="377" width="72.41666666666667" height="8" fill="#ddd" stroke="#ddd"/>
+<text x="190" y="430" font-size="12" fill="#444" font-weight="bold">Formulario «Nuevo registro»:</text>
+<text x="190.0" y="452" font-size="11" fill="#444">Fecha *</text>
+<rect x="190.0" y="458" width="182.5" height="26" fill="#fff" stroke="#999"/>
+<text x="392.5" y="452" font-size="11" fill="#444">Clasificación * (5)</text>
+<rect x="392.5" y="458" width="182.5" height="26" fill="#fff" stroke="#999"/>
+<text x="595.0" y="452" font-size="11" fill="#444">Cantidad *</text>
+<rect x="595.0" y="458" width="182.5" height="26" fill="#fff" stroke="#999"/>
+<text x="797.5" y="452" font-size="11" fill="#444">Unidad * (kg, g, uds.)</text>
+<rect x="797.5" y="458" width="182.5" height="26" fill="#fff" stroke="#999"/>
+<text x="190.0" y="506" font-size="11" fill="#444">Origen (vencido / otro)</text>
+<rect x="190.0" y="512" width="182.5" height="26" fill="#fff" stroke="#999"/>
+<text x="392.5" y="506" font-size="11" fill="#444">Tipo de residuo</text>
+<rect x="392.5" y="512" width="182.5" height="26" fill="#fff" stroke="#999"/>
+<text x="595.0" y="506" font-size="11" fill="#444">Manejo</text>
+<rect x="595.0" y="512" width="182.5" height="26" fill="#fff" stroke="#999"/>
+<text x="797.5" y="506" font-size="11" fill="#444">Soporte (n.º certificado)</text>
+<rect x="797.5" y="512" width="182.5" height="26" fill="#fff" stroke="#999"/>
+<rect x="190" y="556" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="198" y="576.3333333333334" font-size="10" fill="#444" text-anchor="start">Medicamento vencido ≠ riesgo biológico</text>
+<rect x="460" y="556" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="468" y="576.3333333333334" font-size="10" fill="#444" text-anchor="start">Muestra color de bolsa y ejemplos</text>
+<rect x="730" y="556" width="262" height="34" fill="#fff7d6" stroke="#c9a800" stroke-dasharray="4 3"/>
+<text x="738" y="576.3333333333334" font-size="10" fill="#444" text-anchor="start">Las unidades no se suman a kg</text>
+</g>
+</svg>
