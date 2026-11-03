@@ -1,0 +1,119 @@
+[excited] ¿Se puede vencer a la ruleta usando matemáticas?
+
+Hoy te explico, paso a paso, la estrategia Fibonacci en Mega Ruleta: al rojo, en docenas, y usando tus ganancias en plenos… y lo que casi nadie te cuenta.
+
+Primero, ¿qué es Fibonacci? Una secuencia donde cada número es la suma de los dos anteriores.
+
+Uno, uno, dos, tres, cinco, ocho, trece, veintiuno, treinta y cuatro…
+
+En la ruleta, esa secuencia es tu escalera de apuestas.
+
+Las reglas son tres.
+
+Primera: apuestas a algo que paga uno a uno, como el rojo.
+
+Segunda: si pierdes, subes un escalón.
+
+Tercera: si ganas, bajas dos escalones. Como cada número es la suma de los dos anteriores, una victoria recupera las dos últimas apuestas.
+
+Al volver al primer escalón, empiezas un ciclo nuevo.
+
+¿Y qué tiene de especial Mega Ruleta? Antes de cada giro caen rayos sobre algunos números, con multiplicadores de hasta quinientas veces.
+
+Pero ojo: los multiplicadores solo pagan a pleno, es decir, a un número exacto. Al rojo o a las docenas, el pago es normal.
+
+Y por eso el pleno sin rayo paga treinta a uno, y no treinta y cinco.
+
+Vamos a probarlo: cien mil pesos de saldo, y una unidad de mil pesos al rojo.
+
+Primer giro: mil al rojo.
+
+Negro. Perdemos, y subimos un escalón.
+
+Seguimos con mil.
+
+Negro otra vez. Subimos a dos mil.
+
+Dos mil al rojo.
+
+¡Cero! Esa es la ventaja de la casa. Subimos a tres mil.
+
+Tres mil… [excited] ¡vamos!
+
+[sighs] Negro. Cuatro pérdidas seguidas: vamos perdiendo siete mil.
+
+Cinco mil al rojo.
+
+[excited] ¡Rojo! Ganamos cinco mil, y bajamos dos escalones.
+
+Dos mil… y mira ese rayo de doscientas veces en el diecinueve.
+
+[excited] ¡Cayó el diecinueve! [sighs] Pero apostamos al rojo, no al pleno: solo cobramos el doble.
+
+Último giro: mil al rojo.
+
+¡Rojo! Ciclo completo: recuperamos todo, y quedamos ganando… mil pesos.
+
+Siete giros, cuatro derrotas… y solo mil pesos de ganancia. Fibonacci recupera, pero gana poquito.
+
+Ahora, con docenas. Son tres grupos de doce números: del uno al doce, del trece al veinticuatro, y del veinticinco al treinta y seis.
+
+Una docena paga dos a uno: apuestas mil y te devuelven tres mil. Pero solo cubres doce de treinta y siete números: aciertas, más o menos, una de cada tres veces.
+
+Como paga el doble, un solo acierto recupera todo lo perdido y deja ganancia. Por eso, al ganar, vuelves al primer escalón.
+
+Mil a la segunda docena.
+
+Cinco. Primera docena. Subimos un escalón.
+
+Mil otra vez.
+
+Treinta y uno. Subimos a dos mil.
+
+Dos mil a la segunda.
+
+Nueve… perdemos. Subimos a tres mil.
+
+Tres mil… [excited] ¡vamos, vamos!
+
+[excited] ¡Veintiuno! Nos devuelven nueve mil: recuperamos lo perdido, y ganamos dos mil. Volvemos al inicio.
+
+Mil a la segunda docena.
+
+¡Dieciséis! Ganamos otra vez: vamos ganando cuatro mil.
+
+Más tranquilo, ¿verdad? Pero con docenas pierdes dos de cada tres giros, y diez derrotas seguidas pasan, más o menos, en una de cada cincuenta series.
+
+Y ahora, el truco favorito de muchos: jugar los plenos solo con las ganancias.
+
+Tu escalera protege el saldo, y la mitad de lo que ganas la usas en números exactos, buscando un rayo.
+
+Tenemos cuatro mil de ganancia. La mitad: quinientos a cuatro números.
+
+Veintiuno. No salió… pero el saldo inicial sigue intacto.
+
+Quedan dos mil. Otra vez la mitad: doscientos cincuenta a cada número.
+
+[excited] ¡Veintiséis! Pleno, paga treinta a uno: nos devuelven siete mil setecientos cincuenta.
+
+Pero ojo: con cuatro números aciertas, más o menos, una de cada nueve veces. Y que caiga justo uno con rayo es todavía más raro.
+
+Y si te sale un rayo, la regla de oro: retira esa ganancia, y no la devuelvas a la mesa.
+
+Pero, ¿qué pasa si llega una racha mala al rojo?
+
+Mil, mil, dos mil, tres mil, cinco mil, ocho mil, trece mil, veintiún mil, treinta y cuatro mil, cincuenta y cinco mil.
+
+Diez derrotas seguidas: ya perdiste ciento cuarenta y tres mil, más que todo tu saldo. Y la siguiente apuesta sería de ochenta y nueve mil.
+
+Y en mil giros, hay casi un cincuenta por ciento de probabilidad de vivir una racha así.
+
+Mi veredicto.
+
+Fibonacci sube más suave que la Martingala, y te dice exactamente cuánto apostar.
+
+Pero no cambia la ventaja de la casa, del dos coma siete por ciento. Ninguna estrategia la cambia: ni Fibonacci, ni docenas, ni plenos.
+
+Si vas a jugar, define antes un límite de pérdida y una meta de ganancia, y al llegar a cualquiera, te retiras. Es entretenimiento, no un ingreso.
+
+[excited] ¿Tú cuál prefieres: rojo, docenas o plenos? Déjamelo en los comentarios.

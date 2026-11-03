@@ -2,7 +2,7 @@
 import json, wave, numpy as np, sys, os
 D=os.path.dirname(os.path.abspath(__file__)); SR=44100; rng=np.random.default_rng(7)
 E=json.load(open(os.path.join(D,'events.json'))); DUR=E['dur']; N=int((DUR+.5)*SR); SC=E['scenes']
-I1=SC['fib'][0]; K0,K1=SC['streak']; S0=SC['sim'][0]; S1=SC['sim'][1]
+I1=SC['fib'][0]; K0,K1=SC['streak']; S0=SC['sim'][0]; S1=SC['pl'][1]
 mus=np.zeros(N); sfx=np.zeros(N)
 T=lambda d: np.arange(int(d*SR))/SR
 def add(buf,t0,sig,g=1.):
@@ -121,8 +121,8 @@ def mavg(x,n):
     c=np.cumsum(np.concatenate([[0],x])); y=(c[n:]-c[:-n])/n; pad=len(x)-len(y); return np.concatenate([np.full(pad//2,y[0]),y,np.full(pad-pad//2,y[-1])])
 env=mavg(np.abs(voz),2205); act=np.clip(mavg((env>.01).astype(float),int(.25*SR))*1.6,0,1)
 duck=1-.62*act
-vz=np.tanh(2.2*voz)/np.tanh(2.2)*1.1
-mix=mus*.5*duck+sfx*.7*(1-.35*act)+vz
+vz=np.tanh(1.4*voz)/np.tanh(1.4)
+mix=mus*.42*duck+sfx*.6*(1-.35*act)+vz
 # fade final
 fo=int(1.3*SR); end=int(DUR*SR); mix[end-fo:end]*=np.linspace(1,0,fo); mix[end:]=0
 mix=np.tanh(1.3*mix)/np.tanh(1.3); mix*=.92/np.max(np.abs(mix))
