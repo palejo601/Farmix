@@ -73,3 +73,18 @@ for i,(k,txt) in enumerate(L):
     out.append({'id':k,'dur':round(b-a,3),'words':words})
 open(os.path.join(D,'voz.js'),'w').write('window.VOZ='+json.dumps(out,ensure_ascii=False)+';')
 print('ok',len(out),'frases, voz total %.1fs'%(len(A)/SR))
+
+# --- Corrección 29:1: p2b = "¡Veintiséis! Pleno, | nos devuelven siete mil | quinientos." (empalme de la misma toma) ---
+def cut(a,b):
+    x=A[int(a*SR):int(b*SR)].astype(np.float32); n=int(.01*SR); x[:n]*=np.linspace(0,1,n); x[-n:]*=np.linspace(1,0,n); return x
+parts=[(224.62,226.44,[('¡Veintiséis!',224.777),('Pleno',225.88)]),(227.86,229.10,[('nos',227.92),('devuelven',228.08),('siete',228.56),('mil',228.96)]),(213.64,214.22,[('quinientos',213.68)])]
+gaps=[0,.14,0]; buf=[]; words=[]; off=0.
+for (a,b,ws),g in zip(parts,gaps):
+    if g: buf.append(np.zeros(int(g*SR),np.float32)); off+=g
+    buf.append(cut(a,b)); words+=[{'t':round(off+t-a,3),'w':w} for w,t in ws]; off+=b-a
+buf.append(np.zeros(int(.35*SR),np.float32)); y=np.concatenate(buf).astype(np.int16)
+for i,w in enumerate(words): w['d']=round((words[i+1]['t'] if i+1<len(words) else off-.04)-w['t'],3)
+w=wave.open(os.path.join(D,'voz','p2b.wav'),'wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes(y.tobytes()); w.close()
+out=[o if o['id']!='p2b' else {'id':'p2b','dur':round(len(y)/SR,3),'words':words} for o in out]
+open(os.path.join(D,'voz.js'),'w').write('window.VOZ='+json.dumps(out,ensure_ascii=False)+';')
+print('p2b corregido:',' '.join(x['w'] for x in words),round(len(y)/SR,2),'s')

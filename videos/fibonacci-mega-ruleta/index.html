@@ -131,7 +131,7 @@ function runSession(key,t){
     const mode=cfg.mode,a=say(d.a,tt+.2),land=Math.max(a+.6,tt+4.8),k=ORDER.indexOf(d.n),rel=k*SL-PI/2,bet=mode==='pleno'?d.c*PLN.length:FIB[idx]*1000;
     const s={...d,i,mode,tS:tt,D:3.2,land,roll:land-3.2,k,rel,idx,bet};
     s.win=mode==='red'?REDS.has(d.n):mode==='doz'?(d.n>=13&&d.n<=24):PLN.includes(d.n);
-    s.pay=s.win?(mode==='red'?2*bet:mode==='doz'?3*bet:31*d.c):0;
+    s.pay=s.win?(mode==='red'?2*bet:mode==='doz'?3*bet:30*d.c):0;
     s.next=mode==='red'?(s.win?Math.max(0,idx-2):idx+1):mode==='doz'?(s.win?0:idx+1):idx;idx=s.next;
     const pr=prevRel===null?rel+2.1:prevRel;s.delta=((pr-rel)%TAU+TAU)%TAU+TAU*4;prevRel=rel;
     s.end=say(d.b,land+.55)+.8;tt=s.end;SPINS.push(s);S.spins.push(s);
@@ -166,7 +166,7 @@ function runSession(key,t){
   for(let i=0;i<4;i++){ev(TT.bolts+i*.3,'zap',{v:.7});fl(TT.bolts+i*.3,'#fff3b0',.25,.25)}
   for(let i=0;i<3;i++)ev(TT.badges+i*.28,'pop');ev(TT.b500,'boom',{v:.6});ev(TT.b500,'coin');shk(TT.b500,12);
   e=say('mega2',e+.5);TT.mc1=fw('mega2',['pleno'])[0];TT.mc2=fw('mega2',['rojo'])[0];ev(TT.mc1,'pop');ev(TT.mc2,'lose',{v:.5});
-  e=say('mega3',e+.45);TT.mc3=fw('mega3',['treinta'])[0];ev(TT.mc3,'pop');t=e+1.4;SC.mega[1]=t;
+  TT.mc3=e+.6;ev(TT.mc3,'pop');ev(TT.mc3+.1,'coin');t=TT.mc3+3.4;SC.mega[1]=t;
   t=runSession('sim',t);
   t=runSession('doc',t);TT.dz=fw('doc1',['uno','trece','veinticinco']);TT.dz.forEach(x=>ev(x,'pop',{v:.6}));
   t=runSession('pl',t);
@@ -284,7 +284,7 @@ function resultFan(t,s){
   if(s.win){const q=seg(t,s.land+.25,.4);tr(540,WY+180,lerp(.85,1,eo(q)),()=>{
     const g=X.createLinearGradient(-330,0,330,0);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(.2,'rgba(0,0,0,.85)');g.addColorStop(.8,'rgba(0,0,0,.85)');g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(-330,-82,660,164);
     const lg=X.createLinearGradient(-330,0,330,0);lg.addColorStop(0,'rgba(255,211,77,0)');lg.addColorStop(.5,'#ffd34d');lg.addColorStop(1,'rgba(255,211,77,0)');X.fillStyle=lg;X.fillRect(-330,-84,660,3);X.fillRect(-330,81,660,3);
-    txt('USTED GANA',0,-46,38,'#fff',{w:600});txt(fmt(s.pay)+' COP',0,12,78,goldGrad(12,78),{glow:20,gc:'rgba(255,170,0,.6)'});txt('Simulación',0,60,28,'#fff',{w:700})},q*2)}
+    txt('USTED GANA',0,-46,38,'#fff',{w:600});txt(fmt(s.pay)+' COP',0,12,78,goldGrad(12,78),{glow:20,gc:'rgba(255,170,0,.6)'});txt(s.mode==='pleno'?'Pleno 29:1 · Simulación':'Simulación',0,60,28,'#fff',{w:700})},q*2)}
 }
 // ---------- mesa vertical estilo Mega Ruleta ----------
 const TX=372,CW=112,TY=935,ZH=56,RY=991,RH=50;
@@ -318,7 +318,7 @@ function sMega(t){
     rr(-105,-60,210,120,18,goldGrad(0,120),'#7a4d06',3);X.shadowBlur=0;txt(m,0,4,big?66:58,C.gd)})});
   card(t,TT.mc1,1130,170,()=>{X.fillStyle=C.g;X.beginPath();X.arc(170,1215,56,0,TAU);X.fill();txt('🎯',170,1218,54,'#fff');txt('PLENO (número exacto)',260,1182,46,'#fff',{al:'left'});txt('MEGA hasta 500x  ✅',260,1250,40,C.gold,{al:'left',w:800})});
   card(t,TT.mc2,1320,170,()=>{X.fillStyle=C.r;X.beginPath();X.arc(170,1405,56,0,TAU);X.fill();txt('ROJO',170,1407,30,'#fff');txt('Rojo / Negro / Docenas',260,1372,44,'#fff',{al:'left'});txt('Pago normal · sin multiplicador  ❌',260,1440,36,C.lose,{al:'left',w:800})});
-  popIn(t,TT.mc3,540,1580,()=>{rr(-400,-52,800,104,52,'rgba(0,0,0,.35)',C.gold,3);txt('El pleno paga 30:1 (no 35:1)',0,3,44,C.gold)});
+  popIn(t,TT.mc3,540,1580,()=>{rr(-400,-52,800,104,52,'rgba(0,0,0,.35)',C.gold,3);txt('Pleno sin rayo: paga 29 a 1',0,3,44,C.gold)});
   subs(t,1760);
 }
 // ---------- ESCENAS de simulación (rojo, docenas, plenos) ----------
@@ -332,7 +332,7 @@ function sSession(key,t){
   const S=SESS[key],S0=SC[key][0],e=eo(seg(t,S0,.7)),sp0=S.spins[0].tS;let cur=null;for(const s of S.spins)if(t>=s.tS)cur=s;
   const megas=cur?cur.m.map(([n,m],j)=>({n,m,ts:cur.tS+.1+j*.25,te:cur.end})):[];
   videoArea(t,megas,cur);
-  txt('Mega Ruleta • 1.000 COP – 50.000.000',22,24,24,'rgba(255,255,255,.75)',{al:'left',w:600});txt('SIMULACIÓN',1058,24,24,'rgba(255,255,255,.75)',{al:'right',w:600});
+  txt('Mega Ruleta • 50 COP – 50.000.000',22,24,24,'rgba(255,255,255,.75)',{al:'left',w:600});txt('SIMULACIÓN',1058,24,24,'rgba(255,255,255,.75)',{al:'right',w:600});
   rr(22,52,250,90,14,'rgba(40,52,74,.88)');const secs=cur&&t<cur.roll?Math.ceil(10*(1-seg(t,cur.tS,cur.roll-cur.tS))):0;
   txt('00:'+String(secs).padStart(2,'0'),102,98,44,'#fff',{w:800});[0,1,2].forEach(i=>rr(196,82+i*15,50,6,3,'#cfd6ff'));
   rr(790,52,268,90,14,'rgba(20,26,50,.88)','rgba(255,255,255,.15)');txt(`GIRO ${cur?cur.i+1:0}/${S.spins.length}`,924,82,32,'#fff',{w:800});
@@ -382,8 +382,8 @@ function sSession(key,t){
   else{txt('APUESTA TOTAL',1058,1800,26,C.m,{al:'right',w:600});txt(fmt(mo.bet)+' COP',1058,1846,42,'#fff',{al:'right',w:800})}
   if(key==='sim')sumCard(t,S.post[0],1e9,['RESULTADO','7 giros · 4 derrotas','+1.000 COP','Recupera… pero gana poquito']);
   if(key==='doc')sumCard(t,S.post[0],1e9,['RESULTADO','5 giros · 2 aciertos','+4.000 COP','Más tranquilo que al rojo…','⚠️ Pierdes 2 de 3 · 10 seguidas ≈ 1 en 50']);
-  if(key==='pl'){sumCard(t,S.post[0],S.post[1],['CON GANANCIAS','2 giros a plenos','+8.750 COP','4 números ≈ aciertas 1 de cada 9','⚡ Con rayo: todavía más raro']);
-    sumCard(t,S.post[1],1e9,['REGLA DE ORO ⚡','Si te sale un rayo…','RETIRA','la ganancia y no la devuelvas'],1)}
+  if(key==='pl'){sumCard(t,S.post[0],S.post[1],['CON GANANCIAS','2 giros a plenos','+8.500 COP','4 números ≈ aciertas 1 de cada 9','⚡ Con rayo: todavía más raro']);
+    sumCard(t,S.post[1],1e9,['REGLA DE ORO ⚡','Si te sale un rayo…','RETIRA','la ganancia y no la devuelvas','🇨🇴 Premios > 48 UVT: retención del 20%'],1)}
   subs(t,862);
 }
 // ---------- ESCENA 6: racha mala ----------

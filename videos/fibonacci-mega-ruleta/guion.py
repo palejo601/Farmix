@@ -12,7 +12,7 @@ L=[
 ('rules5','Al volver al primer escalón, empiezas un ciclo nuevo.'),
 ('mega1','¿Y qué tiene de especial Mega Ruleta? Antes de cada giro caen rayos sobre algunos números, con multiplicadores de hasta quinientas veces.'),
 ('mega2','Pero ojo: los multiplicadores solo pagan a pleno, es decir, a un número exacto. Al rojo o a las docenas, el pago es normal.'),
-('mega3','Y por eso el pleno sin rayo paga treinta a uno, y no treinta y cinco.'),
+('mega3','Y por eso el pleno sin rayo paga treinta a uno, y no treinta y cinco.'),  # no se usa: el pago real es 29:1 (se muestra en pantalla)
 ('sim0','Vamos a probarlo: cien mil pesos de saldo, y una unidad de mil pesos al rojo.'),
 ('s1a','Primer giro: mil al rojo.'),('s1b','Negro. Perdemos, y subimos un escalón.'),
 ('s2a','Seguimos con mil.'),('s2b','Negro otra vez. Subimos a dos mil.'),
@@ -36,7 +36,7 @@ L=[
 ('p1a','Tenemos cuatro mil de ganancia. La mitad: quinientos a cuatro números.'),
 ('p1b','Veintiuno. No salió… pero el saldo inicial sigue intacto.'),
 ('p2a','Quedan dos mil. Otra vez la mitad: doscientos cincuenta a cada número.'),
-('p2b','[excited] ¡Veintiséis! Pleno, paga treinta a uno: nos devuelven siete mil setecientos cincuenta.'),
+('p2b','[excited] ¡Veintiséis! Pleno, paga treinta a uno: nos devuelven siete mil setecientos cincuenta.'),  # se empalma a: ¡Veintiséis! Pleno, nos devuelven siete mil quinientos (29:1)
 ('pl3','Pero ojo: con cuatro números aciertas, más o menos, una de cada nueve veces. Y que caiga justo uno con rayo es todavía más raro.'),
 ('pl4','Y si te sale un rayo, la regla de oro: retira esa ganancia, y no la devuelvas a la mesa.'),
 ('streak1','Pero, ¿qué pasa si llega una racha mala al rojo?'),
