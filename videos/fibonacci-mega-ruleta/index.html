@@ -88,7 +88,9 @@ function ball(x,y,s=1){
 // ---------- narración ----------
 const V={};(window.VOZ||[]).forEach(s=>{const w=s.words;s.end=w.length?w[w.length-1].t+w[w.length-1].d:s.dur-.9;V[s.id]=s});
 const LN={};
-function say(id,t){if(!V[id])return t;LN[id]=t;ev(t,'voice',{id});return t+V[id].end}
+const CK={},FIRST={};(window.VOZC||[]).forEach(c=>{CK[c.id]=c;FIRST[c.lines[0][0]]=c.id});
+function place(cid,t){const c=CK[cid];ev(t,'voice',{id:cid});c.lines.forEach(([id,off])=>LN[id]=t+off);return t+c.dur}
+const endOf=id=>LN[id]+V[id].end;
 function fw(id,list){const ws=V[id]?V[id].words:[],out=[];let j=0;
   list.forEach(w=>{while(j<ws.length&&ws[j].w.toLowerCase().replace(/[^a-záéíóúñü]/g,'')!==w)j++;out.push(j<ws.length?LN[id]+ws[j].t:null);j++});
   const t0=LN[id]||0,t1=t0+(V[id]?V[id].end:3);return out.map((v,i)=>v==null?lerp(t0,t1,i/Math.max(1,list.length)):v)}
@@ -124,17 +126,17 @@ function ballState(t){
   else{r=R_POCKET;for(let j=0;j<KH.length;j++)if(p>=KN[j]&&p<KN[j+1])r+=KH[j]*Math.sin(PI*(p-KN[j])/(KN[j+1]-KN[j]))}
   return {rel,r,a:st===SPINS[0]?seg(t,st.roll,.12):1};
 }
-function runSession(key,t){
-  const cfg=CFG[key],S={key,mode:cfg.mode,bal0:cfg.bal0,spins:[]};SESS[key]=S;SC[key]=[t];ev(t+.3,'pop');
-  let e=t+.3;cfg.pre.forEach(id=>{e=say(id,e+.5)});let tt=e+.7,idx=0;
+function runSession(key){
+  const cfg=CFG[key],S={key,mode:cfg.mode,bal0:cfg.bal0,spins:[]};SESS[key]=S;let idx=0,last=0;
   cfg.defs.forEach((d,i)=>{
-    const mode=cfg.mode,a=say(d.a,tt+.2),land=Math.max(a+.6,tt+4.8),k=ORDER.indexOf(d.n),rel=k*SL-PI/2,bet=mode==='pleno'?d.c*PLN.length:FIB[idx]*1000;
-    const s={...d,i,mode,tS:tt,D:3.2,land,roll:land-3.2,k,rel,idx,bet};
+    const mode=cfg.mode,La=LN[d.a],Ea=endOf(d.a),tS=La-.25,roll=Math.max(tS+.9,Ea-.9),land=Math.max(roll+2.6,Ea+.35);
+    const k=ORDER.indexOf(d.n),rel=k*SL-PI/2,bet=mode==='pleno'?d.c*PLN.length:FIB[idx]*1000;
+    const s={...d,i,mode,tS,D:land-roll,land,roll,k,rel,idx,bet};
     s.win=mode==='red'?REDS.has(d.n):mode==='doz'?(d.n>=13&&d.n<=24):PLN.includes(d.n);
     s.pay=s.win?(mode==='red'?2*bet:mode==='doz'?3*bet:30*d.c):0;
     s.next=mode==='red'?(s.win?Math.max(0,idx-2):idx+1):mode==='doz'?(s.win?0:idx+1):idx;idx=s.next;
     const pr=prevRel===null?rel+2.1:prevRel;s.delta=((pr-rel)%TAU+TAU)%TAU+TAU*4;prevRel=rel;
-    s.end=say(d.b,land+.55)+.8;tt=s.end;SPINS.push(s);S.spins.push(s);
+    last=place(FIRST[d.b],land+.45);SPINS.push(s);S.spins.push(s);
     s.m.forEach((_,j)=>{ev(s.tS+.1+j*.25,'zap',{v:.55});fl(s.tS+.1+j*.25,'#fff3b0',.2,.15)});ev(s.tS+.35,'chip');
     ev(s.roll,'roll',{d:s.D});ev(s.roll+s.D*.66,'clack',{v:.6});for(let j=0;j<5;j++)ev(s.roll+s.D*KN[j],'clack',{v:1-j*.18});
     shk(s.land,7);
@@ -143,47 +145,41 @@ function runSession(key,t){
     if(s.m.some(([n])=>n===s.n)){ev(s.land,'boom');ev(s.land+.05,'zap');shk(s.land,20);fl(s.land,'#ffc83d',.9,.5);CF.push({t:s.land+.1,x:540,y:560,n:70,seed:99,gold:1})}
     ev(s.land+1.0,'pop');for(let j=0;j<3;j++)ev(s.land+.65+j*.14,'tick');
   });
-  e=tt;cfg.post.forEach((id,i)=>{e=say(id,i?e+.5:tt+.3);ev(LN[id],'whoosh',{v:.5})});
-  S.post=cfg.post.map(id=>LN[id]);t=e+1.4;SC[key][1]=t;return t;
+  if(LN[cfg.post[0]]===undefined)place(FIRST[cfg.post[0]],last+1.6);
+  S.spins.forEach((s,i)=>s.end=i+1<S.spins.length?S.spins[i+1].tS:LN[cfg.post[0]]);
+  cfg.post.forEach(id=>ev(LN[id],'whoosh',{v:.5}));S.post=cfg.post.map(id=>LN[id]);
 }
 
-// ---------- línea de tiempo (guiada por la voz) ----------
+// ---------- línea de tiempo (la voz manda: bloques continuos) ----------
 (function build(){
-  let e,t;
   ev(.25,'boom');shk(.33,16);ev(.65,'boom');shk(.73,22);ev(1.15,'pop');ev(1.55,'zap');fl(1.55,'#fff3b0',.35,.35);
-  e=say('intro1',.9);e=say('intro2',e+.4);t=e+1.0;SC.intro=[0,t];
-  SC.fib=[t];TT.fibHead=t+.2;ev(TT.fibHead,'boom',{v:.7});shk(TT.fibHead+.08,10);
-  e=say('fib1',t+.6);e=say('fib2',e+.45);TT.cards=fw('fib2',['uno','uno','dos','tres','cinco','ocho','trece','veintiuno','treinta']);TT.cards.forEach(c=>ev(c,'pop',{v:.8}));
-  e=say('fib3',e+.5);TT.fibPill=fw('fib3',['escalera'])[0];ev(TT.fibPill,'coin');t=e+1.2;SC.fib[1]=t;
-  SC.rules=[t];TT.rulesHead=t+.2;ev(TT.rulesHead,'boom',{v:.7});shk(TT.rulesHead+.08,10);
-  e=say('rules1',t+.6);e=say('rules2',e+.45);TT.card1=LN.rules2;
-  e=say('rules3',e+.5);TT.card2=LN.rules3;TT.mv2=fw('rules3',['subes'])[0];
-  e=say('rules4',e+.5);TT.card3=LN.rules4;TT.mv3=fw('rules4',['bajas'])[0];
-  [TT.card1,TT.card2,TT.card3].forEach(x=>ev(x,'whoosh',{v:.5}));ev(TT.mv2,'lose',{v:.5});ev(TT.mv3,'pop');ev(TT.mv3+.3,'pop');
-  e=say('rules5',e+.5);TT.r5=LN.rules5;ev(TT.r5,'pop');t=e+1.5;SC.rules[1]=t;
-  SC.mega=[t];TT.megaHead=t+.2;ev(TT.megaHead,'boom',{v:.7});
-  e=say('mega1',t+.7);[TT.bolts,TT.badges,TT.b500]=fw('mega1',['rayos','multiplicadores','quinientas']);
+  let e=place('c0',.9);e=place('c1',e+.7);place('c2',e+1.0);
+  runSession('sim');runSession('doc');runSession('pl');
+  const mid=(p,n)=>(endOf(p)+LN[n])/2;
+  SC.intro=[0];SC.fib=[mid('intro2','fib1')];SC.rules=[mid('fib3','rules1')];SC.mega=[mid('rules5','mega1')];SC.sim=[mid('mega3n','sim0')];
+  SC.doc=[mid('simEnd','doc1')];SC.pl=[mid('docEnd','pl1')];SC.streak=[mid('pl4','streak1')];SC.ver=[mid('streak4','ver1')];
+  DUR=endOf('out2')+2.4;const ks=Object.keys(SC);ks.forEach((k,i)=>SC[k][1]=i+1<ks.length?SC[ks[i+1]][0]:DUR);
+  TT.fibHead=SC.fib[0]+.15;ev(TT.fibHead,'boom',{v:.7});shk(TT.fibHead+.08,10);
+  TT.cards=fw('fib2',['uno','uno','dos','tres','cinco','ocho','trece','veintiuno','treinta']);TT.cards.forEach(c=>ev(c,'pop',{v:.8}));
+  TT.fibPill=fw('fib3',['escalera'])[0];ev(TT.fibPill,'coin');
+  TT.rulesHead=SC.rules[0]+.15;ev(TT.rulesHead,'boom',{v:.7});shk(TT.rulesHead+.08,10);
+  TT.card1=LN.rules2;TT.card2=LN.rules3;TT.mv2=fw('rules3',['subes'])[0];TT.card3=LN.rules4;TT.mv3=fw('rules4',['bajas'])[0];
+  [TT.card1,TT.card2,TT.card3].forEach(x=>ev(x,'whoosh',{v:.5}));ev(TT.mv2,'lose',{v:.5});ev(TT.mv3,'pop');ev(TT.mv3+.3,'pop');TT.r5=LN.rules5;ev(TT.r5,'pop');
+  TT.megaHead=SC.mega[0]+.15;ev(TT.megaHead,'boom',{v:.7});
+  [TT.bolts,TT.badges,TT.b500]=fw('mega1',['rayos','multiplicadores','quinientas']);
   for(let i=0;i<4;i++){ev(TT.bolts+i*.3,'zap',{v:.7});fl(TT.bolts+i*.3,'#fff3b0',.25,.25)}
   for(let i=0;i<3;i++)ev(TT.badges+i*.28,'pop');ev(TT.b500,'boom',{v:.6});ev(TT.b500,'coin');shk(TT.b500,12);
-  e=say('mega2',e+.5);TT.mc1=fw('mega2',['pleno'])[0];TT.mc2=fw('mega2',['rojo'])[0];ev(TT.mc1,'pop');ev(TT.mc2,'lose',{v:.5});
-  TT.mc3=e+.6;ev(TT.mc3,'pop');ev(TT.mc3+.1,'coin');t=TT.mc3+3.4;SC.mega[1]=t;
-  t=runSession('sim',t);
-  t=runSession('doc',t);TT.dz=fw('doc1',['uno','trece','veinticinco']);TT.dz.forEach(x=>ev(x,'pop',{v:.6}));
-  t=runSession('pl',t);
-  // RACHA
-  SC.streak=[t];TT.stHead=t+.2;ev(TT.stHead,'alarm');ev(TT.stHead,'boom');shk(TT.stHead+.05,18);fl(TT.stHead,C.r,.7,.5);
-  e=say('streak1',t+.7);TT.stQ=LN.streak1+.1;
-  e=say('streak2',e+.45);TT.bars=fw('streak2',['mil','mil','dos','tres','cinco','ocho','trece','veintiún','treinta','cincuenta']);
+  TT.mc1=fw('mega2',['pleno'])[0];TT.mc2=fw('mega2',['rojo'])[0];ev(TT.mc1,'pop');ev(TT.mc2,'lose',{v:.5});
+  TT.mc3=fw('mega3n',['veintinueve'])[0];ev(TT.mc3,'pop');ev(TT.mc3+.1,'coin');
+  TT.dz=fw('doc1',['uno','trece','veinticinco']);TT.dz.forEach(x=>ev(x,'pop',{v:.6}));
+  TT.stHead=SC.streak[0]+.15;ev(TT.stHead,'alarm');ev(TT.stHead,'boom');shk(TT.stHead+.05,18);fl(TT.stHead,C.r,.7,.5);TT.stQ=LN.streak1+.1;
+  TT.bars=fw('streak2',['mil','mil','dos','tres','cinco','ocho','trece','veintiún','treinta','cincuenta']);
   TT.bars.forEach((b,i)=>{ev(b,'lose',{v:.5+i*.04});ev(b,'clack',{v:.6});shk(b+.05,3+i*1.3)});
-  e=say('streak3',e+.5);TT.stNext=fw('streak3',['siguiente'])[0];ev(TT.stNext,'boom');ev(TT.stNext,'alarm');shk(TT.stNext+.05,22);fl(TT.stNext,C.r,.8,.5);
-  e=say('streak4',e+.5);TT.fact1=LN.streak4;TT.fact2=fw('streak4',['giros'])[0];ev(TT.fact1,'pop');ev(TT.fact2,'pop');
-  ev(e-1.5,'riser',{d:2.2});t=e+1.4;SC.streak[1]=t;
-  // VEREDICTO
-  SC.ver=[t];e=say('ver1',t+.5);TT.verHead=LN.ver1;ev(TT.verHead,'boom');shk(TT.verHead+.05,12);
-  e=say('ver2',e+.4);TT.v=[LN.ver2,fw('ver2',['exactamente'])[0]];e=say('ver3',e+.5);TT.v.push(LN.ver3,fw('ver3',['ninguna'])[0]);
-  TT.v.forEach((x,i)=>ev(x,i<2?'pop':'lose',{v:.5}));
-  e=say('out1',e+.6);TT.limit=LN.out1;ev(TT.limit,'boom',{v:.7});shk(TT.limit+.05,10);
-  e=say('out2',e+.5);TT.cta=LN.out2;ev(TT.cta,'win',{v:.7});DUR=e+2.4;SC.ver[1]=DUR;
+  TT.stNext=fw('streak3',['siguiente'])[0];ev(TT.stNext,'boom');ev(TT.stNext,'alarm');shk(TT.stNext+.05,22);fl(TT.stNext,C.r,.8,.5);
+  TT.fact1=LN.streak4;TT.fact2=fw('streak4',['giros'])[0];ev(TT.fact1,'pop');ev(TT.fact2,'pop');ev(endOf('streak4')-1.5,'riser',{d:2.2});
+  TT.verHead=LN.ver1;ev(TT.verHead,'boom');shk(TT.verHead+.05,12);
+  TT.v=[LN.ver2,fw('ver2',['exactamente'])[0],LN.ver3,fw('ver3',['ninguna'])[0]];TT.v.forEach((x,i)=>ev(x,i<2?'pop':'lose',{v:.5}));
+  TT.limit=LN.out1;ev(TT.limit,'boom',{v:.7});shk(TT.limit+.05,10);TT.cta=LN.out2;ev(TT.cta,'win',{v:.7});
   Object.keys(SC).slice(1).forEach(k=>ev(SC[k][0]-.28,'whoosh'));
   const res=k=>SESS[k].spins.slice().reverse().map(s=>{const mm=s.m.find(([n])=>n===s.n);return {n:s.n,m:mm?mm[1]:0}});
   SESS.sim.hist0=HIST0;SESS.doc.hist0=res('sim').concat(HIST0);SESS.pl.hist0=res('doc').concat(res('sim'),HIST0);

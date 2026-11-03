@@ -54,37 +54,38 @@ S={ # inicio de cada palabra (s), en orden, por frase (de wordTimings de ElevenL
 'out2':[300.14,300.24,300.52,301.28,301.84,302.48,302.64,303.44,303.8,303.92,304.04],
 }
 E=dict(zip([k for k,_ in L],[3.0,13.36,19.76,27.12,30.52,32.12,36.48,39.68,48.88,52.32,60.72,69.36,74.08,79.04,81.32,84.44,85.6,88.64,90.0,94.08,96.48,101.52,102.8,106.56,110.72,116.96,119.04,124.8,132.24,141.04,152.0,160.16,162.16,165.44,166.56,168.88,170.32,173.28,175.32,182.16,183.92,188.32,198.72,204.04,210.72,215.68,219.84,224.64,230.64,240.08,245.92,249.6,259.84,268.88,274.32,275.68,281.52,290.08,300.08,304.96]))
-raw=subprocess.run(['ffmpeg','-loglevel','error','-i',os.path.join(D,'voz','master.mp3'),'-f','s16le','-ac','1','-ar',str(SR),'-'],capture_output=True,check=True).stdout
-A=np.frombuffer(raw,np.int16)
-ids=[k for k,_ in L]; cuts=[]
-for i,(k,txt) in enumerate(L):
-    if i==0: cuts.append(0.); continue
-    pe=E[ids[i-1]]; cuts.append(pe+.05 if txt.startswith('[sighs]') else max(pe+.03,S[k][0]-.15))
-cuts.append(len(A)/SR)
-out=[]
-for i,(k,txt) in enumerate(L):
-    toks=re.sub(r'\[[^\]]*\]','',txt).split(); st=S[k]; assert len(toks)==len(st),(k,len(toks),len(st))
-    a,b=cuts[i],(cuts[i+1] if i+1<len(L) else E[k]+.7); seg=A[int(a*SR):int(b*SR)].copy()
-    n=int(.012*SR); seg[:n]=(seg[:n]*np.linspace(0,1,n)).astype(np.int16); seg[-n:]=(seg[-n:]*np.linspace(1,0,n)).astype(np.int16)
-    w=wave.open(os.path.join(D,'voz',k+'.wav'),'wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes(seg.tobytes()); w.close()
-    words=[]
-    for j,(tk,t0) in enumerate(zip(toks,st)):
-        t1=st[j+1] if j+1<len(st) else E[k]; words.append({'t':round(t0-a,3),'d':round(min(t1-t0,1.0),3),'w':tk.rstrip(',.:;…')})
-    out.append({'id':k,'dur':round(b-a,3),'words':words})
-open(os.path.join(D,'voz.js'),'w').write('window.VOZ='+json.dumps(out,ensure_ascii=False)+';')
-print('ok',len(out),'frases, voz total %.1fs'%(len(A)/SR))
-
-# --- Corrección 29:1: p2b = "¡Veintiséis! Pleno, | nos devuelven siete mil | quinientos." (empalme de la misma toma) ---
-def cut(a,b):
-    x=A[int(a*SR):int(b*SR)].astype(np.float32); n=int(.01*SR); x[:n]*=np.linspace(0,1,n); x[-n:]*=np.linspace(1,0,n); return x
-parts=[(224.62,226.44,[('¡Veintiséis!',224.777),('Pleno',225.88)]),(227.86,229.10,[('nos',227.92),('devuelven',228.08),('siete',228.56),('mil',228.96)]),(213.64,214.22,[('quinientos',213.68)])]
-gaps=[0,.14,0]; buf=[]; words=[]; off=0.
-for (a,b,ws),g in zip(parts,gaps):
-    if g: buf.append(np.zeros(int(g*SR),np.float32)); off+=g
-    buf.append(cut(a,b)); words+=[{'t':round(off+t-a,3),'w':w} for w,t in ws]; off+=b-a
-buf.append(np.zeros(int(.35*SR),np.float32)); y=np.concatenate(buf).astype(np.int16)
-for i,w in enumerate(words): w['d']=round((words[i+1]['t'] if i+1<len(words) else off-.04)-w['t'],3)
-w=wave.open(os.path.join(D,'voz','p2b.wav'),'wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes(y.tobytes()); w.close()
-out=[o if o['id']!='p2b' else {'id':'p2b','dur':round(len(y)/SR,3),'words':words} for o in out]
-open(os.path.join(D,'voz.js'),'w').write('window.VOZ='+json.dumps(out,ensure_ascii=False)+';')
-print('p2b corregido:',' '.join(x['w'] for x in words),round(len(y)/SR,2),'s')
+def dec(f):
+    return np.frombuffer(subprocess.run(['ffmpeg','-loglevel','error','-i',os.path.join(D,'voz',f),'-f','s16le','-ac','1','-ar',str(SR),'-'],capture_output=True,check=True).stdout,np.int16).astype(np.float32)
+A=dec('master.mp3'); ids=[k for k,_ in L]; TXT=dict(L)
+# punto de corte (en silencio) antes de cada frase
+CUT={}
+for i,k in enumerate(ids):
+    if i==0: CUT[k]=0.; continue
+    pe=E[ids[i-1]]; CUT[k]=pe+.05 if TXT[k].startswith('[sighs]') else max(pe+.03,S[k][0]-.15)
+CUT['_end']=len(A)/SR
+# Bloques continuos: la voz suena tal cual se grabó; solo se separa donde gira la bola o se corrige un dato
+CH=[['intro1','intro2','fib1','fib2','fib3','rules1','rules2','rules3','rules4','rules5','mega1','mega2'],['mega3n'],['sim0','s1a'],
+ ['s1b','s2a'],['s2b','s3a'],['s3b','s4a'],['s4b','s5a'],['s5b','s6a'],['s6b','s7a'],['s7b','simEnd','doc1','doc2','doc3','d1a'],
+ ['d1b','d2a'],['d2b','d3a'],['d3b','d4a'],['d4b','d5a'],['d5b','docEnd','pl1','pl2','p1a'],['p1b','p2a'],['p2b'],
+ ['pl3','pl4','streak1','streak2','streak3','streak4','ver1','ver2','ver3','out1','out2']]
+nxt=lambda k:CUT[ids[ids.index(k)+1]] if ids.index(k)+1<len(ids) else CUT['_end']
+def fade(x,fi=.015,fo=.04):
+    a=int(fi*SR);b=int(fo*SR);x=x.copy();x[:a]*=np.linspace(0,1,a);x[-b:]*=np.linspace(1,0,b);return x
+VOZ=[];VOZC=[]
+for ci,ch in enumerate(CH):
+    cid='c%d'%ci
+    if ch==['mega3n']:
+        y=dec('mega3n.mp3'); ws=[('Por',0),('eso',.32),('el',.64),('pleno',.96),('sin',1.28),('rayo',1.52),('paga',1.92),('veintinueve',2.4),('a',3.36),('uno',3.6)]
+        y=fade(y[:int(4.5*SR)]); words=[{'t':t,'w':w,'d':round((ws[j+1][1] if j+1<len(ws) else 4.08)-t,3)} for j,(w,t) in enumerate(ws)]
+        VOZ.append({'id':'mega3n','dur':round(len(y)/SR,3),'words':words}); lines=[['mega3n',0]]
+    else:
+        a=CUT[ch[0]]; b=225.86 if ch==['p2b'] else nxt(ch[-1]); y=fade(A[int(a*SR):int(b*SR)]); lines=[]
+        for k in ch:
+            toks=re.sub(r'\[[^\]]*\]','',TXT[k]).split(); st=S[k]; ka=CUT[k]; ke=225.84 if k=='p2b' else E[k]
+            if k=='p2b': toks,st=toks[:1],st[:1]
+            words=[{'t':round(t0-ka,3),'d':round(min((st[j+1] if j+1<len(st) else ke)-t0,1.0),3),'w':tk.rstrip(',.:;…')} for j,(tk,t0) in enumerate(zip(toks,st))]
+            VOZ.append({'id':k,'dur':round(nxt(k)-ka,3),'words':words}); lines.append([k,round(ka-a,3)])
+    w=wave.open(os.path.join(D,'voz',cid+'.wav'),'wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes(np.clip(y,-32768,32767).astype(np.int16).tobytes()); w.close()
+    VOZC.append({'id':cid,'dur':round(len(y)/SR,3),'lines':lines})
+open(os.path.join(D,'voz.js'),'w').write('window.VOZ='+json.dumps(VOZ,ensure_ascii=False)+';\nwindow.VOZC='+json.dumps(VOZC)+';')
+print('ok',len(VOZC),'bloques continuos,',len(VOZ),'frases')
