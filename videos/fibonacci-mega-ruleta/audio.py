@@ -1,7 +1,8 @@
 # Sintetiza música + efectos sincronizados con events.json -> audio.wav
 import json, wave, numpy as np, sys, os
 D=os.path.dirname(os.path.abspath(__file__)); SR=44100; rng=np.random.default_rng(7)
-E=json.load(open(os.path.join(D,'events.json'))); DUR=E['dur']; N=int((DUR+.5)*SR)
+E=json.load(open(os.path.join(D,'events.json'))); DUR=E['dur']; N=int((DUR+.5)*SR); SC=E['scenes']
+I1=SC['fib'][0]; K0,K1=SC['streak']; S0=SC['sim'][0]; S1=SC['sim'][1]
 mus=np.zeros(N); sfx=np.zeros(N)
 T=lambda d: np.arange(int(d*SR))/SR
 def add(buf,t0,sig,g=1.):
@@ -35,7 +36,7 @@ B=.5
 pad=np.zeros(N)
 for bar in range(int(DUR/2)+1):
     t0=bar*2; root,tri=CH[bar%4]
-    tension=43.3<=t0<52.5
+    tension=K0<=t0<K1
     if not tension:
         for f in tri:
             for dt in (-.6,.6):
@@ -43,7 +44,7 @@ for bar in range(int(DUR/2)+1):
     for b in range(4):
         tb=t0+b*B
         if tb>=DUR: break
-        intro=tb<4.5
+        intro=tb<I1
         if tension:
             if b%2==0: add(mus,tb,KICK,.9)
             for k in range(2): add(mus,tb+k*.25,bassn(110,.2),.32)
@@ -52,14 +53,14 @@ for bar in range(int(DUR/2)+1):
         if b%2==1 and not intro: add(mus,tb,CLAP,.35)
         add(mus,tb+.25,HAT,.18)
         if not intro: add(mus,tb+.25,bassn(root),.4)
-        if 4.5<=tb<43.3:
+        if I1<=tb<S1:
             arp=[tri[0]*2,tri[1]*2,tri[2]*2,tri[1]*2]
-            for k in range(4): add(mus,tb+k*.125,pluck(arp[k]),.09 if tb>=17 else .05)
+            for k in range(4): add(mus,tb+k*.125,pluck(arp[k]),.08 if tb>=S0 else .045)
 pad=filt(pad,1400); tt=np.arange(N)/SR
 duck=.35+.65*np.minimum(1,(tt%B)/.3)
 mus+=pad*.05*duck
 # riser intro
-s,t=chirp(1200,200,2.,-1); r=filt(noise(2.),2500)*(t/2)**2; add(mus,2.5,r,.25)
+s,t=chirp(1200,200,2.,-1); r=filt(noise(2.),2500)*(t/2)**2; add(mus,I1-2.,r,.25)
 # ---------- efectos ----------
 def fx(name,v=1.,d=None):
     if name=='boom':
@@ -110,9 +111,18 @@ def fx(name,v=1.,d=None):
         t=T(d); p=t/d; s=np.sin(2*np.pi*np.cumsum(200+1000*p**2)/SR)
         return (filt(noise(d),3000)*.7+s*.4)*p**2*.3*v
     raise ValueError(name)
+voz=np.zeros(N)
 for e in E['events']:
-    add(sfx,e['t'],fx(e['type'],e.get('v',1.),e.get('d')))
-mix=mus*.55+sfx
+    if e['type']=='voice':
+        w=wave.open(os.path.join(D,'voz',e['id']+'.wav'));a=np.frombuffer(w.readframes(w.getnframes()),np.int16)/32768.;add(voz,e['t'],a)
+    else: add(sfx,e['t'],fx(e['type'],e.get('v',1.),e.get('d')))
+# ducking: baja la música mientras habla la voz (envolvente suavizada)
+def mavg(x,n):
+    c=np.cumsum(np.concatenate([[0],x])); y=(c[n:]-c[:-n])/n; pad=len(x)-len(y); return np.concatenate([np.full(pad//2,y[0]),y,np.full(pad-pad//2,y[-1])])
+env=mavg(np.abs(voz),2205); act=np.clip(mavg((env>.01).astype(float),int(.25*SR))*1.6,0,1)
+duck=1-.62*act
+vz=np.tanh(2.2*voz)/np.tanh(2.2)*1.1
+mix=mus*.5*duck+sfx*.7*(1-.35*act)+vz
 # fade final
 fo=int(1.3*SR); end=int(DUR*SR); mix[end-fo:end]*=np.linspace(1,0,fo); mix[end:]=0
 mix=np.tanh(1.3*mix)/np.tanh(1.3); mix*=.92/np.max(np.abs(mix))

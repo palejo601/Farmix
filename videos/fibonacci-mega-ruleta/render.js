@@ -5,12 +5,13 @@ const FPS=30,dir=__dirname,out=process.argv[3]||path.join(dir,'video_noaudio.mp4
   const b=await chromium.launch();const p=await b.newPage({viewport:{width:1080,height:1920}});
   p.on('pageerror',e=>console.error('PAGE ERR',e.message));
   await p.goto('file://'+path.join(dir,'index.html'));await p.evaluate(()=>window.READY);
-  const prev=process.argv[2]==='--preview'?process.argv[3].split(',').map(Number):null;
+  let prev=process.argv[2]==='--preview'?process.argv[3]:null;
+  if(prev==='auto')prev=await p.evaluate(()=>{const S=SPINS;return [SC.intro[1]-1,TT.cards[8]+.5,TT.pills+.5,TT.mc3+.6,S[0].roll+1.2,S[0].land+.8,S[4].land+.9,S[5].land+.4,TT.simSum+.6,TT.stNext+.8,TT.cta+.6,SC.sim[0]+.5].map(x=>+x.toFixed(2))});else if(prev)prev=prev.split(',').map(Number);
   if(prev){fs.mkdirSync(path.join(dir,'preview'),{recursive:true});
     for(const t of prev){const d=await p.evaluate(t=>{renderFrame(t);return document.getElementById('cv').toDataURL('image/jpeg',.8)},t);
       fs.writeFileSync(path.join(dir,'preview',`f_${t}.jpg`),Buffer.from(d.split(',')[1],'base64'))}
     await b.close();return}
-  const ev=await p.evaluate(()=>({events:window.EVENTS,dur:window.DUR}));fs.writeFileSync(path.join(dir,'events.json'),JSON.stringify(ev));
+  const ev=await p.evaluate(()=>({events:window.EVENTS,dur:window.DUR,scenes:window.SCENES}));fs.writeFileSync(path.join(dir,'events.json'),JSON.stringify(ev));
   const N=Math.round(ev.dur*FPS);
   const ff=spawn('ffmpeg',['-y','-loglevel','error','-f','image2pipe','-c:v','mjpeg','-framerate',String(FPS),'-i','-','-c:v','libx264','-preset','medium','-crf','18','-pix_fmt','yuv420p',out],{stdio:['pipe','inherit','inherit']});
   for(let f=0;f<N;f++){const d=await p.evaluate(t=>{renderFrame(t);return document.getElementById('cv').toDataURL('image/jpeg',.93)},f/FPS);
