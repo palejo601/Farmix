@@ -1,0 +1,351 @@
+1
+00:00:03,000 --> 00:00:05,254
+En el ámbito de la atención sanitaria,
+
+2
+00:00:05,294 --> 00:00:09,453
+un diagnóstico confiable puede marcar
+la diferencia en la vida de un paciente.
+
+3
+00:00:09,533 --> 00:00:13,231
+Detrás de cada resultado de laboratorio
+existe un proceso científico
+
+4
+00:00:13,271 --> 00:00:16,156
+que depende de múltiples factores, entre ellos,
+
+5
+00:00:16,196 --> 00:00:20,088
+la calidad y el correcto funcionamiento
+de los reactivos de diagnóstico.
+
+6
+00:00:20,168 --> 00:00:25,104
+Por esta razón, vigilar su seguridad,
+calidad y desempeño es fundamental.
+
+7
+00:00:25,184 --> 00:00:27,753
+Esta es la misión de la reactivovigilancia.
+
+8
+00:00:35,153 --> 00:00:38,293
+La reactivovigilancia comprende
+las actividades de vigilancia
+
+9
+00:00:38,333 --> 00:00:42,200
+sanitaria orientadas a identificar,
+evaluar y gestionar los riesgos
+
+10
+00:00:42,240 --> 00:00:45,392
+relacionados con los reactivos
+de diagnóstico in vitro.
+
+11
+00:00:45,472 --> 00:00:49,110
+Su propósito es contribuir a que
+estos productos mantengan condiciones
+
+12
+00:00:49,150 --> 00:00:53,186
+adecuadas de calidad, seguridad y
+desempeño durante su utilización,
+
+13
+00:00:53,226 --> 00:00:56,572
+permitiendo detectar oportunamente
+fallas que puedan comprometer la
+
+14
+00:00:56,612 --> 00:00:59,897
+confiabilidad de los resultados
+y la atención del paciente.
+
+15
+00:00:59,977 --> 00:01:03,372
+En Colombia, el Programa
+Nacional de Reactivovigilancia,
+
+16
+00:01:03,412 --> 00:01:07,680
+actualizado por el Invima en 2020,
+se enfoca en la identificación,
+
+17
+00:01:07,720 --> 00:01:12,340
+cualificación y gestión de los efectos
+indeseados asociados a estos productos.
+
+18
+00:01:15,240 --> 00:01:19,096
+Los reactivos de diagnóstico in vitro
+son productos utilizados en muestras
+
+19
+00:01:19,136 --> 00:01:22,773
+procedentes del cuerpo humano para
+proporcionar información relacionada
+
+20
+00:01:22,813 --> 00:01:26,900
+con estados fisiológicos,
+patológicos o condiciones clínicas.
+
+21
+00:01:26,980 --> 00:01:30,459
+Incluyen reactivos, calibradores
+y materiales de control,
+
+22
+00:01:30,499 --> 00:01:33,796
+que permiten identificar o
+medir analitos como la glucosa,
+
+23
+00:01:33,836 --> 00:01:38,190
+la hemoglobina, los anticuerpos o
+los antígenos de agentes infecciosos.
+
+24
+00:01:38,270 --> 00:01:41,373
+Su desempeño es esencial en
+áreas como la bioquímica,
+
+25
+00:01:41,413 --> 00:01:44,601
+hematología, inmunología y microbiología.
+
+26
+00:01:44,681 --> 00:01:47,675
+Una alteración en su calidad
+puede comprometer la exactitud de
+
+27
+00:01:47,715 --> 00:01:51,377
+los resultados y conducir a
+decisiones clínicas inadecuadas.
+
+28
+00:01:54,277 --> 00:01:57,271
+Los reactivos pueden presentar
+diferentes problemas durante
+
+29
+00:01:57,311 --> 00:02:00,342
+su almacenamiento, distribución o utilización.
+
+30
+00:02:00,422 --> 00:02:03,221
+La contaminación, la pérdida de estabilidad,
+
+31
+00:02:03,261 --> 00:02:06,474
+las alteraciones de composición
+y las fallas de desempeño pueden
+
+32
+00:02:06,514 --> 00:02:11,280
+generar resultados que no reflejen
+correctamente la condición clínica del paciente.
+
+33
+00:02:11,360 --> 00:02:14,354
+Un reactivo con baja sensibilidad
+puede producir falsos
+
+34
+00:02:14,394 --> 00:02:18,395
+negativos; uno con baja
+especificidad, falsos positivos.
+
+35
+00:02:18,475 --> 00:02:22,197
+Por ello, la detección temprana y
+la notificación de estos problemas
+
+36
+00:02:22,237 --> 00:02:25,972
+constituyen elementos fundamentales
+de la vigilancia sanitaria.
+
+37
+00:02:28,872 --> 00:02:33,177
+Un resultado de laboratorio incorrecto
+puede ocasionar diagnósticos equivocados,
+
+38
+00:02:33,217 --> 00:02:36,781
+retrasos en los tratamientos
+o intervenciones innecesarias.
+
+39
+00:02:36,861 --> 00:02:40,061
+La reactivovigilancia permite
+reconocer estos riesgos,
+
+40
+00:02:40,101 --> 00:02:45,474
+investigar sus causas y establecer acciones que
+reduzcan la posibilidad de nuevos incidentes.
+
+41
+00:02:45,554 --> 00:02:48,063
+Su importancia va más allá del laboratorio:
+
+42
+00:02:48,103 --> 00:02:51,655
+representa una contribución directa
+a la seguridad del paciente.
+
+43
+00:02:54,555 --> 00:02:58,314
+Cuando se identifica una posible
+falla relacionada con un reactivo,
+
+44
+00:02:58,354 --> 00:03:01,955
+es necesario activar un procedimiento
+organizado de vigilancia.
+
+45
+00:03:02,035 --> 00:03:05,648
+Si existe riesgo, se suspende
+preventivamente su uso,
+
+46
+00:03:05,688 --> 00:03:10,405
+se aísla el lote involucrado y se verifican
+los registros y controles de calidad.
+
+47
+00:03:10,485 --> 00:03:13,977
+La documentación del incidente,
+la identificación del lote,
+
+48
+00:03:14,017 --> 00:03:18,066
+la evaluación del riesgo y la notificación
+correspondiente permiten establecer
+
+49
+00:03:18,106 --> 00:03:22,314
+medidas oportunas para evitar que el
+problema afecte a otros pacientes.
+
+50
+00:03:22,394 --> 00:03:26,031
+Luego se investigan las causas,
+se implementan medidas correctivas
+
+51
+00:03:26,071 --> 00:03:29,199
+y preventivas, y se hace
+seguimiento a su eficacia.
+
+52
+00:03:32,099 --> 00:03:36,258
+En Colombia, el Invima ejerce
+funciones fundamentales de inspección,
+
+53
+00:03:36,298 --> 00:03:40,603
+vigilancia y control sanitario sobre
+los reactivos de diagnóstico in vitro.
+
+54
+00:03:40,683 --> 00:03:43,762
+La regulación establece
+condiciones para su fabricación,
+
+55
+00:03:43,802 --> 00:03:47,791
+importación, almacenamiento,
+comercialización y utilización,
+
+56
+00:03:47,831 --> 00:03:52,937
+con el propósito de proteger la salud pública
+y garantizar la calidad de estos productos.
+
+57
+00:03:53,017 --> 00:04:00,926
+Son referentes el Decreto 3770 de 2004,
+modificado por el Decreto 581 de 2017;
+
+58
+00:04:00,966 --> 00:04:06,580
+la Resolución 132 de 2006;
+la Resolución 3100 de 2019;
+
+59
+00:04:06,620 --> 00:04:14,044
+y la Resolución 7532 de 2020 del Invima, que
+actualizó el Programa Nacional de Reactivovigilancia.
+
+60
+00:04:14,124 --> 00:04:18,295
+Según esta última, los reportes
+inmediatos no deben superar cinco días
+
+61
+00:04:18,335 --> 00:04:22,567
+calendario, y los incidentes se
+consolidan en reportes trimestrales.
+
+62
+00:04:25,467 --> 00:04:27,915
+La reactivovigilancia es una responsabilidad
+
+63
+00:04:27,955 --> 00:04:30,233
+que requiere trabajo interdisciplinario.
+
+64
+00:04:30,313 --> 00:04:34,605
+Cada profesional involucrado en la cadena de
+utilización de los reactivos debe contribuir
+
+65
+00:04:34,645 --> 00:04:39,228
+a la identificación de riesgos, el cumplimiento
+de las condiciones de conservación,
+
+66
+00:04:39,268 --> 00:04:43,281
+la verificación de la calidad y la
+notificación oportuna de incidentes.
+
+67
+00:04:46,181 --> 00:04:50,353
+La calidad del diagnóstico comienza
+mucho antes de obtener un resultado.
+
+68
+00:04:50,433 --> 00:04:52,941
+Comienza con la selección, conservación,
+
+69
+00:04:52,981 --> 00:04:56,085
+utilización y vigilancia
+adecuada de cada reactivo.
+
+70
+00:04:56,165 --> 00:04:59,146
+La reactivovigilancia transforma
+la detección de riesgos
+
+71
+00:04:59,186 --> 00:05:02,059
+en oportunidades de prevención y mejora continua.
+
+72
+00:05:02,139 --> 00:05:04,781
+Porque detrás de cada resultado existe una persona
+
+73
+00:05:04,821 --> 00:05:07,479
+cuya salud merece la máxima seguridad.

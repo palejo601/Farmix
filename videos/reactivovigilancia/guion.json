@@ -1,0 +1,43 @@
+[
+["s1","Introducción",3.0,5.5,[
+"En el ámbito de la atención sanitaria, un diagnóstico confiable puede marcar la diferencia en la vida de un paciente.",
+"Detrás de cada resultado de laboratorio existe un proceso científico que depende de múltiples factores, entre ellos, la calidad y el correcto funcionamiento de los reactivos de diagnóstico.",
+"Por esta razón, vigilar su seguridad, calidad y desempeño es fundamental.",
+"Esta es la misión de la reactivovigilancia."]],
+["s2","¿Qué es la reactivovigilancia?",2.2,1.0,[
+"La reactivovigilancia comprende las actividades de vigilancia sanitaria orientadas a identificar, evaluar y gestionar los riesgos relacionados con los reactivos de diagnóstico in vitro.",
+"Su propósito es contribuir a que estos productos mantengan condiciones adecuadas de calidad, seguridad y desempeño durante su utilización, permitiendo detectar oportunamente fallas que puedan comprometer la confiabilidad de los resultados y la atención del paciente.",
+"En Colombia, el Programa Nacional de Reactivovigilancia, actualizado por el Invima en 2020, se enfoca en la identificación, cualificación y gestión de los efectos indeseados asociados a estos productos."]],
+["s3","Reactivos de diagnóstico in vitro",2.2,1.0,[
+"Los reactivos de diagnóstico in vitro son productos utilizados en muestras procedentes del cuerpo humano para proporcionar información relacionada con estados fisiológicos, patológicos o condiciones clínicas.",
+"Incluyen reactivos, calibradores y materiales de control, que permiten identificar o medir analitos como la glucosa, la hemoglobina, los anticuerpos o los antígenos de agentes infecciosos.",
+"Su desempeño es esencial en áreas como la bioquímica, hematología, inmunología y microbiología.",
+"Una alteración en su calidad puede comprometer la exactitud de los resultados y conducir a decisiones clínicas inadecuadas."]],
+["s4","Incidentes y problemas de calidad",2.2,1.0,[
+"Los reactivos pueden presentar diferentes problemas durante su almacenamiento, distribución o utilización.",
+"La contaminación, la pérdida de estabilidad, las alteraciones de composición y las fallas de desempeño pueden generar resultados que no reflejen correctamente la condición clínica del paciente.",
+"Un reactivo con baja sensibilidad puede producir falsos negativos; uno con baja especificidad, falsos positivos.",
+"Por ello, la detección temprana y la notificación de estos problemas constituyen elementos fundamentales de la vigilancia sanitaria."]],
+["s5","Seguridad del paciente",2.2,1.0,[
+"Un resultado de laboratorio incorrecto puede ocasionar diagnósticos equivocados, retrasos en los tratamientos o intervenciones innecesarias.",
+"La reactivovigilancia permite reconocer estos riesgos, investigar sus causas y establecer acciones que reduzcan la posibilidad de nuevos incidentes.",
+"Su importancia va más allá del laboratorio: representa una contribución directa a la seguridad del paciente."]],
+["s6","Vigilancia y notificación",2.2,1.0,[
+"Cuando se identifica una posible falla relacionada con un reactivo, es necesario activar un procedimiento organizado de vigilancia.",
+"Si existe riesgo, se suspende preventivamente su uso, se aísla el lote involucrado y se verifican los registros y controles de calidad.",
+"La documentación del incidente, la identificación del lote, la evaluación del riesgo y la notificación correspondiente permiten establecer medidas oportunas para evitar que el problema afecte a otros pacientes.",
+"Luego se investigan las causas, se implementan medidas correctivas y preventivas, y se hace seguimiento a su eficacia."]],
+["s7","Marco normativo colombiano",2.2,1.0,[
+"En Colombia, el Invima ejerce funciones fundamentales de inspección, vigilancia y control sanitario sobre los reactivos de diagnóstico in vitro.",
+"La regulación establece condiciones para su fabricación, importación, almacenamiento, comercialización y utilización, con el propósito de proteger la salud pública y garantizar la calidad de estos productos.",
+"Son referentes el Decreto 3770 de 2004, modificado por el Decreto 581 de 2017; la Resolución 132 de 2006; la Resolución 3100 de 2019; y la Resolución 7532 de 2020 del Invima, que actualizó el Programa Nacional de Reactivovigilancia.",
+"Según esta última, los reportes inmediatos no deben superar cinco días calendario, y los incidentes se consolidan en reportes trimestrales."]],
+["s8","Responsabilidad profesional",2.2,1.0,[
+"La reactivovigilancia es una responsabilidad que requiere trabajo interdisciplinario.",
+"Cada profesional involucrado en la cadena de utilización de los reactivos debe contribuir a la identificación de riesgos, el cumplimiento de las condiciones de conservación, la verificación de la calidad y la notificación oportuna de incidentes."]],
+["s9","Mensaje final",2.2,9.5,[
+"La calidad del diagnóstico comienza mucho antes de obtener un resultado.",
+"Comienza con la selección, conservación, utilización y vigilancia adecuada de cada reactivo.",
+"La reactivovigilancia transforma la detección de riesgos en oportunidades de prevención y mejora continua.",
+"Porque detrás de cada resultado existe una persona cuya salud merece la máxima seguridad."]]
+]
