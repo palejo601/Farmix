@@ -1,0 +1,9 @@
+preview/
+voz/
+part_*.mp4
+parts.txt
+render_*.log
+events.json
+audio.wav
+voz.wav
+video_noaudio.mp4
