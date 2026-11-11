@@ -182,6 +182,13 @@
   <div class="card">
     <h3>4. Vista previa</h3>
     <p class="muted small">Representa la hoja a escala. Al imprimir, elija escala 100 % (sin «ajustar a la página») y márgenes «ninguno».</p>
+    <div class="zoombar" role="group" aria-label="Zoom de la vista previa">
+      <button type="button" class="btn small" id="zm-out" aria-label="Alejar">−</button>
+      <output id="zm-val" aria-live="polite">100 %</output>
+      <button type="button" class="btn small" id="zm-in" aria-label="Acercar">+</button>
+      <button type="button" class="btn small" id="zm-fit">Ajustar</button>
+      <span class="muted small">También puede pellizcar con dos dedos.</span>
+    </div>
     <div id="lb-preview" class="preview"></div>
   </div>
   <div class="sticky-actions wrap">

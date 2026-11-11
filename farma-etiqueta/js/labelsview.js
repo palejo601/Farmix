@@ -219,7 +219,39 @@ async function exportDOCX() {
   finally { busy(false); }
 }
 
+// ---- Zoom de la vista previa: botones, pellizco con dos dedos y Ctrl + rueda ----
+let zoom = 1;
+function setZoom(z, cx, cy) {
+  const pv = $('#lb-preview'), old = zoom;
+  zoom = Math.max(1, Math.min(8, z));
+  const r = pv.getBoundingClientRect();
+  cx = cx == null ? r.width / 2 : cx - r.left; cy = cy == null ? r.height / 2 : cy - r.top;
+  const fx = (pv.scrollLeft + cx) / old, fy = (pv.scrollTop + cy) / old;      // punto del contenido que debe quedar fijo
+  pv.style.setProperty('--z', zoom);
+  pv.scrollLeft = fx * zoom - cx; pv.scrollTop = fy * zoom - cy;
+  $('#zm-val').textContent = Math.round(zoom * 100) + ' %';
+  $('#zm-out').disabled = zoom <= 1; $('#zm-in').disabled = zoom >= 8; $('#zm-fit').disabled = zoom === 1;
+}
+function initZoom() {
+  const pv = $('#lb-preview');
+  $('#zm-in').addEventListener('click', () => setZoom(zoom * 1.5));
+  $('#zm-out').addEventListener('click', () => setZoom(zoom / 1.5));
+  $('#zm-fit').addEventListener('click', () => setZoom(1));
+  let d0 = 0, z0 = 1;
+  const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  pv.addEventListener('touchstart', e => { if (e.touches.length === 2) { d0 = dist(e.touches); z0 = zoom; } }, { passive: true });
+  pv.addEventListener('touchmove', e => {
+    if (e.touches.length !== 2 || !d0) return;
+    e.preventDefault();
+    setZoom(z0 * dist(e.touches) / d0, (e.touches[0].clientX + e.touches[1].clientX) / 2, (e.touches[0].clientY + e.touches[1].clientY) / 2);
+  }, { passive: false });
+  pv.addEventListener('touchend', e => { if (e.touches.length < 2) d0 = 0; }, { passive: true });
+  pv.addEventListener('wheel', e => { if (e.ctrlKey) { e.preventDefault(); setZoom(zoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX, e.clientY); } }, { passive: false });
+  setZoom(1);
+}
+
 export async function initLabels() {
+  initZoom();
   const saved = await db.kvGet('labelCfg').catch(() => null);
   if (saved) cfg = { ...cfg, ...saved, fields: { ...cfg.fields, ...(saved.fields || {}) } };
   $('#lb-size').replaceChildren(...SIZES.map(([n, w, hh], i) => h('option', { value: i }, `${n} — ${w} × ${hh} mm`)), h('option', { value: -1 }, 'Personalizado'));

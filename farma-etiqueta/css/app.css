@@ -157,3 +157,12 @@ pre.raw{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);padding
 
 /* Iconos de línea (los <symbol> heredan el estilo desde el <svg> que los usa) */
 .tile svg,.btn svg,.tabbar svg,.icon-btn svg,.thumb svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* Zoom de la vista previa de rótulos */
+.zoombar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+.zoombar .btn{min-width:48px;font-size:1.15rem}
+.zoombar #zm-fit{font-size:.9rem}
+.zoombar output{min-width:58px;text-align:center;font-weight:700;color:var(--g800)}
+.preview{display:block;touch-action:pan-x pan-y;overscroll-behavior:contain}
+.preview>div{width:calc(100% * var(--z,1));margin-bottom:14px}
+.preview>div:last-child{margin-bottom:0}
