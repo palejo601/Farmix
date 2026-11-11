@@ -1,0 +1,292 @@
+// Pruebas automáticas de extremo a extremo (Playwright + Chromium).
+// Uso: node tests/e2e.cjs            (requiere el paquete «playwright» instalado)
+// Emula un teléfono Android (Pixel 7). No sustituye la prueba en un dispositivo físico.
+const { chromium, devices } = require('playwright');
+const http = require('http'), fs = require('fs'), path = require('path');
+
+const ROOT = path.join(__dirname, '..');
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png', '.wasm': 'application/wasm', '.gz': 'application/gzip' };
+const server = http.createServer((req, res) => {
+  let p = decodeURIComponent(req.url.split('?')[0]); if (p.endsWith('/')) p += 'index.html';
+  const f = path.join(ROOT, p);
+  if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end('404'); }
+  res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(res);
+});
+
+const results = []; let failed = 0;
+const check = (name, ok, extra = '') => { results.push([ok ? 'OK ' : 'FALLA', name, extra]); if (!ok) failed++; console.log((ok ? '  ✔ ' : '  ✘ ') + name + (extra ? ' — ' + extra : '')); };
+const EAN = '7701234567897';
+
+(async () => {
+  await new Promise(r => server.listen(0, r));
+  const URL0 = `http://localhost:${server.address().port}/`;
+  const browser = await chromium.launch();
+  const ctx = await browser.newContext({ ...devices['Pixel 7'], locale: 'es-CO', acceptDownloads: true });
+  let page = await ctx.newPage();
+  const errors = []; const watch = p => { p.on('pageerror', e => errors.push(String(e))); p.on('console', m => { if (m.type() === 'error') errors.push(m.text()); }); };
+  watch(page);
+  await page.goto(URL0);
+  await page.waitForFunction(() => navigator.serviceWorker.controller, null, { timeout: 30000 });
+
+  // --- Imágenes de prueba generadas en el propio navegador (sintéticas) ---
+  await page.addScriptTag({ url: 'vendor/lib/JsBarcode.all.min.js' });
+  const img = async (kind) => Buffer.from((await page.evaluate(async ({ kind, EAN }) => {
+    const c = document.createElement('canvas'); c.width = 1400; c.height = 1000; const x = c.getContext('2d');
+    x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.fillStyle = '#111';
+    if (kind === 'pack' || kind === 'pack2') {
+      x.font = 'bold 120px Arial'; x.fillText('CALMADOL', 80, 170);
+      x.font = '64px Arial'; x.fillText('Acetaminofén 500 mg', 80, 290);
+      x.font = '52px Arial'; x.fillText('Tabletas recubiertas', 80, 380); x.fillText('Caja por 20 tabletas', 80, 460);
+      x.fillText('Laboratorios Andinos S.A.', 80, 560); x.fillText('Reg. San. INVIMA 2019M-0012345', 80, 650);
+      if (kind === 'pack') { x.font = 'bold 56px Arial'; x.fillText('LOTE: AB12345', 80, 780); x.fillText('VENCE: 05/2027', 80, 870); }
+    }
+    if (kind === 'ean' || kind === 'blur' || kind === 'pack') {
+      const b = document.createElement('canvas'); JsBarcode(b, EAN, { format: 'EAN13', width: 4, height: 150, margin: 30 });
+      if (kind === 'blur') x.filter = 'blur(2px)';
+      if (kind === 'pack') x.drawImage(b, 880, 700, 480, 260); else x.drawImage(b, 350, 330);
+    }
+    if (kind === 'none') { x.font = '60px Arial'; x.fillText('Imagen sin código de barras', 200, 500); for (let i = 0; i < 40; i++) x.fillRect(100 + i * 30, 700, 12, 12); }
+    return c.toDataURL(kind === 'ean' ? 'image/png' : 'image/jpeg', 0.9).split(',')[1];
+  }, { kind, EAN })), 'base64');
+  const F = { ean: { name: 'ean13.png', mimeType: 'image/png', buffer: await img('ean') }, blur: { name: 'borrosa.jpg', mimeType: 'image/jpeg', buffer: await img('blur') },
+    none: { name: 'sin-codigo.jpg', mimeType: 'image/jpeg', buffer: await img('none') }, pack: { name: 'empaque.jpg', mimeType: 'image/jpeg', buffer: await img('pack') },
+    pack2: { name: 'empaque-sin-lote.jpg', mimeType: 'image/jpeg', buffer: await img('pack2') } };
+  const choose = async (sel, file) => { const [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 8000 }), page.click(sel)]); await fc.setFiles(file); return fc; };
+  const modalText = () => page.locator('.modal').last().innerText();
+  const btn = t => page.locator('.modal footer button', { hasText: t }).last();
+  const waitIdle = () => page.waitForFunction(() => document.getElementById('busy').hidden, null, { timeout: 180000 });
+
+  console.log('\nPrueba 1 — Selector de fotografías');
+  await page.click('.tabbar a[data-tab=registrar]');
+  const fc = await choose('#photo-empty label[for=pick-gallery]', F.pack);
+  check('El botón «Elegir de la galería» abre el selector de archivos del sistema', true);
+  const inp = await page.evaluate(() => { const i = document.getElementById('pick-gallery'); return { type: i.type, accept: i.accept, capture: i.hasAttribute('capture') }; });
+  check('Es un <input type=file> real, acepta JPEG/PNG/WEBP y no fuerza la cámara', inp.type === 'file' && /jpeg/.test(inp.accept) && /png/.test(inp.accept) && /webp/.test(inp.accept) && !inp.capture, inp.accept);
+  await page.waitForSelector('#photo-box:not([hidden])');
+  const nat = await page.evaluate(() => new Promise(r => { const i = document.getElementById('photo-preview'); i.complete && i.naturalWidth ? r(i.naturalWidth) : i.onload = () => r(i.naturalWidth); }));
+  check('Aparece la vista previa de la fotografía', nat > 0, nat + ' px');
+  await choose('#photo-box label[for=pick-files]', F.ean);
+  await page.waitForFunction(() => /ean|×/.test(document.getElementById('photo-info').textContent));
+  check('La fotografía se puede cambiar (selector «archivos»)', true);
+  await page.click('#btn-photo-del'); await btn('Eliminar').click();
+  check('La fotografía se puede eliminar (con confirmación)', await page.locator('#photo-empty').isVisible());
+  await page.setInputFiles('#pick-gallery', { name: 'roto.jpg', mimeType: 'image/jpeg', buffer: Buffer.from([0xFF, 0xD8, 0xFF, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]) });
+  await page.waitForSelector('.toast.err'); const t1 = await page.locator('.toast.err').last().innerText();
+  check('Archivo dañado: mensaje comprensible y sin bloqueo', /dañada|no se puede abrir/i.test(t1), t1);
+  await page.setInputFiles('#pick-gallery', { name: 'nota.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('esto no es una imagen, es texto') });
+  await page.waitForFunction(() => [...document.querySelectorAll('.toast.err')].some(t => /Formato no admitido/.test(t.textContent)));
+  check('Archivo que no es imagen: rechazado por contenido, no por extensión', true);
+  const noGUM = !/getUserMedia/.test(['app', 'form', 'photos', 'barcode', 'ocr'].map(f => fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8')).join(''));
+  check('El código no usa getUserMedia ni solicita cámara', noGUM);
+
+  console.log('\nPrueba 2 — Código de barras desde fotografía');
+  const native = await page.evaluate(() => 'BarcodeDetector' in self);
+  await choose('#photo-empty label[for=pick-gallery]', F.ean); await page.waitForSelector('#photo-box:not([hidden])');
+  await page.click('#btn-barcode'); await page.waitForSelector('#bc-value', { timeout: 60000 });
+  const read = await page.locator('#bc-value').innerText(), info = await modalText();
+  check('EAN-13 nítido: el código leído es exacto', read === EAN, `${read} · ${info.match(/Formato:[^\n]*/)?.[0]}`);
+  await btn('Usar en el formulario').click();
+  check('El código confirmado se incorpora al formulario', await page.inputValue('#f-codigoBarras') === EAN);
+  await choose('#photo-box label[for=pick-gallery]', F.blur); await page.waitForTimeout(700);
+  await page.click('#btn-barcode'); await page.waitForSelector('.modal', { timeout: 60000 }); await waitIdle();
+  const blurTxt = await modalText(); const blurVal = await page.locator('#bc-value').count() ? await page.locator('#bc-value').innerText() : null;
+  check('Imagen borrosa: se lee exacto o se informa que no se detectó (nunca un valor distinto)', blurVal === EAN || (blurVal === null && /No se detectó/.test(blurTxt)), blurVal ? 'leído ' + blurVal : 'no detectado, mensaje claro');
+  await page.locator('.modal footer button').first().click();
+  await choose('#photo-box label[for=pick-gallery]', F.none); await page.waitForTimeout(700);
+  await page.click('#btn-barcode'); await page.waitForSelector('.modal', { timeout: 60000 }); await waitIdle();
+  const noneTxt = await modalText();
+  check('Imagen sin código: mensaje claro y ningún dato inventado', /No se detectó ningún código/.test(noneTxt) && await page.locator('#bc-value').count() === 0);
+  check('Se ofrece reintentar', await btn('Reintentar').count() === 1);
+  await btn('Cerrar').click();
+  check(`Motor usado en esta prueba: ${native ? 'BarcodeDetector nativo' : 'ZXing (BarcodeDetector no existe en este Chromium)'}`, true);
+
+  console.log('\nPrueba 3 — OCR');
+  await page.click('#btn-form-clear'); if (await btn('Descartar').count()) await btn('Descartar').click();
+  await choose('#photo-empty label[for=pick-gallery]', F.pack); await page.waitForSelector('#photo-box:not([hidden])');
+  await page.click('#btn-ocr'); await page.waitForSelector('.ocr-row', { timeout: 180000 });
+  const rows = await page.$$eval('.ocr-row', rs => rs.map(r => ({ label: r.querySelector('b').textContent, value: r.querySelector('input:not([type=checkbox])').value, conf: r.querySelector('.chip').textContent, checked: r.querySelector('input[type=checkbox]').checked })));
+  const get = l => rows.find(r => r.label === l)?.value;
+  console.log('    Texto leído:', JSON.stringify(await page.locator('pre.raw').first().textContent()));
+  console.log('    Campos detectados:', JSON.stringify(rows.map(r => `${r.label}=${r.value} [${r.conf}]`)));
+  check('OCR extrae el nombre', get('Nombre del producto') === 'CALMADOL', get('Nombre del producto'));
+  check('OCR extrae la concentración', get('Concentración') === '500 mg', get('Concentración'));
+  check('OCR extrae el lote sin alterarlo', get('Número de lote') === 'AB12345', get('Número de lote'));
+  check('OCR extrae el vencimiento sin alterarlo', get('Fecha de vencimiento') === '05/2027', get('Fecha de vencimiento'));
+  check('OCR extrae registro sanitario, laboratorio, forma y presentación', /2019M-0012345/.test(get('Registro sanitario') || '') && /Andinos/.test(get('Laboratorio') || '') && /Tabletas/i.test(get('Forma farmacéutica') || '') && /20 tabletas/.test(get('Presentación') || ''),
+    [get('Registro sanitario'), get('Laboratorio'), get('Forma farmacéutica'), get('Presentación')].join(' | '));
+  check('La revisión muestra nivel de confianza y advierte que no es información verificada', rows.every(r => /Confianza/.test(r.conf)) && /NO es información farmacéutica verificada/.test(await modalText()));
+  check('Nada se escribe en el formulario antes de confirmar', await page.inputValue('#f-lote') === '');
+  const loteInput = page.locator('.ocr-row', { hasText: 'Número de lote' }).locator('input:not([type=checkbox])');
+  await loteInput.fill('AB12346');
+  await btn('Aplicar al formulario').click();
+  check('Corrección manual en la revisión y aplicación al formulario', await page.inputValue('#f-lote') === 'AB12346' && await page.inputValue('#f-nombre') === 'CALMADOL');
+  // No inventa: empaque sin lote ni vencimiento
+  await choose('#photo-box label[for=pick-gallery]', F.pack2); await page.waitForTimeout(700);
+  await page.click('#btn-ocr'); await page.waitForSelector('.ocr-row', { timeout: 180000 });
+  const rows2 = await page.$$eval('.ocr-row b', bs => bs.map(b => b.textContent)), txt2 = await modalText();
+  check('Empaque sin lote ni fecha: no inventa esos campos y advierte que falta el vencimiento', !rows2.includes('Número de lote') && !rows2.includes('Fecha de vencimiento') && /No se detectó la fecha de vencimiento/.test(txt2));
+  await btn('Cancelar').click();
+  await choose('#photo-box label[for=pick-gallery]', F.pack); await page.waitForTimeout(700);
+  await page.click('#btn-barcode'); await page.waitForSelector('#bc-value', { timeout: 60000 });
+  check('Código de barras leído dentro de la foto del empaque', await page.locator('#bc-value').innerText() === EAN);
+  await btn('Usar en el formulario').click();
+  await page.fill('#f-ubicacion', 'Estante B-3');
+  await page.click('#btn-save'); await page.waitForSelector('#v-historial:not([hidden]) .rec');
+  check('Registro confirmado y guardado', /CALMADOL/.test(await page.locator('.rec').first().innerText()));
+
+  console.log('\nPrueba 4 — Almacenamiento persistente');
+  await page.close(); page = await ctx.newPage(); watch(page); await page.goto(URL0 + '#historial');
+  await page.waitForSelector('.rec');
+  const card = await page.locator('.rec').first().innerText();
+  check('Tras cerrar y reabrir, el registro sigue disponible', /CALMADOL/.test(card) && /AB12346/.test(card) && /05\/2027/.test(card) && card.includes(EAN));
+  check('La miniatura de la fotografía sigue disponible', await page.locator('.rec img.thumb').count() === 1);
+  await page.locator('.rec button', { hasText: 'Abrir' }).click(); await page.waitForSelector('.detail-photo');
+  const ph = await page.evaluate(() => new Promise(r => { const i = document.querySelector('.detail-photo'); const f = () => r([i.naturalWidth, i.naturalHeight]); i.complete && i.naturalWidth ? f() : (i.onload = f, i.onerror = () => r([0, 0])); }));
+  check('La fotografía completa se recupera de IndexedDB', ph[0] > 0, ph.join(' × ') + ' px');
+  check('El detalle distingue datos leídos (OCR / código) de datos manuales', /OCR/.test(await modalText()) && /código de barras/i.test(await modalText()));
+  await btn('Cerrar').click();
+  const stored = await page.evaluate(() => new Promise(r => { const q = indexedDB.open('farma-etiqueta'); q.onsuccess = () => { const g = q.result.transaction('photos').objectStore('photos').getAll(); g.onsuccess = () => r(g.result.map(p => ({ bytes: p.data.byteLength, isBuf: p.data instanceof ArrayBuffer }))); }; }));
+  check('La foto está guardada como bytes en IndexedDB (no como URL temporal)', stored.length === 1 && stored[0].isBuf && stored[0].bytes > 5000, JSON.stringify(stored));
+  // borrador: recuperación ante cierre inesperado
+  await page.click('.tabbar a[data-tab=registrar]'); await page.fill('#f-nombre', 'Borrador de prueba'); await page.waitForTimeout(900);
+  await page.close(); page = await ctx.newPage(); watch(page); await page.goto(URL0); await page.waitForSelector('#v-registrar:not([hidden])');
+  check('Cierre inesperado: el formulario sin guardar se recupera', await page.inputValue('#f-nombre') === 'Borrador de prueba');
+  await page.click('#btn-form-clear'); await btn('Descartar').click();
+  // duplicados
+  await page.fill('#f-nombre', 'calmadol'); await page.fill('#f-lote', 'ab12346'); await page.fill('#f-concentracion', '500 mg'); await page.fill('#f-codigoBarras', EAN);
+  await page.click('#btn-save'); await page.waitForSelector('.modal');
+  check('Control de duplicados: avisa antes de guardar un registro repetido', /duplicado/i.test(await modalText()));
+  await btn('Cancelar').click(); await page.click('#btn-form-clear'); await btn('Descartar').click();
+
+  console.log('\nPrueba 5 — Funcionamiento sin conexión');
+  await page.goto(URL0 + '#config'); await page.waitForSelector('#cf-status div');
+  await page.waitForFunction(() => /Disponibles sin conexión/.test(document.getElementById('cf-status').textContent), null, { timeout: 20000 }).catch(() => {});
+  check('Indicador: recursos OCR disponibles sin conexión (tras el primer uso)', /Disponibles sin conexión/.test(await page.locator('#cf-status').innerText()));
+  await ctx.setOffline(true);
+  await page.close(); page = await ctx.newPage(); watch(page);
+  await page.goto(URL0 + '#historial'); await page.waitForSelector('.rec');
+  check('Sin internet: la aplicación abre y muestra el historial', /CALMADOL/.test(await page.locator('.rec').first().innerText()));
+  check('Sin internet: el indicador de conexión lo informa', /Sin conexión/.test(await page.locator('#net-chip').innerText()));
+  await page.click('.tabbar a[data-tab=registrar]');
+  await choose('#photo-empty label[for=pick-gallery]', F.pack); await page.waitForSelector('#photo-box:not([hidden])');
+  await page.click('#btn-barcode'); await page.waitForSelector('#bc-value', { timeout: 60000 });
+  check('Sin internet: lectura de código de barras', await page.locator('#bc-value').innerText() === EAN); await btn('Usar en el formulario').click();
+  await page.click('#btn-ocr'); await page.waitForSelector('.ocr-row', { timeout: 180000 });
+  const offLote = await page.locator('.ocr-row', { hasText: 'Número de lote' }).locator('input:not([type=checkbox])').inputValue();
+  check('Sin internet: OCR completo (motor, WASM e idiomas locales)', offLote === 'AB12345', offLote);
+  await btn('Aplicar al formulario').click(); await page.fill('#f-nombre', 'Producto offline'); await page.click('#btn-save');
+  await page.waitForSelector('#v-historial:not([hidden]) .rec');
+  check('Sin internet: registrar un producto', await page.locator('.rec').count() === 2);
+  await page.locator('.rec', { hasText: 'Producto offline' }).locator('button', { hasText: 'Editar' }).click();
+  await page.waitForSelector('#v-registrar:not([hidden])'); await page.fill('#f-observaciones', 'Editado sin conexión'); await page.click('#btn-save');
+  await page.waitForSelector('#v-historial:not([hidden]) .rec');
+  await page.fill('#h-search', 'offline ab12345');
+  check('Sin internet: editar un registro y buscarlo por nombre + lote', await page.locator('.rec').count() === 1);
+  await page.fill('#h-search', EAN); check('Búsqueda por código de barras', await page.locator('.rec').count() === 2);
+  await page.fill('#h-search', 'andinos'); check('Búsqueda por laboratorio', await page.locator('.rec').count() === 2);
+  await page.fill('#h-search', 'acetaminofen'); check('Búsqueda por principio activo (sin tildes)', await page.locator('.rec').count() >= 1);
+  await page.fill('#h-search', ''); await page.selectOption('#h-filter', 'vencido'); check('Filtro «vencidos» (ninguno en los datos de prueba)', await page.locator('.rec').count() === 0);
+  await page.selectOption('#h-filter', '');
+
+  console.log('\nPrueba 6 — Rótulos, impresión y exportación (aún sin conexión)');
+  await page.locator('.rec', { hasText: 'CALMADOL' }).first().locator('button', { hasText: 'Rótulo' }).click();
+  await page.waitForSelector('#lb-preview svg');
+  check('Sin internet: se generan rótulos con vista previa', true);
+  await page.locator('#lb-items input[type=number]').fill('30'); await page.locator('#lb-items input[type=number]').dispatchEvent('input');
+  await page.selectOption('#lb-size', '1'); await page.fill('#sh-cols', '2'); await page.fill('#sh-rows', '5');
+  let sum = await page.locator('#sh-summary').innerText();
+  check('30 rótulos con 10 por hoja → 3 páginas', /10 rótulo\(s\) por hoja/.test(sum) && /3 página/.test(sum), sum);
+  // Medidas físicas y textos sin recortes en todos los tamaños
+  const sizes = await page.$$eval('#lb-size option', o => o.map(x => [x.value, x.textContent]));
+  let allFit = true, detail = [];
+  for (const [v, name] of sizes.filter(s => s[0] !== '-1')) {
+    await page.selectOption('#lb-size', v); await page.click('#sh-auto'); await page.waitForTimeout(60);
+    const r = await page.evaluate(() => {
+      const w = +document.getElementById('lb-w').value, h = +document.getElementById('lb-h').value;
+      const svg = document.querySelector('#lb-preview svg'), g = svg.querySelector('g[transform]');
+      let out = 0, n = 0, overlap = 0; const boxes = [];
+      for (const t of g.querySelectorAll('text')) { const b = t.getBBox(); n++; if (b.x < -0.05 || b.x + b.width > w + 0.05 || b.y < -0.05 || b.y + b.height > h + 0.05) out++; boxes.push(b); }
+      for (let i = 1; i < boxes.length; i++) if (boxes[i].y + boxes[i].height * 0.2 < boxes[i - 1].y + boxes[i - 1].height * 0.55) overlap++;
+      const bars = g.querySelector('g[shape-rendering]'); let barOk = true;
+      if (bars) { const b = bars.getBBox(); barOk = b.x >= 0 && b.x + b.width <= w && b.y + b.height <= h; }
+      return { w, h, n, out, overlap, bars: !!bars, barOk, warn: document.getElementById('lb-warnings').innerText, err: !document.getElementById('sh-error').hidden };
+    });
+    if (r.out || r.overlap || !r.barOk || r.err || !r.n) allFit = false;
+    detail.push(`${r.w}×${r.h}: ${r.n} líneas${r.bars ? '+barras' : ''}${r.warn ? ' (aviso)' : ''}`);
+  }
+  check('Los 10 tamaños predefinidos: texto dentro del rótulo, sin cortes ni superposición', allFit, detail.join(' · '));
+  await page.selectOption('#lb-size', '4'); await page.waitForTimeout(60);
+  check('Rótulo 20 × 10 mm: el código de barras se omite con aviso en vez de imprimirse ilegible', /código de barras no cabe/.test(await page.locator('#lb-warnings').innerText()));
+  await page.selectOption('#lb-size', '-1'); await page.fill('#lb-w', '60'); await page.fill('#lb-h', '35'); await page.click('#sh-auto');
+  sum = await page.locator('#sh-summary').innerText(); check('Tamaño personalizado 60 × 35 mm', /60 × 35 mm/.test(sum), sum);
+  await page.fill('#sh-cols', '9'); await page.locator('#sh-cols').dispatchEvent('input');
+  check('Distribución imposible: error claro e impresión deshabilitada', await page.locator('#sh-error').isVisible() && await page.locator('#lb-print').isDisabled());
+  // Impresión CSS: se captura el resultado real del motor de impresión de Chromium
+  await page.selectOption('#lb-size', '1'); await page.selectOption('#sh-paper', 'Carta'); await page.fill('#sh-cols', '2'); await page.fill('#sh-rows', '4');
+  await page.fill('#sh-mt', '12'); await page.fill('#sh-ml', '15'); await page.fill('#sh-gh', '4'); await page.fill('#sh-gv', '5'); await page.locator('#sh-gv').dispatchEvent('input');
+  await page.evaluate(() => { window.print = () => {}; }); await page.click('#lb-print');
+  const geo = await page.evaluate(() => { const s = document.querySelector('#print-root svg'); return { n: document.querySelectorAll('#print-root svg').length, w: s.getAttribute('width'), h: s.getAttribute('height'),
+    page: document.getElementById('page-style').textContent, cells: [...s.querySelectorAll(':scope > g')].slice(0, 3).map(g => g.getAttribute('transform')), per: s.querySelectorAll(':scope > g').length }; });
+  check('Impresión: hoja Carta en mm reales, márgenes y separaciones configurados', geo.w === '215.9mm' && geo.h === '279.4mm' && /size:215.9mm 279.4mm;margin:0/.test(geo.page) && geo.cells[0] === 'translate(15 12)' && geo.cells[1] === 'translate(89 12)' && geo.cells[2] === 'translate(15 67)', JSON.stringify(geo));
+  check('Impresión: 30 rótulos a 8 por hoja → 4 páginas, sin rótulos adicionales', geo.n === 4 && geo.per === 8 && await page.evaluate(() => document.querySelectorAll('#print-root svg > g').length) === 30);
+  await page.emulateMedia({ media: 'print' });
+  const pdfPrint = (await page.pdf({ preferCSSPageSize: true, printBackground: true })).toString('latin1');
+  await page.emulateMedia({ media: 'screen' });
+  const mb = pdfPrint.match(/\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)/), pc = (pdfPrint.match(/\/Type\s*\/Page[^s]/g) || []).length;
+  check('Motor de impresión (PDF del navegador): 4 páginas tamaño Carta, sin página en blanco extra', pc === 4 && mb && Math.abs(mb[1] - 612) < 1.5 && Math.abs(mb[2] - 792) < 1.5, `${pc} páginas, ${mb?.[1]} × ${mb?.[2]} pt`);
+  // PDF propio
+  let [dl] = await Promise.all([page.waitForEvent('download'), page.click('#lb-pdf')]);
+  const pdf = fs.readFileSync(await dl.path()).toString('latin1');
+  const pm = pdf.match(/\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)/), pn = (pdf.match(/\/Type\s*\/Page[^s]/g) || []).length;
+  check('Exportar PDF: 4 páginas de 215,9 × 279,4 mm (medida real)', pn === 4 && Math.abs(pm[1] / 72 * 25.4 - 215.9) < 0.2 && Math.abs(pm[2] / 72 * 25.4 - 279.4) < 0.2, `${pn} pág., ${(pm[1] / 72 * 25.4).toFixed(1)} × ${(pm[2] / 72 * 25.4).toFixed(1)} mm`);
+  // Word
+  [dl] = await Promise.all([page.waitForEvent('download'), page.click('#lb-docx')]);
+  const docxPath = path.join(require('os').tmpdir(), 'fe-test.docx'); await dl.saveAs(docxPath);
+  const xml = require('child_process').execSync(`unzip -p "${docxPath}" word/document.xml`, { maxBuffer: 1e8 }).toString();
+  const media = require('child_process').execSync(`unzip -l "${docxPath}"`).toString();
+  check('Exportar Word: DOCX con tablas y texto editable (no una imagen pegada)', (xml.match(/<w:tbl>/g) || []).length === 4 && /<w:t[^>]*>CALMADOL<\/w:t>/.test(xml) && /Lote: AB12346/.test(xml), `${(xml.match(/<w:tbl>/g) || []).length} tablas, ${(xml.match(/<w:tc>/g) || []).length} celdas`);
+  check('Exportar Word: medidas configuradas (celda 70 mm = 3969 twips, fila 50 mm exacta) y código de barras incluido', /w:w="3969"/.test(xml) && /w:val="2835" w:hRule="exact"|w:hRule="exact" w:val="2835"/.test(xml) && /media\/.*\.png/.test(media));
+
+  console.log('\nPrueba 7 — Respaldo y restauración');
+  await page.click('.tabbar a[data-tab=respaldo]');
+  [dl] = await Promise.all([page.waitForEvent('download'), page.click('#bk-export')]);
+  const bkPath = path.join(require('os').tmpdir(), 'fe-backup.json'); await dl.saveAs(bkPath);
+  const bk = JSON.parse(fs.readFileSync(bkPath, 'utf8'));
+  check('Respaldo exportado con registros y fotografías', bk.registros.length === 2 && bk.fotos.length === 2 && bk.fotos.every(f => bk.registros.some(r => r.id === f.id)), `${bk.registros.length} registros, ${bk.fotos.length} fotos, ${(fs.statSync(bkPath).size / 1024).toFixed(0)} KB`);
+  await page.click('.tabbar a[data-tab=historial]');
+  await page.locator('.rec', { hasText: 'Producto offline' }).locator('button', { hasText: 'Eliminar' }).click();
+  check('Eliminar pide confirmación', /no se puede deshacer/.test(await modalText())); await btn('Eliminar').click();
+  await page.waitForFunction(() => document.querySelectorAll('.rec').length === 1);
+  check('Registro de prueba eliminado', true);
+  await page.click('.tabbar a[data-tab=respaldo]');
+  const bad = fs.readFileSync(bkPath, 'utf8');
+  await page.setInputFiles('#pick-backup', { name: 'cortado.json', mimeType: 'application/json', buffer: Buffer.from(bad.slice(0, bad.length / 2)) });
+  await page.waitForSelector('.modal'); check('Respaldo truncado: detectado como dañado, sin modificar datos', /dañado|incompleto/.test(await modalText())); await btn('Cerrar').click();
+  await page.setInputFiles('#pick-backup', { name: 'alterado.json', mimeType: 'application/json', buffer: Buffer.from(bad.replace('AB12346', 'AB99999')) });
+  await page.waitForSelector('.modal'); check('Respaldo alterado: no supera la verificación de integridad', /integridad/.test(await modalText())); await btn('Cerrar').click();
+  await page.setInputFiles('#pick-backup', bkPath); await page.waitForSelector('.modal');
+  check('Restauración: advierte sobre registros que ya existen', /ya existen/.test(await modalText()));
+  await btn('Agregar solo los nuevos').click(); await page.waitForSelector('.toast.ok');
+  await page.click('.tabbar a[data-tab=historial]'); await page.waitForFunction(() => document.querySelectorAll('.rec').length === 2);
+  await page.locator('.rec', { hasText: 'Producto offline' }).locator('button', { hasText: 'Abrir' }).click(); await page.waitForSelector('.detail-photo');
+  const ph2 = await page.evaluate(() => new Promise(r => { const i = document.querySelector('.detail-photo'); const f = () => r(i.naturalWidth); i.complete && i.naturalWidth ? f() : (i.onload = f, i.onerror = () => r(0)); }));
+  check('Tras restaurar: el registro y su fotografía se recuperan', ph2 > 0 && /Editado sin conexión/.test(await modalText()));
+  await btn('Cerrar').click();
+  await page.click('.tabbar a[data-tab=respaldo]'); await page.setInputFiles('#pick-backup', bkPath); await page.waitForSelector('.modal');
+  await btn('Sobrescribir existentes').click(); await page.waitForFunction(() => /Confirmar sobrescritura/.test(document.querySelector('#modal-root').innerText));
+  check('Sobrescribir exige una confirmación adicional', true); await btn('Cancelar').click();
+
+  await ctx.setOffline(false);
+  console.log('\nGeneral');
+  const ovf = await page.evaluate(async () => { const out = []; for (const v of ['inicio', 'registrar', 'historial', 'rotulos', 'respaldo', 'config']) { location.hash = '#' + v; await new Promise(r => setTimeout(r, 150)); if (document.documentElement.scrollWidth > innerWidth + 1) out.push(v); } return out; });
+  check('Ninguna pantalla se desborda horizontalmente en teléfono (412 px)', ovf.length === 0, ovf.join(','));
+  const small = await page.evaluate(() => [...document.querySelectorAll('.btn,.tabbar a,.tile')].filter(b => b.offsetParent && b.getBoundingClientRect().height < 40).length);
+  check('Botones con altura táctil ≥ 40 px', small === 0, small + ' pequeños');
+  const realErr = errors.filter(e => !/Failed to load resource|net::ERR_INTERNET_DISCONNECTED/.test(e));
+  check('Sin errores de JavaScript durante toda la sesión', realErr.length === 0, realErr.slice(0, 3).join(' | '));
+
+  await browser.close(); server.close();
+  console.log(`\nResultado: ${results.length - failed} de ${results.length} comprobaciones correctas.`);
+  if (process.argv.includes('--md')) fs.writeFileSync(path.join(ROOT, 'docs', 'resultado-pruebas.md'), `# Resultado de las pruebas automáticas\n\nEjecución: ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC · Chromium ${browser.version()} · emulación Pixel 7 (Android).\n\n| Estado | Comprobación | Detalle |\n|---|---|---|\n` + results.map(r => `| ${r[0].trim()} | ${r[1]} | ${String(r[2]).replace(/\|/g, '\\|').slice(0, 300)} |`).join('\n') + `\n\n**${results.length - failed} de ${results.length} correctas.**\n`);
+  process.exit(failed ? 1 : 0);
+})().catch(e => { console.error('ERROR DE PRUEBA:', e); process.exit(2); });
