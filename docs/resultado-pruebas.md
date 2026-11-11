@@ -1,6 +1,6 @@
 # Resultado de las pruebas automáticas
 
-Ejecución: 2026-11-11 22:26 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
+Ejecución: 2026-11-11 22:31 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
 
 | Estado | Comprobación | Detalle |
 |---|---|---|
@@ -61,6 +61,9 @@ Ejecución: 2026-11-11 22:26 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Exportar PDF: 4 páginas de 215,9 × 279,4 mm (medida real) | 4 pág., 215.9 × 279.4 mm |
 | OK | Exportar Word: DOCX con tablas y texto editable (no una imagen pegada) | 4 tablas, 78 celdas |
 | OK | Exportar Word: medidas configuradas (celda 70 mm = 3969 twips, fila 50 mm exacta) y código de barras incluido |  |
+| OK | Botones separados: Ver PDF, Ver Word, Compartir PDF, Compartir Word | Imprimir · Ver PDF · Ver Word · Compartir PDF · Compartir Word |
+| OK | «Ver» en Android (navegador) descarga el archivo y explica cómo abrirlo |  |
+| OK | Compartir PDF y Compartir Word entregan archivos reales (sin menú Compartir en este navegador: se descargan) |  |
 | OK | Respaldo exportado con registros y fotografías | 2 registros, 2 fotos, 263 KB |
 | OK | Eliminar pide confirmación |  |
 | OK | Registro de prueba eliminado |  |
@@ -71,13 +74,13 @@ Ejecución: 2026-11-11 22:26 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Sobrescribir exige una confirmación adicional |  |
 | OK | Solo con elegir la foto se llenan nombre, concentración, lote, vencimiento, registro y laboratorio | 0.9 s · {"nombre":"CALMADOL","concentracion":"500 mg","lote":"AB12345","vencimiento":"05/2027","registroSanitario":"INVIMA 2019M-0012345","laboratorio":"Laboratorios Andinos S.A"} |
 | OK | Sin ventanas que confirmar: aviso en el formulario para revisar antes de guardar |  |
-| OK | Tiempo de lectura medido y mostrado (objetivo ≤ 10 s) | 0.5 s medidos por la app |
+| OK | Tiempo de lectura medido y mostrado (objetivo ≤ 10 s) | 0.4 s medidos por la app |
 | OK | Lo escrito a mano no se reemplaza: lo leído queda como sugerencia |  |
 | OK | Tocar la sugerencia la aplica |  |
-| OK | Lote y fechas faltantes se buscan en segundo plano sin bloquear la pantalla | Realzando la imagen… (puede seguir revisando el formulario) |
+| OK | Lote y fechas faltantes se buscan en segundo plano sin bloquear la pantalla | Tercera lectura con imagen realzada… 11 % (puede seguir revisando el formulario) |
 | OK | Al terminar informa lo que no encontró y no inventa lote ni vencimiento |  |
 | OK | Ninguna pantalla se desborda horizontalmente en teléfono (412 px) |  |
 | OK | Botones con altura táctil ≥ 40 px | 0 pequeños |
 | OK | Sin errores de JavaScript durante toda la sesión |  |
 
-**75 de 75 correctas.**
+**78 de 78 correctas.**

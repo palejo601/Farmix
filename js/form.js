@@ -102,6 +102,7 @@ function photoProgress(text, frac) {
 
 export async function setPhotoFromFile(file, after) {
   location.hash = '#registrar';
+  const tStart = performance.now();          // el tiempo mostrado incluye preparar la foto
   try {
     photoProgress('Leyendo la fotografía…', .05);
     const p = await processFile(file, photoProgress);
@@ -113,7 +114,7 @@ export async function setPhotoFromFile(file, after) {
     toast(errMsg(e), 'err', 6500);
     return;
   } finally { setTimeout(() => photoProgress(false), 600); }
-  if ((await db.kvGet('autoFill').catch(() => null)) !== false) { await autoFill(); return; }
+  if ((await db.kvGet('autoFill').catch(() => null)) !== false) { await autoFill(tStart); return; }
   if (after === 'ocr' || after === 'all') await runOCR();
 }
 
@@ -132,11 +133,11 @@ function setField(f, v, src) {
 // extra = otra fotografía (otra cara del empaque) que solo se lee; no reemplaza la foto guardada del registro.
 // Lectura de una foto: texto (en línea si está configurado; si no, en el teléfono).
 // extras=true añade en el mismo paso las lecturas extra de lote y fechas. No toca el formulario.
-async function analyze(source, extras = true) {
+async function analyze(source, extras = true, side = 2600) {
   let res, canvas, onlineErr = '';
   try {
     busy('Leyendo el texto de la foto…');
-    canvas = await blobToCanvas(source, 2600);
+    canvas = await blobToCanvas(source, side);
     // Con internet y clave configurada se usa primero el servicio en línea; si falla o no hay conexión, el OCR local.
     const on = await db.kvGet('onlineOcr').catch(() => null);
     if (on?.enabled && on.key && navigator.onLine) {
@@ -198,14 +199,15 @@ function suggest(field, value, note) {
   box.append(h('div', { class: 'sugg' }, h('span', {}, note + ' '),
     h('button', { type: 'button', class: 'btn small', onclick: e => { setField(field, value, 'ocr'); chips(); scheduleDraft(); e.target.closest('.sugg').remove(); } }, `Usar «${value}»`)));
 }
-export async function autoFill() {
+export async function autoFill(tStart) {
   if (!st.photo) { toast('Primero seleccione una fotografía.', 'warn'); return; }
   clearSuggestions();
   const note = $('#autofill-note'), label = Object.fromEntries(FIELDS);
-  let r; const t0 = performance.now();
+  let r; const t0 = tStart || performance.now();
   busy('Leyendo la foto…');
   const seq = ++readSeq;
-  try { r = await withPhoto(src => analyze(src, false)); }
+  // Primera lectura sobre la foto guardada (1800 px): rápida; lote y fechas se buscan después a más resolución.
+  try { r = await analyze(st.photo.blob, false, 1800).catch(() => withPhoto(src => analyze(src, false, 1800))); }
   catch (e) {
     busy(false); note.hidden = false; note.className = 'banner danger';
     note.textContent = 'No se pudo leer la foto: ' + errMsg(e) + ' Puede volver a intentarlo o escribir los datos.';

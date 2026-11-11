@@ -1,5 +1,5 @@
 // Pantalla de rótulos: selección de productos, tamaño, hoja, vista previa, impresión, PDF y Word.
-import { $, $$, h, toast, modal, busy, loadScript, download, isNative, stamp, errMsg } from './ui.js';
+import { $, $$, h, toast, modal, busy, loadScript, isNative, stamp, errMsg, viewFile, shareFile, preopen } from './ui.js';
 import * as db from './db.js';
 import { SIZES, LABEL_FIELDS, PAPERS, layoutLabel, sheetGeometry, maxFit, cellXY, pageSVG, runs } from './labels.js';
 
@@ -69,7 +69,7 @@ function update() {
   $('#sh-summary').textContent = geo.error ? '' : `${cfg.w} × ${cfg.h} mm · ${geo.per} rótulo(s) por hoja (${cfg.cols} × ${cfg.rows}) · ${labels.length} rótulo(s) en total · ${pages.length} página(s) de ${sh.pw} × ${sh.ph} mm`;
   $('#lb-warnings').replaceChildren(...[...warn].map(w => h('li', {}, w)));
   const ok = !geo.error && labels.length > 0;
-  for (const id of ['lb-print', 'lb-pdf', 'lb-docx']) $('#' + id).disabled = !ok;
+  for (const id of ['lb-print', 'lb-pdf', 'lb-docx', 'lb-pdf-share', 'lb-docx-share']) $('#' + id).disabled = !ok;
   const pv = $('#lb-preview');
   if (!ok) { pv.replaceChildren(h('p', { class: 'muted', style: 'margin:0' }, geo.error ? 'Corrija la distribución de la hoja para ver la vista previa.' : 'Agregue productos para ver la vista previa.')); return; }
   const shown = pages.slice(0, 12);
@@ -126,8 +126,9 @@ function print() {
 }
 
 // ---- PDF vectorial (jsPDF) con la misma geometría ----
-async function exportPDF() {
+async function exportPDF(mode) {
   if (!job || job.error || !job.total) return;
+  const win = mode === 'view' ? preopen() : null;
   busy('Generando PDF…');
   try {
     await loadScript('vendor/lib/jspdf.umd.min.js');
@@ -150,9 +151,10 @@ async function exportPDF() {
         }
       });
     });
-    await download(doc.output('blob'), `rotulos-${stamp()}.pdf`);
-    toast(`PDF generado: ${job.total} rótulo(s) en ${pages.length} página(s).`, 'ok');
-  } catch (e) { toast('No se pudo generar el PDF: ' + errMsg(e), 'err', 6000); }
+    const blob = doc.output('blob'), name = `rotulos-${stamp()}.pdf`;
+    busy(false);
+    if (mode === 'view') await viewFile(blob, name, win); else await shareFile(blob, name);
+  } catch (e) { win?.close(); toast('No se pudo ' + (mode === 'view' ? 'abrir' : 'compartir') + ' el PDF: ' + errMsg(e), 'err', 7000); }
   finally { busy(false); }
 }
 
@@ -164,8 +166,9 @@ async function barPNG(bits) {
   const blob = await new Promise(r => c.toBlob(r, 'image/png'));
   return new Uint8Array(await blob.arrayBuffer());
 }
-async function exportDOCX() {
+async function exportDOCX(mode) {
   if (!job || job.error || !job.total) return;
+  const win = mode === 'view' ? preopen() : null;
   busy('Generando documento Word…');
   try {
     await loadScript('vendor/lib/docx.iife.min.js');
@@ -213,9 +216,10 @@ async function exportDOCX() {
       properties: { page: { size: { width: tw(Math.min(sh.pw, sh.ph)), height: tw(Math.max(sh.pw, sh.ph)), orientation: land ? D.PageOrientation.LANDSCAPE : D.PageOrientation.PORTRAIT },
         margin: { top: tw(sh.mt), bottom: tw(Math.max(0, sh.mb - 2)), left: tw(sh.ml), right: tw(Math.max(0, sh.mr - 1)), header: 0, footer: 0, gutter: 0 } } },
       children }] });
-    await download(await D.Packer.toBlob(doc), `rotulos-${stamp()}.docx`);
-    toast(`Documento Word generado: ${job.total} rótulo(s). El texto y las tablas son editables.`, 'ok');
-  } catch (e) { toast('No se pudo generar el documento Word: ' + errMsg(e), 'err', 6000); }
+    const blob = await D.Packer.toBlob(doc), name = `rotulos-${stamp()}.docx`;
+    busy(false);
+    if (mode === 'view') await viewFile(blob, name, win); else await shareFile(blob, name);
+  } catch (e) { win?.close(); toast('No se pudo ' + (mode === 'view' ? 'abrir' : 'compartir') + ' el documento Word: ' + errMsg(e), 'err', 7000); }
   finally { busy(false); }
 }
 
@@ -263,8 +267,10 @@ export async function initLabels() {
   $('#lb-add').addEventListener('click', pick);
   $('#sh-auto').addEventListener('click', () => { readCfg(); const m = maxFit(sheet(), cfg.w, cfg.h); $('#sh-cols').value = m.cols; $('#sh-rows').value = m.rows; update(); });
   $('#lb-print').addEventListener('click', print);
-  $('#lb-pdf').addEventListener('click', exportPDF);
-  $('#lb-docx').addEventListener('click', exportDOCX);
+  $('#lb-pdf').addEventListener('click', () => exportPDF('view'));
+  $('#lb-docx').addEventListener('click', () => exportDOCX('view'));
+  $('#lb-pdf-share').addEventListener('click', () => exportPDF('share'));
+  $('#lb-docx-share').addEventListener('click', () => exportDOCX('share'));
   window.addEventListener('afterprint', () => { $('#print-root').innerHTML = ''; });
   document.addEventListener('fe:label', e => addLabelFor(e.detail));
 }

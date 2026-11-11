@@ -4,7 +4,7 @@ const appName = () => nativePlatform() === 'ios' ? 'App iPhone / iPad' : 'App An
 import * as db from './db.js';
 import { initOCR, recognizeOnline, OCR_BASE, OCR_CORES } from './ocr.js';
 
-export const APP_VERSION = '1.6.1';
+export const APP_VERSION = '1.7.0';
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const secure = () => self.isSecureContext && 'serviceWorker' in navigator && 'caches' in self;
 let installEvt = null, swReg = null;
@@ -78,7 +78,7 @@ async function prepareOCR() {
     await navigator.serviceWorker.ready;
     // Se inicia el motor real: descarga exactamente lo que este dispositivo necesita y el service worker lo guarda.
     await initOCR((t) => show(t, .5));
-    const cache = await caches.open('fe-ocr-v1');
+    const cache = await caches.open('fe-ocr-v2');
     for (const u of OCR_BASE) if (!(await caches.match(new URL(u, document.baseURI).href))) await cache.add(u);
     show('Verificando…', .95);
     if (await ocrOffline()) toast('OCR listo para trabajar sin conexión.', 'ok');

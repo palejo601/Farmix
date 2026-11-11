@@ -3,9 +3,9 @@
 // - Guarda los recursos OCR la primera vez que se usan (caché separada que NO se borra al actualizar).
 // - Nunca toca IndexedDB: actualizar la aplicación no elimina registros ni fotografías.
 // Para publicar una versión nueva, cambie VERSION.
-const VERSION = '1.6.1';
+const VERSION = '1.7.0';
 const SHELL = 'fe-shell-' + VERSION;
-const OCR = 'fe-ocr-v1';
+const OCR = 'fe-ocr-v2';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/app.js', 'js/ui.js', 'js/db.js', 'js/photos.js', 'js/ocr.js', 'js/extract.js', 'js/form.js',
@@ -20,7 +20,7 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (k.startsWith('fe-shell-') && k !== SHELL) await caches.delete(k);
+    for (const k of await caches.keys()) if ((k.startsWith('fe-shell-') && k !== SHELL) || k === 'fe-ocr-v1') await caches.delete(k);   // fe-ocr-v1: modelos OCR anteriores (más lentos)
     await self.clients.claim();
   })());
 });
