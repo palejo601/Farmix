@@ -114,12 +114,19 @@ const EAN = '7701234567897';
   check('OCR extrae el vencimiento sin alterarlo', get('Fecha de vencimiento') === '05/2027', get('Fecha de vencimiento'));
   check('OCR extrae registro sanitario, laboratorio, forma y presentación', /2019M-0012345/.test(get('Registro sanitario') || '') && /Andinos/.test(get('Laboratorio') || '') && /Tabletas/i.test(get('Forma farmacéutica') || '') && /20 tabletas/.test(get('Presentación') || ''),
     [get('Registro sanitario'), get('Laboratorio'), get('Forma farmacéutica'), get('Presentación')].join(' | '));
-  check('La revisión muestra nivel de confianza y advierte que no es información verificada', rows.every(r => /Confianza/.test(r.conf)) && /NO es información farmacéutica verificada/.test(await modalText()));
+  check('La revisión muestra nivel de confianza y advierte que no es información verificada', rows.every(r => /Confianza|Código decodificado/.test(r.conf)) && /NO es información farmacéutica verificada/.test(await modalText()));
   check('Nada se escribe en el formulario antes de confirmar', await page.inputValue('#f-lote') === '');
   const loteInput = page.locator('.ocr-row', { hasText: 'Número de lote' }).locator('input:not([type=checkbox])');
   await loteInput.fill('AB12346');
   await btn('Aplicar al formulario').click();
   check('Corrección manual en la revisión y aplicación al formulario', await page.inputValue('#f-lote') === 'AB12346' && await page.inputValue('#f-nombre') === 'CALMADOL');
+  check('El OCR lee también el código de barras en el mismo paso', get('Código de barras') === EAN && await page.inputValue('#f-codigoBarras') === EAN, get('Código de barras'));
+  // Segunda fotografía (otra cara del empaque): solo se lee, no reemplaza la foto ni pisa datos ya escritos
+  const infoBefore = await page.locator('#photo-info').innerText();
+  await choose('#photo-box label[data-after=extra]', F.pack); await page.waitForSelector('.ocr-row', { timeout: 180000 });
+  const ex = await page.$$eval('.ocr-row', rs => rs.map(r => [r.querySelector('b').textContent, r.querySelector('input[type=checkbox]').checked]));
+  check('«Leer datos de otra foto»: propone los datos sin marcar los que ya están en el formulario y no cambia la foto guardada', ex.length >= 4 && ex.filter(r => r[0] === 'Nombre del producto' || r[0] === 'Número de lote').every(r => r[1] === false) && await page.locator('#photo-info').innerText() === infoBefore, JSON.stringify(ex));
+  await btn('Cancelar').click();
   // No inventa: empaque sin lote ni vencimiento
   await choose('#photo-box label[for=pick-gallery]', F.pack2); await page.waitForTimeout(700);
   await page.click('#btn-ocr'); await page.waitForSelector('.ocr-row', { timeout: 180000 });
