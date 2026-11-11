@@ -5,6 +5,7 @@ import { processFile, toStored, fromStored, blobToCanvas, freeCanvas, enhance } 
 import { recognize, recognizeOnline } from './ocr.js';
 import { extractFields, extractZone, dateOK } from './extract.js';
 import { liveScan } from './live.js';
+import { readBoxes, mergeBoxes } from './boxes.js';
 
 export const FIELDS = [
   ['nombre', 'Nombre del producto'], ['codigoBarras', 'Código de barras'], ['principioActivo', 'Principio activo'],
@@ -167,6 +168,8 @@ async function morePasses(canvas, o, prog, alive = () => true) {
     }
     o.res.text += '\n— Lectura adicional —\n' + r.text;
   };
+  // Primero las casillas impresas (L, F, V): recortes pequeños, rápidos de leer.
+  if (alive()) { try { mergeBoxes(o.fields, await readBoxes(canvas, t => prog(t))); } catch { /* sin casillas legibles */ } if (!miss('vencimiento')) o.warnings = []; }
   if (need()) merge(await recognize(canvas, (t, f) => prog('Segunda lectura (lote y fechas)…', f), true), 'Detectado en una segunda lectura de la imagen.', false);
   if (need()) {
     prog('Realzando la imagen…');
@@ -397,6 +400,13 @@ async function runZone(file = null) {
       catch { /* una lectura fallida no impide las demás */ }
       finally { if (c !== crop) freeCanvas(c); }
     }
+    // Casillas impresas dentro de la zona (L, F, V): cada letra se lee aparte y se une al valor de al lado o de abajo.
+    busy('Buscando casillas L, F y V…');
+    try {
+      const bx = await readBoxes(crop), found = {};
+      for (const f of bx) if (!f.doubt) found[f.field] = { value: f.value, labelled: true };
+      if (Object.keys(found).length) passes.push({ name: 'casillas', weight: 1.5, found, text: bx.map(f => f.notes[0] + ' ' + f.value).join('\n') });
+    } catch { /* sin casillas */ }
   }
   catch (e) { busy(false); await modal('No se pudo leer la zona', h('p', {}, errMsg(e))); return; }
   finally { freeCanvas(full); freeCanvas(crop); busy(false); }

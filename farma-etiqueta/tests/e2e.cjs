@@ -43,6 +43,13 @@ const EAN = '7701234567897';
       x.fillText('Laboratorios Andinos S.A.', 80, 560); x.fillText('Reg. San. INVIMA 2019M-0012345', 80, 650);
       if (kind === 'pack') { x.font = 'bold 56px Arial'; x.fillText('LOTE: AB12345', 80, 780); x.fillText('VENCE: 05/2027', 80, 870); }
     }
+    if (kind === 'boxes') {                                    // casillas impresas L / F / V con el valor al lado
+      x.font = 'bold 110px Arial'; x.fillText('LOSARTÁN MK', 80, 170); x.font = '60px Arial'; x.fillText('Losartán potásico 50 mg', 80, 280);
+      x.fillText('Caja x 30 tabletas', 80, 370);
+      [['L', '4B0123'], ['F', '05/2024'], ['V', '05/2027']].forEach(([k, v], i) => { const bx = 80 + i * 430, by = 600, S = 56;
+        x.lineWidth = 4; x.strokeRect(bx, by, S, S); x.font = 'bold 42px Arial'; x.textAlign = 'center'; x.fillText(k, bx + S / 2, by + 43); x.textAlign = 'left';
+        x.font = 'bold 50px monospace'; x.fillText(v, bx + S + 22, by + 46); });
+    }
     if (kind === 'ean' || kind === 'blur' || kind === 'pack') {
       const b = document.createElement('canvas'); JsBarcode(b, EAN, { format: 'EAN13', width: 4, height: 150, margin: 30 });
       if (kind === 'blur') x.filter = 'blur(2px)';
@@ -53,7 +60,7 @@ const EAN = '7701234567897';
   }, { kind, EAN })), 'base64');
   const F = { ean: { name: 'ean13.png', mimeType: 'image/png', buffer: await img('ean') }, blur: { name: 'borrosa.jpg', mimeType: 'image/jpeg', buffer: await img('blur') },
     none: { name: 'sin-codigo.jpg', mimeType: 'image/jpeg', buffer: await img('none') }, pack: { name: 'empaque.jpg', mimeType: 'image/jpeg', buffer: await img('pack') },
-    pack2: { name: 'empaque-sin-lote.jpg', mimeType: 'image/jpeg', buffer: await img('pack2') } };
+    pack2: { name: 'empaque-sin-lote.jpg', mimeType: 'image/jpeg', buffer: await img('pack2') }, boxes: { name: 'casillas.jpg', mimeType: 'image/jpeg', buffer: await img('boxes') } };
   const more = () => page.evaluate(() => { const d = document.getElementById('more-opts'); if (d) d.open = true; });
   const clickMore = async sel => { await more(); await page.click(sel); };
   const choose = async (sel, file) => { await more(); const [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 8000 }), page.click(sel)]); await fc.setFiles(file); return fc; };
@@ -324,6 +331,14 @@ const EAN = '7701234567897';
   check('Lote y fechas faltantes se buscan en segundo plano sin bloquear la pantalla', await page.evaluate(() => document.getElementById('busy').hidden) && !!await page.inputValue('#f-nombre'), await page.locator('#autofill-note .bg-read').innerText());
   await page.waitForFunction(() => /No se encontró|Encontrado/.test(document.querySelector('#autofill-note .bg-read').textContent), null, { timeout: 180000 });
   check('Al terminar informa lo que no encontró y no inventa lote ni vencimiento', /No se encontró/.test(await page.locator('#autofill-note .bg-read').innerText()) && await page.inputValue('#f-lote') === '' && await page.inputValue('#f-vencimiento') === '');
+  await page.click('#btn-form-clear'); await btn('Descartar').click();
+  console.log('\nCasillas impresas L / F / V');
+  await page.click('#btn-form-clear'); if (await btn('Descartar').count()) await btn('Descartar').click();
+  await choose('#photo-empty label[for=pick-gallery]', F.boxes);
+  await page.waitForSelector('#autofill-note:not([hidden])', { timeout: 180000 }); await waitIdle();
+  await page.waitForFunction(() => { const b = document.querySelector('#autofill-note .bg-read'); return !b || /No se encontró|Encontrado|Compare/.test(b.textContent); }, null, { timeout: 180000 });
+  const bxv = {}; for (const k of ['lote', 'fechaFabricacion', 'vencimiento']) bxv[k] = await page.inputValue('#f-' + k);
+  check('Casillas [L] [F] [V]: cada valor va a su campo, sin intercambiarse', bxv.lote === '4B0123' && bxv.fechaFabricacion === '05/2024' && bxv.vencimiento === '05/2027', JSON.stringify(bxv));
   await page.click('#btn-form-clear'); await btn('Descartar').click();
   console.log('\nEscáner en vivo (cámara simulada)');
   await page.evaluate(() => {
