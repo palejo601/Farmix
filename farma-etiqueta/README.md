@@ -26,6 +26,16 @@ La aplicación son archivos estáticos: no necesita servidor de aplicaciones, ba
 
 ### Publicarla (necesario para usarla en el teléfono)
 
+**Publicada en: https://palejo601.github.io/Farmix/** (GitHub Pages, rama `gh-pages`, que contiene solo esta carpeta).
+
+Para publicar una versión nueva, desde la raíz del repositorio:
+
+```bash
+git push origin $(git commit-tree $(git rev-parse HEAD:farma-etiqueta) -p origin/gh-pages -m "Publica nueva versión"):refs/heads/gh-pages
+```
+
+Para alojarla en otro sitio:
+
 Suba la carpeta `farma-etiqueta/` completa a cualquier alojamiento **HTTPS** de archivos estáticos:
 
 - **GitHub Pages**: en el repositorio → *Settings → Pages* → publicar la rama; la app queda en `https://USUARIO.github.io/REPO/farma-etiqueta/`.
