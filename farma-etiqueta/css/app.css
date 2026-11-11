@@ -188,3 +188,16 @@ details.more summary{cursor:pointer;min-height:44px;display:flex;align-items:cen
 #v-rotulos .sticky-actions .btn{grid-column:span 2;padding-left:6px;padding-right:6px;font-size:.92rem;min-height:44px;white-space:nowrap}
 #v-rotulos .sticky-actions #lb-pdf-share,#v-rotulos .sticky-actions #lb-docx-share{grid-column:span 3}
 #v-rotulos .sticky-actions .btn svg{width:18px;height:18px}
+/* Escáner en vivo */
+body.no-scroll{overflow:hidden}
+.live{position:fixed;inset:0;z-index:60;background:#000;display:flex;flex-direction:column;color:#fff;padding-bottom:env(safe-area-inset-bottom)}
+.live-view{position:relative;flex:1;min-height:0;overflow:hidden}
+.live-view video{width:100%;height:100%;object-fit:cover;display:block}
+.live-guide{position:absolute;left:5%;right:5%;top:28%;height:30%;border:3px solid #4ade80;border-radius:14px;box-shadow:0 0 0 2000px rgba(0,0,0,.45)}
+.live-guide span{position:absolute;left:0;right:0;top:-30px;text-align:center;font-size:.9rem;text-shadow:0 1px 3px #000}
+.live-status{margin:8px 12px 4px;font-size:.95rem}
+.live-list{display:flex;flex-wrap:wrap;gap:6px;margin:0 12px;max-height:22vh;overflow:auto}
+.live-list .chip{white-space:normal;max-width:100%}
+.live-list .chip.ok{background:#16a34a;color:#fff}
+.live-actions{display:flex;gap:8px;padding:10px 12px}
+.live-actions .btn{flex:1}

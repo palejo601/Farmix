@@ -4,6 +4,7 @@ import * as db from './db.js';
 import { processFile, toStored, fromStored, blobToCanvas, freeCanvas, enhance } from './photos.js';
 import { recognize, recognizeOnline } from './ocr.js';
 import { extractFields, extractZone, dateOK } from './extract.js';
+import { liveScan } from './live.js';
 
 export const FIELDS = [
   ['nombre', 'Nombre del producto'], ['codigoBarras', 'Código de barras'], ['principioActivo', 'Principio activo'],
@@ -114,6 +115,7 @@ export async function setPhotoFromFile(file, after) {
     toast(errMsg(e), 'err', 6500);
     return;
   } finally { setTimeout(() => photoProgress(false), 600); }
+  if (after === 'live') return;                          // foto tomada por el escáner en vivo: los datos ya se leyeron
   if ((await db.kvGet('autoFill').catch(() => null)) !== false) { await autoFill(tStart); return; }
   if (after === 'ocr' || after === 'all') await runOCR();
 }
@@ -234,6 +236,28 @@ export async function autoFill(tStart) {
     missing.length ? h('div', { class: 'miss', style: 'margin-top:6px' }, `No se encontró ${missing.join(' ni ')}: use «Marcar lote y fechas» o escríbalo.`) : null));
   toast(filled ? `Formulario llenado con ${filled} dato(s) de la foto.` : 'No se pudieron leer datos con seguridad en esta foto.', filled ? 'ok' : 'warn');
   if (missing.length || doubts.some(d => /lote|vencim|fabric/i.test(d))) background(r, seq, missing);
+}
+
+// ---- Escáner en vivo: los datos leídos varias veces iguales se llevan al formulario ----
+async function runLive() {
+  const r = await liveScan();
+  if (!r) return;
+  if (r.photo && !st.photo) await setPhotoFromFile(new File([r.photo], 'escaneo-en-vivo.jpg', { type: 'image/jpeg' }), 'live');
+  const label = Object.fromEntries(FIELDS); let n = 0; const sug = [];
+  clearSuggestions();
+  for (const [f, v] of Object.entries(r.values)) {
+    const cur = input(f)?.value.trim(); if (cur == null || cur === v) continue;
+    if (cur && st.origen[f] !== 'ocr') { suggest(f, v, 'En vivo se leyó otro valor:'); sug.push(label[f]); continue; }   // lo escrito a mano no se reemplaza
+    setField(f, v, 'ocr'); n++;
+  }
+  chips(); scheduleDraft();
+  const missing = ['lote', 'vencimiento'].filter(k => !input(k).value.trim()).map(k => label[k].toLowerCase());
+  const note = $('#autofill-note'); note.hidden = false; note.className = 'banner' + (n ? '' : ' danger');
+  note.replaceChildren(h('div', {}, h('b', {}, n ? `Escáner en vivo: ${n} campo(s) llenados` : 'El escáner en vivo no agregó datos nuevos'),
+    '. Compárelos con el empaque antes de guardar.',
+    sug.length ? h('div', { style: 'margin-top:6px' }, `Para revisar: ${sug.join(', ')} (vea la sugerencia bajo cada campo).`) : null,
+    missing.length ? h('div', { style: 'margin-top:6px' }, `Falta ${missing.join(' y ')}: vuelva a escanear esa parte o escríbalo.`) : null));
+  toast(n ? `${n} dato(s) del escáner en vivo en el formulario.` : 'No se agregaron datos nuevos.', n ? 'ok' : 'warn');
 }
 
 // Busca lote y fechas sin bloquear la pantalla: el usuario puede revisar y escribir mientras tanto.
@@ -458,6 +482,7 @@ export function initForm() {
   $('#btn-ocr').addEventListener('click', () => runOCR());
   $('#btn-zone').addEventListener('click', () => runZone());
   $('#btn-auto').addEventListener('click', () => autoFill());
+  $$('.btn-live').forEach(b => b.addEventListener('click', runLive));
 
   // Selectores de archivo: la apertura la hace el propio <label for>, en el mismo gesto del usuario.
   let after = null;

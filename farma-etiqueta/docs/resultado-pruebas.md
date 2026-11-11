@@ -1,6 +1,6 @@
 # Resultado de las pruebas automáticas
 
-Ejecución: 2026-11-11 22:31 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
+Ejecución: 2026-11-11 22:39 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
 
 | Estado | Comprobación | Detalle |
 |---|---|---|
@@ -11,7 +11,7 @@ Ejecución: 2026-11-11 22:31 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | La fotografía se puede eliminar (con confirmación) |  |
 | OK | Archivo dañado: mensaje comprensible y sin bloqueo | La fotografía está dañada o no se puede abrir. Elija otra imagen. |
 | OK | Archivo que no es imagen: rechazado por contenido, no por extensión |  |
-| OK | El código no usa getUserMedia ni solicita cámara |  |
+| OK | La cámara solo se usa en el escáner en vivo (js/live.js), al pulsar su botón |  |
 | OK | La pantalla principal tiene únicamente: Escanear fotografía, Crear rótulo, Historial | Escanear fotografía · Crear rótulo · Historial |
 | OK | Lector de códigos eliminado (sin barcode.js, ZXing ni BarcodeDetector) |  |
 | OK | «Crear rótulo» abre el generador |  |
@@ -77,10 +77,12 @@ Ejecución: 2026-11-11 22:31 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Tiempo de lectura medido y mostrado (objetivo ≤ 10 s) | 0.4 s medidos por la app |
 | OK | Lo escrito a mano no se reemplaza: lo leído queda como sugerencia |  |
 | OK | Tocar la sugerencia la aplica |  |
-| OK | Lote y fechas faltantes se buscan en segundo plano sin bloquear la pantalla | Tercera lectura con imagen realzada… 11 % (puede seguir revisando el formulario) |
+| OK | Lote y fechas faltantes se buscan en segundo plano sin bloquear la pantalla | Tercera lectura con imagen realzada… 36 % (puede seguir revisando el formulario) |
 | OK | Al terminar informa lo que no encontró y no inventa lote ni vencimiento |  |
+| OK | En vivo: nombre, lote y vencimiento se confirman leyéndolos varias veces | 0.4 s · ✓ Nombre: CALMADOL \| ✓ Concentración: 500 mg \| ✓ Lote: AB12345 \| ✓ Vencimiento: 05/2027 |
+| OK | «Usar datos» llena el formulario, guarda una foto del escaneo y apaga la cámara |  |
 | OK | Ninguna pantalla se desborda horizontalmente en teléfono (412 px) |  |
 | OK | Botones con altura táctil ≥ 40 px | 0 pequeños |
 | OK | Sin errores de JavaScript durante toda la sesión |  |
 
-**78 de 78 correctas.**
+**80 de 80 correctas.**
