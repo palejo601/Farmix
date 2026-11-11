@@ -172,3 +172,11 @@ pre.raw{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);padding
 .zone-wrap img{display:block;width:100%;height:auto;pointer-events:none;-webkit-user-drag:none}
 .zone-box{position:absolute;border:2.5px solid var(--em);box-shadow:0 0 0 9999px rgba(0,0,0,.5);border-radius:4px;pointer-events:none}
 .zone-shot{display:block;width:100%;max-height:42vh;object-fit:contain;background:#111;border-radius:10px;margin-bottom:8px}
+
+/* Llenado automático */
+#autofill-note{display:block}
+#autofill-note b{display:block;margin-bottom:2px}
+.sugg{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px;padding:8px 10px;background:#fffbeb;border:1px solid #f0b429;border-radius:10px;font-size:.85rem;color:#93370d}
+.sugg .btn{min-height:40px}
+details.more{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
+details.more summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:600;color:var(--g800)}

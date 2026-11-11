@@ -42,6 +42,7 @@ function showPhoto() {
 
 function fill(rec) {
   for (const [f] of FIELDS) { input(f).value = rec?.[f] || ''; input(f).classList.remove('invalid'); }
+  clearSuggestions(); $('#autofill-note').hidden = true;
   $('#form-error').hidden = true;
   $('#form-title').textContent = st.id ? 'Editar registro' : 'Registrar producto';
   $('#btn-save').lastChild.textContent = st.id ? 'Guardar cambios' : 'Guardar registro';
@@ -106,13 +107,14 @@ export async function setPhotoFromFile(file, after) {
     photoProgress('Leyendo la fotografía…', .05);
     const p = await processFile(file, photoProgress);
     st.photo = { blob: p.blob, w: p.w, h: p.h }; st.thumb = p.thumb; st.photoState = 'new';
-    st.src = file;                                         // original a resolución completa: mejora la lectura de letra pequeña
+    st.src = p.hi;                                         // copia de lectura en memoria (no se reabre el archivo original)
     showPhoto(); scheduleDraft();
     toast(`Fotografía lista (${fmtBytes(p.original)} → ${fmtBytes(p.blob.size)}).`, 'ok');
   } catch (e) {
     toast(errMsg(e), 'err', 6500);
     return;
   } finally { setTimeout(() => photoProgress(false), 600); }
+  if ((await db.kvGet('autoFill').catch(() => null)) !== false) { await autoFill(); return; }
   if (after === 'barcode') await runBarcode();
   else if (after === 'ocr' || after === 'all') await runOCR();
 }
@@ -133,7 +135,7 @@ async function runBarcode(chained = false) {
   for (;;) {
     let r, err = null;
     busy('Buscando código de barras…');
-    try { r = await readBarcode(st.src || st.photo.blob, busy); } catch (e) { err = e; } finally { busy(false); }
+    try { r = await withPhoto(src => readBarcode(src, busy)); } catch (e) { err = e; } finally { busy(false); }
     if (err) { await modal('No se pudo leer el código', h('p', {}, errMsg(err))); return; }
     if (!r) {
       const again = await modal('No se detectó ningún código de barras', h('div', {},
@@ -160,17 +162,14 @@ async function runBarcode(chained = false) {
 
 // ---- OCR con pantalla de revisión ----
 // extra = otra fotografía (otra cara del empaque) que solo se lee; no reemplaza la foto guardada del registro.
-async function runOCR(extra = null) {
-  if (!(extra instanceof Blob)) extra = null;
-  if (!extra && !st.photo) { toast('Primero seleccione una fotografía.', 'warn'); return; }
-  const source = extra || st.src || st.photo.blob;
+// Lectura completa de una foto: código de barras, texto (en línea si está configurado; si no, en el teléfono)
+// y lecturas extra cuando faltan lote o vencimiento. No toca el formulario.
+async function analyze(source, wantCode) {
   let res, canvas, fields, warnings, code = null, onlineErr = '';
-  busy('Preparando OCR…');
   try {
-    // En el mismo paso se busca el código de barras (si el formulario aún no lo tiene).
-    if (!input('codigoBarras').value.trim()) { try { code = await readBarcode(source, busy); } catch { code = null; } }
-    busy('Preparando OCR…');
-    canvas = await blobToCanvas(source, 3000);
+    if (wantCode) { try { code = await readBarcode(source, busy); } catch { code = null; } }
+    busy('Leyendo el texto de la foto…');
+    canvas = await blobToCanvas(source, 2600);
     // Con internet y clave configurada se usa primero el servicio en línea; si falla o no hay conexión, el OCR local.
     const on = await db.kvGet('onlineOcr').catch(() => null);
     if (on?.enabled && on.key && navigator.onLine) {
@@ -197,11 +196,70 @@ async function runOCR(extra = null) {
       try { merge(await recognize(ec, (t, f) => busy('Tercera lectura con imagen realzada…', f), true), 'Leído tras realzar la imagen (impresión tenue o por puntos): este tipo de lectura falla con frecuencia. Compárelo carácter por carácter con el empaque antes de marcarlo.', true); }
       finally { freeCanvas(ec); }
     }
-  }
-  catch (e) { busy(false); await modal('No se pudo reconocer el texto', h('div', {}, h('p', {}, errMsg(e)), h('p', { class: 'muted small' }, 'Los datos del formulario no se modificaron. Puede ingresarlos manualmente.'))); return; }
-  finally { freeCanvas(canvas); busy(false); }
+  } finally { freeCanvas(canvas); }
+  return { fields, warnings, res, onlineErr, code };
+}
 
-  return review(fields, warnings, res, onlineErr, extra, code);
+// Usa la copia de lectura en alta resolución; si no se puede abrir, la foto guardada del registro.
+async function withPhoto(fn) {
+  try { return await fn(st.src || st.photo.blob); }
+  catch (e) { if (st.src && st.photo) { st.src = null; return fn(st.photo.blob); } throw e; }
+}
+
+async function runOCR(extra = null) {
+  if (!(extra instanceof Blob)) extra = null;
+  if (!extra && !st.photo) { toast('Primero seleccione una fotografía.', 'warn'); return; }
+  const wantCode = !input('codigoBarras').value.trim();
+  let r;
+  busy('Preparando la lectura…');
+  try { r = extra ? await analyze(extra, wantCode) : await withPhoto(src => analyze(src, wantCode)); }
+  catch (e) { busy(false); await modal('No se pudo reconocer el texto', h('div', {}, h('p', {}, errMsg(e)), h('p', { class: 'muted small' }, 'Los datos del formulario no se modificaron. Puede ingresarlos manualmente.'))); return; }
+  finally { busy(false); }
+  return review(r.fields, r.warnings, r.res, r.onlineErr, extra, r.code);
+}
+
+// ---- Llenado automático: al elegir la foto el formulario se completa solo ----
+function clearSuggestions() { $$('#product-form .sugg').forEach(e => e.remove()); }
+function suggest(field, value, note) {
+  const box = input(field)?.parentElement; if (!box) return;
+  box.querySelector('.sugg')?.remove();
+  box.append(h('div', { class: 'sugg' }, h('span', {}, note + ' '),
+    h('button', { type: 'button', class: 'btn small', onclick: e => { setField(field, value, 'ocr'); chips(); scheduleDraft(); e.target.closest('.sugg').remove(); } }, `Usar «${value}»`)));
+}
+export async function autoFill() {
+  if (!st.photo) { toast('Primero seleccione una fotografía.', 'warn'); return; }
+  clearSuggestions();
+  const note = $('#autofill-note'), label = Object.fromEntries(FIELDS);
+  let r;
+  busy('Leyendo la foto…');
+  try { r = await withPhoto(src => analyze(src, true)); }
+  catch (e) {
+    busy(false); note.hidden = false; note.className = 'banner danger';
+    note.textContent = 'No se pudo leer la foto: ' + errMsg(e) + ' Puede volver a intentarlo o escribir los datos.';
+    return;
+  } finally { busy(false); }
+  const { fields, res, onlineErr, code } = r;
+  if (code) fields.push({ field: 'codigoBarras', value: code.value, conf: null, doubt: false, code });
+  let filled = 0; const doubts = [];
+  for (const f of fields) {
+    const cur = input(f.field).value.trim(), src = st.origen[f.field];
+    const mine = cur && src !== 'ocr' && src !== 'codigo';          // lo escrito por el usuario nunca se reemplaza
+    if (cur === f.value) continue;
+    const weak = f.doubt || (f.conf != null && f.conf < 60);
+    if (weak || mine) { suggest(f.field, f.value, weak ? 'Lectura dudosa, verifíquela:' : 'En la foto se leyó otro valor:'); doubts.push(label[f.field]); continue; }
+    setField(f.field, f.value, f.code ? 'codigo' : 'ocr');
+    if (f.code) st.formatoCodigo = f.code.format;
+    filled++;
+  }
+  chips(); scheduleDraft();
+  const missing = ['lote', 'vencimiento'].filter(k => !input(k).value.trim() && !fields.some(x => x.field === k)).map(k => label[k].toLowerCase());
+  note.hidden = false; note.className = 'banner' + (filled ? '' : ' danger');
+  note.replaceChildren(h('div', {},
+    h('b', {}, filled ? `Se llenaron ${filled} campo(s) desde la foto` : 'No se pudo llenar ningún campo con seguridad'),
+    ` (${res.online ? 'lectura en línea' : 'lectura en el teléfono'}${onlineErr ? '; el servicio en línea no respondió' : ''}). Compruebe que coincidan con el empaque antes de guardar.`,
+    doubts.length ? h('div', { style: 'margin-top:6px' }, `Para revisar: ${doubts.join(', ')} (vea la sugerencia bajo cada campo).`) : null,
+    missing.length ? h('div', { style: 'margin-top:6px' }, `No se encontró ${missing.join(' ni ')}: use «Marcar lote y fechas» o escríbalo.`) : null));
+  toast(filled ? `Formulario llenado con ${filled} dato(s) de la foto.` : 'No se pudieron leer datos con seguridad en esta foto.', filled ? 'ok' : 'warn');
 }
 
 async function review(fields, warnings, res, onlineErr, extra, code) {
@@ -390,13 +448,14 @@ export function initForm() {
   form.addEventListener('submit', save);
   form.addEventListener('input', e => {
     const f = e.target.name;
-    if (f) { st.origen[f] = 'manual'; e.target.classList.remove('invalid'); $(`label[for="f-${f}"] .src`)?.remove(); scheduleDraft(); }
+    if (f) { st.origen[f] = 'manual'; e.target.classList.remove('invalid'); e.target.parentElement.querySelector('.sugg')?.remove(); $(`label[for="f-${f}"] .src`)?.remove(); scheduleDraft(); }
   });
   $('#btn-form-clear').addEventListener('click', () => newRecord());
   $('#btn-photo-del').addEventListener('click', removePhoto);
   $('#btn-barcode').addEventListener('click', () => runBarcode());
   $('#btn-ocr').addEventListener('click', () => runOCR());
   $('#btn-zone').addEventListener('click', () => runZone());
+  $('#btn-auto').addEventListener('click', () => autoFill());
 
   // Selectores de archivo: la apertura la hace el propio <label for>, en el mismo gesto del usuario.
   let after = null;

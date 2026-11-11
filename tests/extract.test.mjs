@@ -19,5 +19,6 @@ t('Composición: principio activo y concentración', ['Cada tableta contiene Lev
 t('No confunde «sódica 50» con una fecha', ['Levotiroxina sódica 50 mcg'], { vencimiento: null, 'vencimiento?': null });
 t('Almacenamiento (no «fuera del alcance de los niños»)', ['Manténgase fuera del alcance de los niños', 'Almacenar a temperatura inferior a 30 °C, en su', 'envase y empaque original.'], { condiciones: 'Almacenar a temperatura inferior a 30 °C, en su envase y empaque original' });
 t('Sin lote ni fecha: no inventa', ['CALMADOL', 'Tabletas recubiertas'], { lote: null, vencimiento: null, fechaFabricacion: null });
+t('Laboratorio por razón social (sin «Laboratorios»)', ['Levotiroxina MK', 'Tecnoquímicas S.A., Jamundí - Colombia'], { laboratorio: 'Tecnoquímicas S.A., Jamundí - Colombia' });
 console.log(bad ? `\n${bad} fallo(s)` : '\nTodas las reglas correctas');
 process.exit(bad ? 1 : 0);
