@@ -1,5 +1,5 @@
 // Pantalla de rótulos: selección de productos, tamaño, hoja, vista previa, impresión, PDF y Word.
-import { $, $$, h, toast, modal, busy, loadScript, download, stamp, errMsg } from './ui.js';
+import { $, $$, h, toast, modal, busy, loadScript, download, isNative, stamp, errMsg } from './ui.js';
 import * as db from './db.js';
 import { SIZES, LABEL_FIELDS, PAPERS, layoutLabel, sheetGeometry, maxFit, cellXY, pageSVG, runs } from './labels.js';
 
@@ -117,6 +117,7 @@ export async function showLabels() {
 // ---- Impresión con CSS: página y rótulos en milímetros reales ----
 function print() {
   if (!job || job.error || !job.total) return;
+  if (isNative()) { toast('En la app Android se genera el PDF: ábralo o envíelo a su impresora desde el menú que aparece.', '', 6000); return exportPDF(); }
   const { sh, pages } = job;
   let st = $('#page-style'); if (!st) { st = h('style', { id: 'page-style' }); document.head.append(st); }
   st.textContent = `@page{size:${sh.pw}mm ${sh.ph}mm;margin:0}`;
@@ -149,7 +150,7 @@ async function exportPDF() {
         }
       });
     });
-    download(doc.output('blob'), `rotulos-${stamp()}.pdf`);
+    await download(doc.output('blob'), `rotulos-${stamp()}.pdf`);
     toast(`PDF generado: ${job.total} rótulo(s) en ${pages.length} página(s).`, 'ok');
   } catch (e) { toast('No se pudo generar el PDF: ' + errMsg(e), 'err', 6000); }
   finally { busy(false); }
@@ -212,7 +213,7 @@ async function exportDOCX() {
       properties: { page: { size: { width: tw(Math.min(sh.pw, sh.ph)), height: tw(Math.max(sh.pw, sh.ph)), orientation: land ? D.PageOrientation.LANDSCAPE : D.PageOrientation.PORTRAIT },
         margin: { top: tw(sh.mt), bottom: tw(Math.max(0, sh.mb - 2)), left: tw(sh.ml), right: tw(Math.max(0, sh.mr - 1)), header: 0, footer: 0, gutter: 0 } } },
       children }] });
-    download(await D.Packer.toBlob(doc), `rotulos-${stamp()}.docx`);
+    await download(await D.Packer.toBlob(doc), `rotulos-${stamp()}.docx`);
     toast(`Documento Word generado: ${job.total} rótulo(s). El texto y las tablas son editables.`, 'ok');
   } catch (e) { toast('No se pudo generar el documento Word: ' + errMsg(e), 'err', 6000); }
   finally { busy(false); }

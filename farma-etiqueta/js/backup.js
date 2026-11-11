@@ -29,7 +29,7 @@ export async function exportBackup() {
     }
     parts.push(`],"totalFotos":${n}}`);
     const blob = new Blob(parts, { type: 'application/json' });
-    download(blob, `farma-etiqueta-respaldo-${stamp()}.json`);
+    await download(blob, `farma-etiqueta-respaldo-${stamp()}.json`);
     await db.kvSet('lastBackup', { at: Date.now(), records: records.length, photos: n });
     toast(`Respaldo creado: ${records.length} registro(s), ${n} fotografía(s), ${fmtBytes(blob.size)}. Guárdelo fuera de este dispositivo.`, 'ok', 7000);
     refreshBackup();

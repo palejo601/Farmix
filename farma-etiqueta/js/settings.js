@@ -1,5 +1,5 @@
 // Configuración y estado: conexión, almacenamiento, recursos OCR sin conexión, instalación y actualización.
-import { $, h, toast, confirmDlg, fmtBytes, errMsg } from './ui.js';
+import { $, h, toast, confirmDlg, fmtBytes, errMsg, isNative } from './ui.js';
 import * as db from './db.js';
 import { initOCR, OCR_BASE, OCR_CORES } from './ocr.js';
 
@@ -9,6 +9,7 @@ const secure = () => self.isSecureContext && 'serviceWorker' in navigator && 'ca
 let installEvt = null, swReg = null;
 
 export function mode() {
+  if (isNative()) return 'App Android instalada';
   if (location.protocol === 'file:') return 'Archivo local (funciones limitadas)';
   if (!secure()) return 'Sitio sin HTTPS (sin modo offline)';
   return standalone() ? 'Aplicación instalada (PWA)' : 'Sitio web HTTPS (instalable)';
@@ -16,6 +17,7 @@ export function mode() {
 
 // ¿Están guardados localmente todos los recursos que el OCR necesita en este dispositivo?
 export async function ocrOffline() {
+  if (isNative()) return true;                       // en la app todos los recursos van dentro del instalador
   if (!secure()) return false;
   try {
     const has = async u => !!(await caches.match(new URL(u, document.baseURI).href));
@@ -34,10 +36,10 @@ export async function refreshStatus() {
   netChip();
   const [ocr, n, est, persisted] = await Promise.all([ocrOffline(), db.countRecords().catch(() => null),
     navigator.storage?.estimate?.().catch(() => null), navigator.storage?.persisted?.().catch(() => false)]);
-  const sw = secure() ? (navigator.serviceWorker.controller ? 'Activo' : 'Instalándose…') : 'No disponible';
+  const sw = isNative() ? 'Activo' : secure() ? (navigator.serviceWorker.controller ? 'Activo' : 'Instalándose…') : 'No disponible';
   const rows = [
     ['Conexión', navigator.onLine ? 'En línea' : 'Sin conexión', navigator.onLine ? '' : 'warn'],
-    ['Modo de uso', mode(), secure() ? '' : 'bad'],
+    ['Modo de uso', mode(), secure() || isNative() ? '' : 'bad'],
     ['Aplicación sin conexión', sw, sw === 'Activo' ? '' : 'warn'],
     ['Recursos OCR', ocr ? 'Disponibles sin conexión' : 'Pendientes (requieren internet la primera vez)', ocr ? '' : 'warn'],
     ['Lector de códigos de barras', ('BarcodeDetector' in self ? 'Nativo + ZXing' : 'ZXing') + ' (local)', ''],
@@ -55,7 +57,8 @@ export async function refreshStatus() {
   $('#cf-ocr').hidden = ocr; $('#cf-persist').hidden = !!persisted || !navigator.storage?.persist;
   $('#cf-install-btn').hidden = !installEvt;
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  $('#cf-install').replaceChildren(h('p', {}, standalone() ? 'La aplicación ya está instalada en este dispositivo.'
+  $('#cf-install').replaceChildren(h('p', {}, isNative() ? 'Está usando la app Android instalada: todo funciona sin conexión. Para actualizarla, instale el APK nuevo encima (sin desinstalar) y conservará sus registros.'
+    : standalone() ? 'La aplicación ya está instalada en este dispositivo.'
     : location.protocol === 'file:' ? 'Un archivo HTML local no puede instalarse ni trabajar sin conexión. Publique la carpeta en un sitio HTTPS (vea README).'
     : !secure() ? 'Para instalarla y usarla sin conexión, la aplicación debe abrirse desde una dirección HTTPS.'
     : ios ? 'iPhone / iPad: abra esta página en Safari, toque Compartir (cuadro con flecha) y elija «Agregar a pantalla de inicio». No requiere App Store ni cuenta de desarrollador.'
@@ -83,7 +86,7 @@ async function prepareOCR() {
 }
 
 export async function registerSW() {
-  if (!secure()) return;
+  if (isNative() || !secure()) return;
   try {
     swReg = await navigator.serviceWorker.register('sw.js');
     const offer = w => { if (w && navigator.serviceWorker.controller) { $('#update-banner').hidden = false; $('#update-now').onclick = () => w.postMessage('skipWaiting'); } };
@@ -107,6 +110,7 @@ export function initSettings() {
     refreshStatus();
   });
   $('#cf-update').addEventListener('click', async () => {
+    if (isNative()) { toast('La app Android se actualiza instalando el APK de la versión nueva.', ''); return; }
     if (!swReg) { toast('Las actualizaciones automáticas requieren HTTPS.', 'warn'); return; }
     try { await swReg.update(); toast(swReg.waiting || swReg.installing ? 'Nueva versión encontrada.' : 'Ya tiene la versión más reciente.', 'ok'); }
     catch { toast('No se pudo buscar actualizaciones (¿sin conexión?).', 'warn'); }

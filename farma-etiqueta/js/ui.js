@@ -67,7 +67,19 @@ export function loadScript(src) {
   });
 }
 
-export function download(blob, name) {
+export const isNative = () => !!self.Capacitor?.isNativePlatform?.();
+
+// En la app Android el WebView no descarga archivos: se escribe el archivo y se abre el menú del sistema para guardarlo, abrirlo o enviarlo.
+async function nativeSave(blob, name) {
+  const { Filesystem, Share } = self.Capacitor.Plugins;
+  const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
+  const f = await Filesystem.writeFile({ path: name, data, directory: 'CACHE' });
+  try { await Share.share({ title: name, files: [f.uri], dialogTitle: 'Guardar o enviar ' + name }); }
+  catch (e) { if (!/cancel/i.test(e?.message || '')) throw e; }
+}
+
+export async function download(blob, name) {
+  if (isNative()) return nativeSave(blob, name);
   const url = URL.createObjectURL(blob);
   const a = h('a', { href: url, download: name });
   document.body.append(a); a.click(); a.remove();
