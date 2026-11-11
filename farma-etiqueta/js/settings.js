@@ -1,15 +1,16 @@
 // Configuración y estado: conexión, almacenamiento, recursos OCR sin conexión, instalación y actualización.
-import { $, h, toast, confirmDlg, fmtBytes, errMsg, isNative } from './ui.js';
+import { $, h, toast, confirmDlg, fmtBytes, errMsg, isNative, nativePlatform } from './ui.js';
+const appName = () => nativePlatform() === 'ios' ? 'App iPhone / iPad' : 'App Android';
 import * as db from './db.js';
 import { initOCR, OCR_BASE, OCR_CORES } from './ocr.js';
 
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.2.1';
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const secure = () => self.isSecureContext && 'serviceWorker' in navigator && 'caches' in self;
 let installEvt = null, swReg = null;
 
 export function mode() {
-  if (isNative()) return 'App Android instalada';
+  if (isNative()) return appName() + ' instalada';
   if (location.protocol === 'file:') return 'Archivo local (funciones limitadas)';
   if (!secure()) return 'Sitio sin HTTPS (sin modo offline)';
   return standalone() ? 'Aplicación instalada (PWA)' : 'Sitio web HTTPS (instalable)';
@@ -57,7 +58,7 @@ export async function refreshStatus() {
   $('#cf-ocr').hidden = ocr; $('#cf-persist').hidden = !!persisted || !navigator.storage?.persist;
   $('#cf-install-btn').hidden = !installEvt;
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  $('#cf-install').replaceChildren(h('p', {}, isNative() ? 'Está usando la app Android instalada: todo funciona sin conexión. Para actualizarla, instale el APK nuevo encima (sin desinstalar) y conservará sus registros.'
+  $('#cf-install').replaceChildren(h('p', {}, isNative() ? (nativePlatform() === 'ios' ? 'Está usando la app para iPhone / iPad instalada desde el computador: todo funciona sin conexión. Con un Apple ID gratuito la firma vence cada 7 días: vuelva a instalarla encima con el mismo programa (sin borrarla) y conservará sus registros.' : 'Está usando la app Android instalada: todo funciona sin conexión. Para actualizarla, instale el APK nuevo encima (sin desinstalar) y conservará sus registros.')
     : standalone() ? 'La aplicación ya está instalada en este dispositivo.'
     : location.protocol === 'file:' ? 'Un archivo HTML local no puede instalarse ni trabajar sin conexión. Publique la carpeta en un sitio HTTPS (vea README).'
     : !secure() ? 'Para instalarla y usarla sin conexión, la aplicación debe abrirse desde una dirección HTTPS.'
@@ -110,7 +111,7 @@ export function initSettings() {
     refreshStatus();
   });
   $('#cf-update').addEventListener('click', async () => {
-    if (isNative()) { toast('La app Android se actualiza instalando el APK de la versión nueva.', ''); return; }
+    if (isNative()) { toast(nativePlatform() === 'ios' ? 'La app se actualiza instalando el .ipa de la versión nueva desde el computador.' : 'La app Android se actualiza instalando el APK de la versión nueva.', ''); return; }
     if (!swReg) { toast('Las actualizaciones automáticas requieren HTTPS.', 'warn'); return; }
     try { await swReg.update(); toast(swReg.waiting || swReg.installing ? 'Nueva versión encontrada.' : 'Ya tiene la versión más reciente.', 'ok'); }
     catch { toast('No se pudo buscar actualizaciones (¿sin conexión?).', 'warn'); }

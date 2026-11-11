@@ -68,6 +68,7 @@ export function loadScript(src) {
 }
 
 export const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+export const nativePlatform = () => (self.Capacitor?.isNativePlatform?.() ? self.Capacitor.getPlatform?.() || 'android' : '');   // 'android' | 'ios' | ''
 export const isNative = () => !!self.Capacitor?.isNativePlatform?.();
 
 // En la app Android el WebView no descarga archivos: se escribe el archivo y se abre el menú del sistema para guardarlo, abrirlo o enviarlo.
