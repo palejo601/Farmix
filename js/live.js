@@ -5,7 +5,8 @@ import { h, toast, errMsg } from './ui.js';
 import { recognize } from './ocr.js';
 import { extractFields, extractZone } from './extract.js';
 
-const NEED = 2;   // lecturas iguales necesarias para dar un dato por seguro
+const NEED = 2;   // lecturas iguales necesarias para dar un dato por seguro (lote y fechas: 3, y sin otra lectura que compita)
+const need = f => ['lote', 'fechaFabricacion', 'vencimiento'].includes(f) ? 3 : NEED;
 const NAMES = { nombre: 'Nombre', principioActivo: 'Principio activo', concentracion: 'Concentración', formaFarmaceutica: 'Forma', presentacion: 'Presentación',
   laboratorio: 'Laboratorio', registroSanitario: 'Registro', lote: 'Lote', fechaFabricacion: 'Fabricación', vencimiento: 'Vencimiento' };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -18,45 +19,54 @@ function cameraError(e) {
   return 'No se pudo abrir la cámara: ' + errMsg(e);
 }
 
-// Devuelve { values: {campo: valor}, photo: Blob|null } o null si se cancela.
+// Devuelve { values: {campo: valor}, photo: Blob|null, read: bool } o null si se cancela.
+// read=true: el usuario pidió «Tomar foto y leer»: la foto se analiza completa como si viniera de la galería.
 export async function liveScan() {
   if (!navigator.mediaDevices?.getUserMedia) { toast(isSecureContext ? 'Este navegador no permite usar la cámara en vivo. Use «Elegir de la galería».' : 'La cámara en vivo requiere abrir la app por HTTPS o instalarla.', 'err', 7000); return null; }
   let stream;
-  try { stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } }); }
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 }, advanced: [{ focusMode: 'continuous' }] } }); }
   catch (e) { toast(cameraError(e), 'err', 8000); return null; }
   const track = stream.getVideoTracks()[0];
   const video = h('video', { autoplay: true, muted: true, playsinline: true, 'aria-label': 'Imagen de la cámara' });
   video.muted = true; video.setAttribute('playsinline', ''); video.srcObject = stream;
   const guide = h('div', { class: 'live-guide' }, h('span', {}, 'Ponga aquí el nombre, el lote o las fechas'));
   const status = h('p', { class: 'live-status', role: 'status' }, 'Preparando la lectura…');
+  const raw = h('p', { class: 'live-raw' }, '');
   const list = h('div', { class: 'live-list' });
   const torchBtn = h('button', { type: 'button', class: 'btn', hidden: true }, 'Linterna');
   const useBtn = h('button', { type: 'button', class: 'btn primary', disabled: true }, 'Usar datos');
+  const shotBtn = h('button', { type: 'button', class: 'btn' }, 'Tomar foto y leer');
   const closeBtn = h('button', { type: 'button', class: 'btn' }, 'Cerrar');
   const root = h('div', { class: 'live', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Escáner en vivo' },
-    h('div', { class: 'live-view' }, video, guide), status, list, h('div', { class: 'live-actions' }, closeBtn, torchBtn, useBtn));
+    h('div', { class: 'live-view' }, video, guide), status, raw, list, h('div', { class: 'live-actions' }, closeBtn, torchBtn, shotBtn, useBtn));
   document.body.append(root); document.body.classList.add('no-scroll');
   try { await video.play(); } catch { /* algunos navegadores ya lo reproducen solos */ }
 
+  try { await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch { /* sin enfoque continuo */ }
   let torch = false;
   try { if (track.getCapabilities?.().torch) torchBtn.hidden = false; } catch { /* sin linterna */ }
   torchBtn.onclick = async () => { try { torch = !torch; await track.applyConstraints({ advanced: [{ torch }] }); torchBtn.classList.toggle('primary', torch); } catch { toast('No se pudo encender la linterna.', 'warn'); } };
 
   const votes = {}, best = {};
+  // Seguro: leído igual varias veces y al menos el doble que cualquier otra lectura distinta (p. ej. 4B0123 frente a 480123).
+  const sure = f => !!best[f] && (best[f].forced || (best[f].n >= need(f) && best[f].n >= 2 * best[f].rival));
   const render = () => {
-    const sure = Object.keys(best).filter(f => best[f].n >= NEED);
-    list.replaceChildren(...Object.keys(NAMES).filter(f => best[f]).map(f =>
-      h('span', { class: 'chip' + (best[f].n >= NEED ? ' ok' : ' warn') }, `${best[f].n >= NEED ? '✓' : '…'} ${NAMES[f]}: ${best[f].v}`)));
-    useBtn.disabled = !sure.length; useBtn.textContent = sure.length ? `Usar ${sure.length} dato(s)` : 'Usar datos';
-    const falta = ['nombre', 'lote', 'vencimiento'].filter(f => !(best[f]?.n >= NEED)).map(f => NAMES[f].toLowerCase());
+    const okList = Object.keys(best).filter(f => sure(f));
+    // Un dato sin confirmar se puede aceptar tocándolo (si coincide con el empaque).
+    list.replaceChildren(...Object.keys(NAMES).filter(f => best[f]).map(f => sure(f)
+      ? h('span', { class: 'chip ok' }, `✓ ${NAMES[f]}: ${best[f].v}`)
+      : h('button', { type: 'button', class: 'chip warn', title: 'Tocar para aceptar', onclick: () => { best[f].forced = true; render(); } }, `… ${NAMES[f]}: ${best[f].v} (tocar si es correcto)`)));
+    useBtn.disabled = !okList.length; useBtn.textContent = okList.length ? `Usar ${okList.length} dato(s)` : 'Usar datos';
+    const falta = ['nombre', 'lote', 'vencimiento'].filter(f => !sure(f)).map(f => NAMES[f].toLowerCase());
     status.textContent = falta.length ? `Leyendo… falta: ${falta.join(', ')}. Acerque esa parte al recuadro, sin reflejos.` : 'Listo: nombre, lote y vencimiento leídos. Pulse «Usar datos».';
   };
-  const vote = (f, v) => {
+  const vote = (f, v, w = 1) => {
     if (!v) return;
-    const k = (votes[f] ||= {}); k[v] = (k[v] || 0) + 1;
-    const was = best[f]?.n >= NEED;
-    if (!best[f] || k[v] >= best[f].n) best[f] = { v, n: k[v] };
-    if (!was && best[f].n >= NEED && ['lote', 'vencimiento'].includes(f)) navigator.vibrate?.(60);
+    const k = (votes[f] ||= {}); k[v] = (k[v] || 0) + w;
+    const was = sure(f);
+    const [top, second = ['', 0]] = Object.entries(k).sort((a, b) => b[1] - a[1]);
+    best[f] = { v: top[0], n: top[1], rival: second[1], forced: best[f]?.forced && best[f].v === top[0] };
+    if (!was && sure(f) && ['lote', 'vencimiento'].includes(f)) navigator.vibrate?.(60);
   };
 
   // Recorta del video lo que se ve dentro del recuadro (el video se muestra recortado para llenar la pantalla).
@@ -85,9 +95,12 @@ export async function liveScan() {
       try {
         const r = await recognize(c, () => {}, n++ % 2 ? '11' : '6');   // alterna bloque y texto disperso
         if (!open) break;
-        for (const f of extractFields(r.lines).fields) if (!f.doubt && (f.conf == null || f.conf >= 55)) vote(f.field, f.value);
+        // Lectura muy clara (confianza ≥ 85 %) cuenta doble; con etiqueta (LOTE, VENCE…) cuenta 1; sin etiqueta, media.
+        for (const f of extractFields(r.lines).fields) if (!f.doubt && (f.conf == null || f.conf >= 55)) vote(f.field, f.value, f.conf >= 85 ? 2 : 1);
         const z = extractZone(r.lines);
-        for (const f of ['lote', 'fechaFabricacion', 'vencimiento']) if (z[f]?.labelled) vote(f, z[f].value);
+        for (const f of ['lote', 'fechaFabricacion', 'vencimiento']) if (z[f] && (z[f].labelled || f !== 'lote')) vote(f, z[f].value, z[f].labelled ? 1 : 0.5);   // un lote sin etiqueta no se adivina
+        const txt = r.text.replace(/\s+/g, ' ').trim();
+        raw.textContent = txt.length > 2 ? 'Texto visto: ' + txt.slice(0, 140) : 'No se ve texto en el recuadro: acerque la caja (a unos 10–15 cm), espere a que enfoque y evite reflejos.';
         render();
       } catch (e) { status.textContent = 'Error de lectura: ' + errMsg(e); await sleep(800); }
       finally { c.width = c.height = 0; }
@@ -96,9 +109,18 @@ export async function liveScan() {
 
   const result = await new Promise(res => {
     closeBtn.onclick = () => res(null);
+    shotBtn.onclick = async () => {
+      shotBtn.disabled = true; status.textContent = 'Tomando la foto…';
+      let photo = null;
+      try { photo = track.getCapabilities && self.ImageCapture ? await new ImageCapture(track).takePhoto() : null; } catch { photo = null; }   // máxima resolución si el teléfono lo permite
+      if (!photo) { try { photo = await frame(); } catch { photo = null; } }
+      if (!photo) { shotBtn.disabled = false; toast('No se pudo tomar la foto.', 'err'); return; }
+      const values = Object.fromEntries(Object.keys(best).filter(f => sure(f)).map(f => [f, best[f].v]));
+      res({ values, photo, read: true });
+    };
     useBtn.onclick = async () => {
       useBtn.disabled = true;
-      const values = Object.fromEntries(Object.keys(best).filter(f => best[f].n >= NEED).map(f => [f, best[f].v]));
+      const values = Object.fromEntries(Object.keys(best).filter(f => sure(f)).map(f => [f, best[f].v]));
       let photo = null; try { photo = await frame(); } catch { /* sin foto: se usan solo los datos */ }
       res({ values, photo });
     };

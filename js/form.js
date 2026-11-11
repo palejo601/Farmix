@@ -242,6 +242,13 @@ export async function autoFill(tStart) {
 async function runLive() {
   const r = await liveScan();
   if (!r) return;
+  if (r.read) {                                           // «Tomar foto y leer»: lectura completa de la foto (como desde la galería)
+    await setPhotoFromFile(new File([r.photo], 'foto-camara.jpg', { type: r.photo.type || 'image/jpeg' }), 'live');
+    if (!st.photo) return;
+    await autoFill();
+    for (const [f, v] of Object.entries(r.values)) if (!input(f).value.trim()) setField(f, v, 'ocr');
+    chips(); scheduleDraft(); return;
+  }
   if (r.photo && !st.photo) await setPhotoFromFile(new File([r.photo], 'escaneo-en-vivo.jpg', { type: 'image/jpeg' }), 'live');
   const label = Object.fromEntries(FIELDS); let n = 0; const sug = [];
   clearSuggestions();

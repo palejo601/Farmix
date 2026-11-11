@@ -201,3 +201,9 @@ body.no-scroll{overflow:hidden}
 .live-list .chip.ok{background:#16a34a;color:#fff}
 .live-actions{display:flex;gap:8px;padding:10px 12px}
 .live-actions .btn{flex:1}
+
+.live-raw{margin:0 12px 6px;font-size:.8rem;opacity:.8;max-height:3.6em;overflow:hidden}
+.live-list button.chip{border:0;font:inherit;font-size:.8rem;cursor:pointer;min-height:32px}
+.live-actions{flex-wrap:wrap}
+.live-actions .btn{flex:1 1 40%}
+.live-guide{top:22%;height:40%}
