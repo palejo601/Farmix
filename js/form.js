@@ -3,7 +3,7 @@ import { $, $$, h, toast, modal, confirmDlg, busy, fmtBytes, errMsg } from './ui
 import * as db from './db.js';
 import { processFile, toStored, fromStored, blobToCanvas, freeCanvas, enhance } from './photos.js';
 import { readBarcode, gtinCheck } from './barcode.js';
-import { recognize } from './ocr.js';
+import { recognize, recognizeOnline } from './ocr.js';
 import { extractFields } from './extract.js';
 
 export const FIELDS = [
@@ -164,13 +164,20 @@ async function runOCR(extra = null) {
   if (!(extra instanceof Blob)) extra = null;
   if (!extra && !st.photo) { toast('Primero seleccione una fotografía.', 'warn'); return; }
   const source = extra || st.src || st.photo.blob;
-  let res, canvas, fields, warnings, code = null;
+  let res, canvas, fields, warnings, code = null, onlineErr = '';
   busy('Preparando OCR…');
   try {
     // En el mismo paso se busca el código de barras (si el formulario aún no lo tiene).
     if (!input('codigoBarras').value.trim()) { try { code = await readBarcode(source, busy); } catch { code = null; } }
     busy('Preparando OCR…');
-    canvas = await blobToCanvas(source, 3000); res = await recognize(canvas, busy);
+    canvas = await blobToCanvas(source, 3000);
+    // Con internet y clave configurada se usa primero el servicio en línea; si falla o no hay conexión, el OCR local.
+    const on = await db.kvGet('onlineOcr').catch(() => null);
+    if (on?.enabled && on.key && navigator.onLine) {
+      try { res = await recognizeOnline(canvas, on.key, busy); }
+      catch (e) { onlineErr = errMsg(e); }
+    }
+    if (!res) res = await recognize(canvas, busy);
     ({ fields, warnings } = extractFields(res.lines));
     // Lecturas adicionales solo si faltan lote o vencimiento: suelen estar impresos aparte, por puntos o con poco contraste.
     const miss = f => !fields.some(x => x.field === f && !x.doubt);
@@ -211,6 +218,7 @@ async function runOCR(extra = null) {
     return { f, cb, inp, node };
   });
   const body = h('div', {},
+    h('p', { class: 'muted small' }, res.online ? 'Leído con el servicio en línea (OCR.space). La fotografía se envió a ese servicio.' : 'Leído con el OCR local del dispositivo' + (onlineErr ? `. El servicio en línea no se pudo usar: ${onlineErr}.` : '.')),
     h('p', { class: 'banner', style: 'border-radius:10px' }, 'Texto leído automáticamente: NO es información farmacéutica verificada. Compare cada dato con el empaque, corrija lo necesario y marque solo lo que desea usar.'),
     ...warnings.map(w => h('p', { class: 'banner danger', style: 'border-radius:10px' }, w)),
     rows.length ? rows.map(r => r.node) : h('p', { class: 'empty' }, 'No se identificó ningún campo con seguridad. No se completó ningún dato; puede ingresarlos manualmente.'),

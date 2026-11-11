@@ -230,6 +230,18 @@
     </div>
     <div id="cf-progress" class="progress" hidden role="status"><div class="bar"><i></i></div><span></span></div>
   </div>
+  <div class="card"><h3>Reconocimiento en línea (opcional)</h3>
+    <p>Con internet, la app puede leer las fotos con el servicio <b>OCR.space</b>, que acierta más que el OCR del teléfono (sobre todo en lote y fechas impresos por puntos). Sin internet, o si el servicio falla, se usa el OCR local como siempre.</p>
+    <p class="muted small">Al activarlo, cada fotografía que lea con internet <b>se envía a ese servicio externo</b>. Necesita una clave gratuita: regístrese con su correo en <b>ocr.space/ocrapi/freekey</b>, la recibirá por correo, y péguela aquí. La clave se guarda solo en este dispositivo. Ningún servicio garantiza una lectura perfecta: revise siempre los datos.</p>
+    <div class="fields">
+      <div class="field wide"><label for="on-key">Clave de OCR.space</label><input id="on-key" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="80" placeholder="Pegue aquí su clave"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="on-enabled"> Usar el servicio en línea cuando haya internet</label>
+    <div class="row">
+      <button type="button" class="btn primary" id="on-save">Guardar</button>
+      <button type="button" class="btn" id="on-test">Probar la clave</button>
+    </div>
+  </div>
   <div class="card"><h3>Instalación</h3><div id="cf-install"></div>
     <button type="button" class="btn primary" id="cf-install-btn" hidden>Instalar aplicación</button></div>
   <div class="card"><h3>Datos</h3>

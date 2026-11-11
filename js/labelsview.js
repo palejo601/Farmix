@@ -117,7 +117,7 @@ export async function showLabels() {
 // ---- Impresión con CSS: página y rótulos en milímetros reales ----
 function print() {
   if (!job || job.error || !job.total) return;
-  if (isNative()) { toast('En la app Android se genera el PDF: ábralo o envíelo a su impresora desde el menú que aparece.', '', 6000); return exportPDF(); }
+  if (isNative()) { toast('En la app instalada se genera el PDF: ábralo o envíelo a su impresora desde el menú que aparece.', '', 6000); return exportPDF(); }
   const { sh, pages } = job;
   let st = $('#page-style'); if (!st) { st = h('style', { id: 'page-style' }); document.head.append(st); }
   st.textContent = `@page{size:${sh.pw}mm ${sh.ph}mm;margin:0}`;
