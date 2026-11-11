@@ -3,6 +3,7 @@
 import { $, $$, toast, errMsg } from './ui.js';
 import * as db from './db.js';
 import { initForm, newRecord, restoreDraft } from './form.js';
+import { warmOCR } from './ocr.js';
 import { initHistory, refreshHistory } from './history.js';
 import { initLabels, showLabels } from './labelsview.js';
 import { initBackup, refreshBackup } from './backup.js';
@@ -35,5 +36,6 @@ async function start() {
   route();
   registerSW();
   refreshStatus(); refreshBackup();
+  setTimeout(warmOCR, 1500);   // motor OCR listo antes de elegir la primera foto
 }
 start();

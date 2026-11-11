@@ -41,7 +41,11 @@ export function initOCR(progress) {
 // Devuelve {text, confidence, lines:[{text, conf, height}]}
 // sparse también admite un modo de segmentación concreto ('6' = bloque de texto, '7' = un renglón).
 // sparse=true usa segmentación de «texto disperso»: recupera textos sueltos (lote, fecha) junto a códigos de barras o gráficos.
-export async function recognize(canvas, progress = () => {}, sparse = false) {
+let queue = Promise.resolve();
+export function recognize(...a) { const run = queue.then(() => recognizeNow(...a)); queue = run.catch(() => {}); return run; }
+// Prepara el motor en segundo plano al abrir la app, para que la primera foto no espere su arranque.
+export function warmOCR() { initOCR().catch(() => {}); }
+async function recognizeNow(canvas, progress = () => {}, sparse = false) {
   const w = await initOCR(progress);
   try {
     await w.setParameters({ tessedit_pageseg_mode: sparse === true ? '11' : sparse || '3', user_defined_dpi: '300' });

@@ -1,6 +1,6 @@
 # Resultado de las pruebas automáticas
 
-Ejecución: 2026-11-11 22:14 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
+Ejecución: 2026-11-11 22:26 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
 
 | Estado | Comprobación | Detalle |
 |---|---|---|
@@ -71,11 +71,13 @@ Ejecución: 2026-11-11 22:14 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Sobrescribir exige una confirmación adicional |  |
 | OK | Solo con elegir la foto se llenan nombre, concentración, lote, vencimiento, registro y laboratorio | 0.9 s · {"nombre":"CALMADOL","concentracion":"500 mg","lote":"AB12345","vencimiento":"05/2027","registroSanitario":"INVIMA 2019M-0012345","laboratorio":"Laboratorios Andinos S.A"} |
 | OK | Sin ventanas que confirmar: aviso en el formulario para revisar antes de guardar |  |
-| OK | Tiempo de lectura medido y mostrado (objetivo ≤ 10 s) | 0.4 s medidos por la app |
+| OK | Tiempo de lectura medido y mostrado (objetivo ≤ 10 s) | 0.5 s medidos por la app |
 | OK | Lo escrito a mano no se reemplaza: lo leído queda como sugerencia |  |
 | OK | Tocar la sugerencia la aplica |  |
+| OK | Lote y fechas faltantes se buscan en segundo plano sin bloquear la pantalla | Realzando la imagen… (puede seguir revisando el formulario) |
+| OK | Al terminar informa lo que no encontró y no inventa lote ni vencimiento |  |
 | OK | Ninguna pantalla se desborda horizontalmente en teléfono (412 px) |  |
 | OK | Botones con altura táctil ≥ 40 px | 0 pequeños |
 | OK | Sin errores de JavaScript durante toda la sesión |  |
 
-**73 de 73 correctas.**
+**75 de 75 correctas.**
