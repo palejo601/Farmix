@@ -4,6 +4,7 @@
 import { h, toast, errMsg } from './ui.js';
 import { recognize } from './ocr.js';
 import { extractFields, extractZone } from './extract.js';
+import { readBoxes } from './boxes.js';
 
 const NEED = 2;   // lecturas iguales necesarias para dar un dato por seguro (lote y fechas: 3, y sin otra lectura que compita)
 const need = f => ['lote', 'fechaFabricacion', 'vencimiento'].includes(f) ? 3 : NEED;
@@ -99,6 +100,8 @@ export async function liveScan() {
         for (const f of extractFields(r.lines).fields) if (!f.doubt && (f.conf == null || f.conf >= 55)) vote(f.field, f.value, f.conf >= 85 ? 2 : 1);
         const z = extractZone(r.lines);
         for (const f of ['lote', 'fechaFabricacion', 'vencimiento']) if (z[f] && (z[f].labelled || f !== 'lote')) vote(f, z[f].value, z[f].labelled ? 1 : 0.5);   // un lote sin etiqueta no se adivina
+        // Cada 3 imágenes se buscan casillas L / F / V dentro del recuadro.
+        if (n % 3 === 0) for (const f of await readBoxes(c).catch(() => [])) if (!f.doubt) vote(f.field, f.value);
         const txt = r.text.replace(/\s+/g, ' ').trim();
         raw.textContent = txt.length > 2 ? 'Texto visto: ' + txt.slice(0, 140) : 'No se ve texto en el recuadro: acerque la caja (a unos 10–15 cm), espere a que enfoque y evite reflejos.';
         render();

@@ -45,10 +45,10 @@ let queue = Promise.resolve();
 export function recognize(...a) { const run = queue.then(() => recognizeNow(...a)); queue = run.catch(() => {}); return run; }
 // Prepara el motor en segundo plano al abrir la app, para que la primera foto no espere su arranque.
 export function warmOCR() { initOCR().catch(() => {}); }
-async function recognizeNow(canvas, progress = () => {}, sparse = false) {
+async function recognizeNow(canvas, progress = () => {}, sparse = false, extra = {}) {
   const w = await initOCR(progress);
   try {
-    await w.setParameters({ tessedit_pageseg_mode: sparse === true ? '11' : sparse || '3', user_defined_dpi: '300' });
+    await w.setParameters({ tessedit_pageseg_mode: sparse === true ? '11' : sparse || '3', user_defined_dpi: '300', tessedit_char_whitelist: '', ...extra });
     const { data } = await w.recognize(canvas, {}, { text: true, blocks: true });
     const lines = [];
     for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || [])

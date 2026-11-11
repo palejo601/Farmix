@@ -47,11 +47,51 @@ function findDates(text) {
   }
   return out;
 }
+// ---------- Casillas impresas: una sola letra dentro de un recuadro (L = lote, F = fabricación, V = vencimiento) ----------
+// El OCR suele leer el borde del recuadro como «[», «|», «(», «I», «l» o «1»: «[L] 4B0123», «|F| 05/2024», «(V) 05/2027».
+// Solo se acepta la letra si a continuación (o en el renglón de abajo) está un valor del tipo correcto:
+// L → código con al menos un dígito; F y V → fecha válida. Así «V» de «Vía oral» o «F» sueltas no se toman como etiqueta.
+const BOX_L = String.raw`[\[\(\{|!Il1]?`, BOX_R = String.raw`[\]\)\}|!Il1]?`;
+const BOX_TOKEN = new RegExp(String.raw`(^|\s)${BOX_L}\s?([LFV])\s?${BOX_R}\s?[:.\-]?\s*(?=\S)`, 'g');
+const BOX_ONLY = new RegExp(String.raw`^\s*${BOX_L}\s?([LFV])\s?${BOX_R}\s?[:.\-]?\s*$`);
+const BOX_HEAD = new RegExp(String.raw`^(?:\s*${BOX_L}\s?[LFV]\s?${BOX_R}\s*){2,3}$`);
+const BOX_WORD = { L: 'LOTE', F: 'FAB', V: 'VENCE' };
+const LOT_VAL = /^[A-Z0-9][A-Z0-9\-\/]{2,19}/i;
+const lotOK = t => { const m = t.match(LOT_VAL); return m && /\d/.test(m[0]) && !new RegExp('^' + DATE_SRC + '$', 'i').test(m[0]) ? m[0] : null; };
+const dateAt = t => { const m = t.match(new RegExp('^' + DATE_SRC, 'i')); return m && ym(m[0]) != null ? m[0] : null; };
+const valOK = (k, t) => k === 'L' ? lotOK(t) : dateAt(t);
+export function boxLabels(lines) {
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i], t = l.text;
+    // Renglón solo con casillas («L  F  V») y los valores en el renglón siguiente: se vuelve una tabla con encabezados.
+    if (BOX_HEAD.test(t) && lines[i + 1] && /\d/.test(lines[i + 1].text)) {
+      out.push({ ...l, text: [...t.matchAll(/[LFV]/g)].map(m => BOX_WORD[m[0]]).join('  ') }); continue;
+    }
+    // Casilla sola en un renglón y su valor debajo.
+    const only = t.match(BOX_ONLY);
+    if (only && lines[i + 1] && valOK(only[1], lines[i + 1].text.trim())) { out.push({ ...l, text: BOX_WORD[only[1]] + ':' }); continue; }
+    // Casillas en el mismo renglón que su valor: cada una se separa en su propio renglón «ETIQUETA: valor».
+    const hits = [];
+    for (const m of t.matchAll(BOX_TOKEN)) {
+      const after = m[0].slice(m[0].lastIndexOf(m[2]) + 1);
+      if (!/^[\s:.\-\]\)\}|!Il1]/.test(after)) continue;          // «L0TE», «Fab»: la letra es parte de una palabra
+      const at = m.index + m[0].length, v = valOK(m[2], t.slice(at));
+      if (v) hits.push({ k: m[2], start: m.index + m[1].length, at });
+    }
+    if (!hits.length) { out.push(l); continue; }
+    if (hits[0].start > 0 && t.slice(0, hits[0].start).trim()) out.push({ ...l, text: t.slice(0, hits[0].start).trim() });
+    hits.forEach((h, j) => out.push({ ...l, text: BOX_WORD[h.k] + ': ' + t.slice(h.at, j + 1 < hits.length ? hits[j + 1].start : undefined).trim() }));
+  }
+  return out;
+}
+
 const clean = s => s.replace(/\s+/g, ' ').replace(/^[\s:.\-–|]+|[\s:.\-–|,;]+$/g, '').trim();
 const LOW = 60, OK = 80;
 
 export function extractFields(lines) {
-  lines = lines.map(l => ({ text: clean(l.text || ''), conf: l.conf ?? null, height: l.height || 0 })).filter(l => l.text.length > 1);
+  lines = boxLabels(lines.map(l => ({ text: (l.text || '').replace(/\s+/g, ' ').trim(), conf: l.conf ?? null, height: l.height || 0 })))
+    .map(l => ({ ...l, text: clean(l.text) })).filter(l => l.text.length > 1);
   // Rótulos en tabla: una fila de encabezados («LOTE  FAB  VENCE») y debajo la fila de valores. Se reordenan como «etiqueta: valor».
   for (let i = 0; i + 1 < lines.length; i++) {
     const hd = lines[i].text, vals = lines[i + 1].text;
@@ -222,6 +262,10 @@ export function extractFields(lines) {
     if (letters(v) >= 4 && !comp) { add('principioActivo', 'Principio activo', v, concI, ['Deducido por estar junto a la concentración: confírmelo.']); out.splice(Math.min(1, out.length - 1), 0, out.pop()); }
   }
   if (comp) { add('principioActivo', 'Principio activo', comp.pa, comp.i, ['Tomado de la composición («contiene…»): confírmelo.']); out.splice(Math.min(1, out.length - 1), 0, out.pop()); }
+  const fF = out.find(f => f.field === 'fechaFabricacion'), fV = out.find(f => f.field === 'vencimiento');
+  if (fF && fV && ym(fF.value) != null && ym(fV.value) != null && ym(fF.value) >= ym(fV.value)) {
+    for (const f of [fF, fV]) { f.doubt = true; f.checked = false; f.notes.push('La fabricación no es anterior al vencimiento: puede haber casillas confundidas o fechas mal leídas. No se intercambiaron; revíselas con el empaque.'); }
+  }
   return { fields: out, warnings };
 }
 
@@ -250,7 +294,7 @@ function fixLabels(text) {
 const ZKEY = /^(LOTE?|LOT|BATCH|VENCE|VENC|VTO|EXP|CAD|FAB|MFG|MFD|ELAB|FECHA|DATE|DE|NO|N[°º]?)$/i;
 // Devuelve {lote, fechaFabricacion, vencimiento}: cada uno {value, labelled} o ausente.
 export function extractZone(lines) {
-  const ls = lines.map(l => ({ ...l, text: fixLabels(clean(l.text || '')) })).filter(l => l.text.length > 1);
+  const ls = boxLabels(lines.map(l => ({ ...l, text: (l.text || '').replace(/\s+/g, ' ').trim() }))).map(l => ({ ...l, text: fixLabels(clean(l.text)) })).filter(l => l.text.length > 1);
   const out = {};
   for (const f of extractFields(ls).fields) if (['lote', 'fechaFabricacion', 'vencimiento'].includes(f.field) && !f.doubt && !out[f.field]) out[f.field] = { value: f.value, labelled: true };
   // Sin etiqueta legible: en la zona marcada, las fechas válidas y el código alfanumérico restante son los candidatos.
@@ -275,3 +319,4 @@ export function extractZone(lines) {
   return out;
 }
 export const dateOK = s => ym(s) != null;
+export { ym, findDates, lotOK };
