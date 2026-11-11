@@ -9,14 +9,19 @@ const EXP_KW = /(?:^|[^A-Za-z])(EXPIRY(?:\s*DATE)?|EXPIRATION(?:\s*DATE)?|EXP(?:
 const MFG_KW = /(?:^|[^A-Za-z])(MFG|MFD|FAB|ELAB|F\.?\s?F|FECHA\s+(?:DE\s+)?(?:FAB\w*|ELAB\w*)|MANUFACTUR\w*|PRODUCCI[OÓ]N)(?![A-Za-z])/i;
 const LOT_KW = /(?:^|[^A-Za-z0-9])(L[O0]TE|L[O0]T|BATCH|LT)(?![A-Za-z])\.?\s*(?:N[°ºo]\.?|NO\.?|NUM\.?|#)?\s*[:.\-]?\s*([A-Z0-9][A-Z0-9\-\/]{1,19})/i;
 const REG_KW = /(?:^|[^A-Za-z])(?:REG(?:ISTRO)?\.?\s*(?:SAN(?:ITARIO)?\.?)?\s*(?:N[°ºo]\.?|NO\.?)?\s*[:.\-]?\s*(?:INVIMA)?|INVIMA|R\.\s?S\.)\s*(?:N[°ºo]\.?|NO\.?)?\s*[:.\-]?\s*(\d{4}\s?[A-Z]{1,2}\s?-?\s?[\dA-Z][\dA-Z\-]{2,}|[A-Z0-9][A-Z0-9\-\/.]{4,})/i;
-const CONC = /\d+(?:[.,]\d+)?\s?(?:mg|mcg|µg|ug|g|ml|mL|UI|U\.I\.|IU|mEq|%)(?![A-Za-z])(?:\s?\/\s?\d*(?:[.,]\d+)?\s?(?:ml|mL|g|mg|L|dosis|tableta|c[aá]psula|comprimido))?/i;
+const CONC = /\d+(?:[.,]\d+)?\s?(?:mg|mcg|µg|μg|ug|g|ml|mL|UI|U\.I\.|IU|mEq|%)(?![A-Za-z])(?:\s?\/\s?\d*(?:[.,]\d+)?\s?(?:ml|mL|g|mg|L|dosis|tableta|c[aá]psula|comprimido))?/i;
 const FORMA = /(?:^|[^a-záéíóúñ])(tabletas?(?: recubiertas?| masticables?| efervescentes?)?|comprimidos?(?: recubiertos?)?|c[aá]psulas?(?: blandas?| duras?)?|grageas?|jarabe|suspensi[oó]n(?: oral| inyectable)?|soluci[oó]n(?: oral| inyectable| oft[aá]lmica| t[oó]pica| nasal)?|polvo para [a-záéíóúñ ]{3,40}|crema|ung[uü]ento|pomada|gel|gotas|supositorios?|[oó]vulos?|aerosol|inhalador|emulsi[oó]n|loci[oó]n|parches?|elixir|tablets?|capsules?|syrup|cream|ointment)(?![a-záéíóúñ])/i;
-const PRES = /((?:caja|frasco|bl[ií]ster|envase|tubo|sobre|estuche|ampolla|vial|bolsa)s?\s+(?:con|por|x|de)\s+\d+[^\n]{0,40}|(?:^|\s)(?:x|por|con)\s?\d+\s*(?:tabletas?|c[aá]psulas?|comprimidos?|grageas?|sobres?|ampollas?|unidades|ml|mL|g)(?![a-z])[^\n]{0,20})/i;
+const PRES = /(contenido\s*(?:neto)?\s*:?\s*\d+[^\n]{0,30}|(?:caja|frasco|bl[ií]ster|envase|tubo|sobre|estuche|ampolla|vial|bolsa)s?\s+(?:con|por|x|de)\s+\d+[^\n]{0,40}|(?:^|\s)(?:x|por|con)\s?\d+\s*(?:tabletas?|c[aá]psulas?|comprimidos?|grageas?|sobres?|ampollas?|unidades|ml|mL|g)(?![a-z])[^\n]{0,20})/i;
+const PRES2 = /(?:^|[^\d.,\/])(\d{1,4}\s+(?:tabletas?|c[aá]psulas?|comprimidos?|grageas?|sobres?|ampollas?|[oó]vulos?|supositorios?)(?: recubiertas?| blandas?)?)(?![a-záéíóúñ])/i;
+const COND = /(?:cons[eé]rve(?:se)?|almac[eé]n(?:ar|ese|e)|mant[eé]ng(?:a|ase)|gu[aá]rd(?:ar|ese|e)|store)(?![a-záéíóúñ])[^\n]{6,110}/i;
+const CONTIENE = /contienen?\s*:?\s*([A-Za-zÁÉÍÓÚÑáéíóúñ][A-Za-zÁÉÍÓÚÑáéíóúñ ]{3,60}?)(?:\s+equivalente[^\d]{0,40})?\s*$/i;
 const LAB = /(?:^|[^A-Za-z])(LABORATORIOS?|LAB\.)\s+[^\n]{2,60}/i;
 const FAB = /(?:(?:FABRICADO|ELABORADO|MANUFACTURADO|PRODUCIDO|HECHO)\s+(?:Y\s+\w+\s+)?POR|FABRICANTE|MANUFACTURED\s+BY|MADE\s+BY)\s*[:.\-]?\s*([^\n]{0,70})/i;
 // Caracteres que el OCR confunde con frecuencia cuando hay letras y números mezclados.
 const AMBIG = /\d[OISBl]|[OISBl]\d|[A-Z][0158]|[0158][A-Z]/;
 
+const LETTER = /[A-Za-zÁÉÍÓÚÑáéíóúñ]/;
+const inWord = (text, m) => /^[A-Za-z]/.test(m[0]) && m.index > 0 && LETTER.test(text[m.index - 1]);
 const clean = s => s.replace(/\s+/g, ' ').replace(/^[\s:.\-–|]+|[\s:.\-–|,;]+$/g, '').trim();
 const LOW = 60, OK = 80;
 
@@ -40,6 +45,7 @@ export function extractFields(lines) {
     const m = l.text.match(EXP_KW); if (!m) return;
     const rest = l.text.slice(m.index + m[0].length);
     let d = rest.match(DATE), src = i;
+    if (d && inWord(rest, d)) d = null;
     if (!(d && d.index <= 8) && lines[i + 1] && !rest.trim()) { d = lines[i + 1].text.match(DATE); src = i + 1; if (d && d.index > 4) d = null; }
     else if (d && d.index > 8) d = null;
     if (d) { expFound = true; add('vencimiento', 'Fecha de vencimiento', d[0], src, /[OISBl]/.test(d[0].replace(new RegExp(MES, 'i'), '')) ? ['La fecha contiene letras que podrían ser números mal leídos. Verifique con el empaque.'] : [], false); }
@@ -47,7 +53,7 @@ export function extractFields(lines) {
   });
   if (!expFound) {
     const loose = [];
-    lines.forEach((l, i) => { for (const d of l.text.matchAll(DATE_G)) { const before = l.text.slice(0, d.index); if (!MFG_KW.test(before) && !LOT_KW.test(before + d[0]) && /\d{2}/.test(d[0])) loose.push([d[0], i]); } });
+    lines.forEach((l, i) => { for (const d of l.text.matchAll(DATE_G)) { const before = l.text.slice(0, d.index); if (!MFG_KW.test(before) && !LOT_KW.test(before + d[0]) && !inWord(l.text, d) && !(d.index > 0 && /\d/.test(l.text[d.index - 1])) && !(/^\d{1,2} \d{4}$/.test(d[0]) && +d[0].split(' ')[0] > 12) && /20\d{2}|\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2}/.test(d[0])) loose.push([d[0], i]); } });
     if (loose.length === 1) add('vencimiento', 'Fecha de vencimiento', loose[0][0], loose[0][1], ['Fecha encontrada sin la etiqueta EXP/VENCE: podría no ser el vencimiento.'], true);
     warnings.push(expLabelNoDate ? 'Se encontró la etiqueta de vencimiento, pero la fecha no es legible. Revísela en el empaque e ingrésela manualmente.'
       : loose.length === 1 ? 'No se detectó una fecha rotulada como vencimiento. Se propone una fecha dudosa: confírmela con el empaque.'
@@ -89,9 +95,33 @@ export function extractFields(lines) {
   let concI = -1, concM = null;
   for (let i = 0; i < lines.length; i++) { const m = lines[i].text.match(CONC); if (m) { concI = i; concM = m; break; } }
   if (concM) add('concentracion', 'Concentración', concM[0], concI);
-  for (let i = 0; i < lines.length; i++) { const m = lines[i].text.match(FORMA); if (m) { add('formaFarmaceutica', 'Forma farmacéutica', m[1], i); used.delete(i); break; } }
-  for (let i = 0; i < lines.length; i++) { const m = lines[i].text.match(PRES); if (m) { add('presentacion', 'Presentación', m[1], i); used.delete(i); break; } }
+  for (let i = 0; i < lines.length; i++) { const m = lines[i].text.match(FORMA); if (m) { const u = used.has(i); add('formaFarmaceutica', 'Forma farmacéutica', m[1], i); if (!u) used.delete(i); break; } }
+  for (let i = 0; i < lines.length; i++) { const m = lines[i].text.match(PRES); if (m) { const u = used.has(i) || m[1].length > lines[i].text.length * 0.7; add('presentacion', 'Presentación', m[1], i); if (!u) used.delete(i); break; } }
+  if (!out.some(f => f.field === 'presentacion')) for (let i = 0; i < lines.length; i++) { const m = lines[i].text.match(PRES2); if (m) { add('presentacion', 'Presentación', m[1], i, ['Cantidad encontrada sin la palabra «caja» o «contenido»: confirme que sea la presentación.']); used.delete(i); break; } }
   if (concI >= 0) used.delete(concI);
+  // --- Condiciones de almacenamiento ---
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].text.match(COND); if (!m || /alcance|ni[ñn]os|children/i.test(m[0]) || !/\d|luz|humedad|fresco|seco|refriger|light|dry/i.test(m[0] + (lines[i + 1]?.text || ''))) continue;
+    let v = m[0];
+    if (!/[.;]$/.test(lines[i].text) && lines[i + 1] && lines[i + 1].text.length < 70 && !LOT_KW.test(lines[i + 1].text) && !EXP_KW.test(lines[i + 1].text)) { v += ' ' + lines[i + 1].text; used.add(i + 1); }
+    add('condiciones', 'Condiciones de almacenamiento', v, i);
+    break;
+  }
+  // --- «Cada tableta contiene: X 50 mg»: principio activo declarado en la composición ---
+  let comp = null;
+  for (let i = 0; i < lines.length && !comp; i++) {
+    const joined = lines[i].text + (lines[i + 1] ? ' ' + lines[i + 1].text : '');
+    for (const t of [lines[i].text, joined]) {
+      if (!/contienen?/i.test(t)) continue;
+      const c = t.match(CONC); if (!c) continue;
+      const m = t.slice(0, c.index).match(CONTIENE);
+      if (m) { comp = { pa: m[1], conc: c[0], i }; break; }
+    }
+  }
+  if (comp) {
+    used.add(comp.i);
+    if (!out.some(f => f.field === 'concentracion')) add('concentracion', 'Concentración', comp.conc, comp.i);
+  }
 
   // --- Nombre: la línea de texto más grande entre las legibles que no son lote/fecha/registro/laboratorio ---
   const letters = s => (s.match(/[A-Za-zÁÉÍÓÚÑáéíóúñ]/g) || []).length;
@@ -109,7 +139,8 @@ export function extractFields(lines) {
   // --- Principio activo: texto que antecede a la concentración, solo si está en una línea distinta al nombre ---
   if (concI >= 0 && concI !== nameI && concM.index > 2) {
     const v = clean(lines[concI].text.slice(0, concM.index));
-    if (letters(v) >= 4) { add('principioActivo', 'Principio activo', v, concI, ['Deducido por estar junto a la concentración: confírmelo.']); out.splice(Math.min(1, out.length - 1), 0, out.pop()); }
+    if (letters(v) >= 4 && !comp) { add('principioActivo', 'Principio activo', v, concI, ['Deducido por estar junto a la concentración: confírmelo.']); out.splice(Math.min(1, out.length - 1), 0, out.pop()); }
   }
+  if (comp) { add('principioActivo', 'Principio activo', comp.pa, comp.i, ['Tomado de la composición («contiene…»): confírmelo.']); out.splice(Math.min(1, out.length - 1), 0, out.pop()); }
   return { fields: out, warnings };
 }

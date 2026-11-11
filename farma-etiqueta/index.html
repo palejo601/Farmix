@@ -48,7 +48,7 @@
   </div>
   <div class="grid actions">
     <label class="tile primary" for="pick-gallery" data-after="all" role="button" tabindex="0">
-      <svg viewBox="0 0 24 24"><use href="#i-photo"/></svg><b>Identificar por fotografía</b><small>Elegir foto, leer código y texto</small></label>
+      <svg viewBox="0 0 24 24"><use href="#i-photo"/></svg><b>Identificar por fotografía</b><small>Elegir foto: lee código de barras y texto</small></label>
     <label class="tile" for="pick-gallery" data-after="barcode" role="button" tabindex="0">
       <svg viewBox="0 0 24 24"><use href="#i-barcode"/></svg><b>Leer código de barras</b><small>Desde una fotografía</small></label>
     <label class="tile" for="pick-gallery" data-after="ocr" role="button" tabindex="0">
@@ -92,6 +92,10 @@
           <label class="btn" for="pick-files" role="button" tabindex="0">Cambiar (archivos)</label>
           <button type="button" class="btn danger-outline" id="btn-photo-del">Eliminar foto</button>
         </div>
+        <div class="row">
+          <label class="btn" for="pick-gallery" data-after="extra" role="button" tabindex="0"><svg viewBox="0 0 24 24"><use href="#i-plus"/></svg>Leer datos de otra foto (lote, vencimiento…)</label>
+        </div>
+        <p class="hint">Si el lote, la fecha o el código están en otra cara del empaque, tómele otra foto y léala aquí. No reemplaza la foto guardada.</p>
       </div>
       <div id="photo-progress" class="progress" hidden role="status"><div class="bar"><i></i></div><span></span></div>
     </fieldset>

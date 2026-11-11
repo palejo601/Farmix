@@ -120,7 +120,7 @@ Reglas para quien modifique el código: no cambie el nombre de la base (`farma-e
 
 ## 7. Pruebas realizadas
 
-Resultado completo: [`docs/resultado-pruebas.md`](docs/resultado-pruebas.md) (66 de 66 comprobaciones correctas). Se ejecutan con `node tests/e2e.cjs` (requiere `npm i playwright`).
+Resultado completo: [`docs/resultado-pruebas.md`](docs/resultado-pruebas.md) (68 de 68 comprobaciones correctas). Se ejecutan con `node tests/e2e.cjs` (requiere `npm i playwright`).
 
 **Cómo se probó**: automatización con Chromium real emulando un teléfono Android (Pixel 7, pantalla táctil de 412 px), con la aplicación servida por HTTP local y service worker activo. Imágenes de prueba **sintéticas** generadas por el propio script (empaque con texto impreso y código EAN-13).
 

@@ -17,7 +17,7 @@ const SRC_CHIP = { ocr: 'OCR', codigo: 'Código leído' };
 
 // Estado del formulario en edición
 let st = blank();
-function blank() { return { id: null, createdAt: null, origen: {}, formatoCodigo: '', photo: null, photoUrl: null, photoState: 'keep', thumb: '', log: [], dirty: false }; }
+function blank() { return { id: null, createdAt: null, origen: {}, formatoCodigo: '', photo: null, src: null, photoUrl: null, photoState: 'keep', thumb: '', log: [], dirty: false }; }
 const input = f => $('#f-' + f);
 const norm = s => (s || '').toString().trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ');
 
@@ -106,19 +106,20 @@ export async function setPhotoFromFile(file, after) {
     photoProgress('Leyendo la fotografía…', .05);
     const p = await processFile(file, photoProgress);
     st.photo = { blob: p.blob, w: p.w, h: p.h }; st.thumb = p.thumb; st.photoState = 'new';
+    st.src = file;                                         // original a resolución completa: mejora la lectura de letra pequeña
     showPhoto(); scheduleDraft();
     toast(`Fotografía lista (${fmtBytes(p.original)} → ${fmtBytes(p.blob.size)}).`, 'ok');
   } catch (e) {
     toast(errMsg(e), 'err', 6500);
     return;
   } finally { setTimeout(() => photoProgress(false), 600); }
-  if (after === 'barcode' || after === 'all') { const ok = await runBarcode(after === 'all'); if (after === 'all' && ok !== 'cancel') await runOCR(); }
-  else if (after === 'ocr') await runOCR();
+  if (after === 'barcode') await runBarcode();
+  else if (after === 'ocr' || after === 'all') await runOCR();
 }
 
 async function removePhoto() {
   if (!(await confirmDlg('Eliminar fotografía', '¿Quitar la fotografía de este registro? Los datos escritos se conservan.', 'Eliminar', true))) return;
-  st.photo = null; st.thumb = ''; st.photoState = 'del';
+  st.photo = null; st.src = null; st.thumb = ''; st.photoState = 'del';
   showPhoto(); scheduleDraft();
 }
 
@@ -132,7 +133,7 @@ async function runBarcode(chained = false) {
   for (;;) {
     let r, err = null;
     busy('Buscando código de barras…');
-    try { r = await readBarcode(st.photo.blob, busy); } catch (e) { err = e; } finally { busy(false); }
+    try { r = await readBarcode(st.src || st.photo.blob, busy); } catch (e) { err = e; } finally { busy(false); }
     if (err) { await modal('No se pudo leer el código', h('p', {}, errMsg(err))); return; }
     if (!r) {
       const again = await modal('No se detectó ningún código de barras', h('div', {},
@@ -158,12 +159,18 @@ async function runBarcode(chained = false) {
 }
 
 // ---- OCR con pantalla de revisión ----
-async function runOCR() {
-  if (!st.photo) { toast('Primero seleccione una fotografía.', 'warn'); return; }
-  let res, canvas, fields, warnings;
+// extra = otra fotografía (otra cara del empaque) que solo se lee; no reemplaza la foto guardada del registro.
+async function runOCR(extra = null) {
+  if (!(extra instanceof Blob)) extra = null;
+  if (!extra && !st.photo) { toast('Primero seleccione una fotografía.', 'warn'); return; }
+  const source = extra || st.src || st.photo.blob;
+  let res, canvas, fields, warnings, code = null;
   busy('Preparando OCR…');
   try {
-    canvas = await blobToCanvas(st.photo.blob, 2200); res = await recognize(canvas, busy);
+    // En el mismo paso se busca el código de barras (si el formulario aún no lo tiene).
+    if (!input('codigoBarras').value.trim()) { try { code = await readBarcode(source, busy); } catch { code = null; } }
+    busy('Preparando OCR…');
+    canvas = await blobToCanvas(source, 3000); res = await recognize(canvas, busy);
     ({ fields, warnings } = extractFields(res.lines));
     // Segunda pasada solo si faltan lote o vencimiento: suelen estar impresos aparte, junto a barras o gráficos.
     const miss = f => !fields.some(x => x.field === f && !x.doubt);
@@ -180,13 +187,16 @@ async function runOCR() {
   catch (e) { busy(false); await modal('No se pudo reconocer el texto', h('div', {}, h('p', {}, errMsg(e)), h('p', { class: 'muted small' }, 'Los datos del formulario no se modificaron. Puede ingresarlos manualmente.'))); return; }
   finally { freeCanvas(canvas); busy(false); }
 
+  if (code) fields.push({ field: 'codigoBarras', label: 'Código de barras', value: code.value, conf: null, doubt: false, checked: true, code,
+    notes: [`Decodificado de las barras (${code.format}), no del texto. Compárelo con el número impreso.`] });
   const rows = fields.map(f => {
-    const cb = h('input', { type: 'checkbox', checked: f.checked, 'aria-label': 'Usar ' + f.label });
     const inp = h('input', { value: f.value, 'aria-label': f.label + ' detectado', spellcheck: false });
     const cur = input(f.field).value.trim();
+    // Con una foto adicional no se pisa lo que ya está en el formulario, salvo que el usuario lo marque.
+    const cb = h('input', { type: 'checkbox', checked: f.checked && !(extra && cur), 'aria-label': 'Usar ' + f.label });
     const node = h('div', { class: 'ocr-row' + (f.doubt ? ' doubt' : '') },
       h('div', { class: 'top' }, cb, h('b', {}, f.label),
-        h('span', { class: 'chip ' + (f.conf == null ? '' : f.conf >= 80 ? '' : f.conf >= 60 ? 'warn' : 'bad') }, f.conf == null ? 'Confianza n/d' : `Confianza ${Math.round(f.conf)} %`),
+        h('span', { class: 'chip ' + (f.conf == null ? '' : f.conf >= 80 ? '' : f.conf >= 60 ? 'warn' : 'bad') }, f.code ? 'Código decodificado' : f.conf == null ? 'Confianza n/d' : `Confianza ${Math.round(f.conf)} %`),
         f.doubt ? h('span', { class: 'chip warn' }, 'Dudoso') : null),
       inp,
       ...f.notes.map(n => h('p', { class: 'why' }, '⚠ ' + n)),
@@ -204,7 +214,8 @@ async function runOCR() {
   for (const r of rows) {
     const v = r.inp.value.trim();
     if (!r.cb.checked || !v) continue;
-    setField(r.f.field, v, v === r.f.value ? 'ocr' : 'manual'); n++;     // si el usuario lo corrigió, pasa a ser dato manual
+    setField(r.f.field, v, v !== r.f.value ? 'manual' : r.f.code ? 'codigo' : 'ocr'); n++;
+    if (r.f.code && v === r.f.value) st.formatoCodigo = r.f.code.format;     // si el usuario lo corrigió, pasa a ser dato manual
   }
   chips(); scheduleDraft();
   toast(n ? `${n} dato(s) aplicados. Revise el formulario y pulse Guardar para confirmar.` : 'No se aplicó ningún dato.', n ? 'ok' : 'warn', 5500);
@@ -252,7 +263,7 @@ export function initForm() {
   $('#btn-form-clear').addEventListener('click', () => newRecord());
   $('#btn-photo-del').addEventListener('click', removePhoto);
   $('#btn-barcode').addEventListener('click', () => runBarcode());
-  $('#btn-ocr').addEventListener('click', runOCR);
+  $('#btn-ocr').addEventListener('click', () => runOCR());
 
   // Selectores de archivo: la apertura la hace el propio <label for>, en el mismo gesto del usuario.
   let after = null;
@@ -266,6 +277,7 @@ export function initForm() {
       e.target.value = '';                                   // permite volver a elegir el mismo archivo
       const a = after; after = null;
       if (!file) return;
+      if (a === 'extra') { if (st.photo) await runOCR(file); return; }
       if (a && st.dirty && !(await confirmDlg('Formulario con datos', 'El formulario tiene datos sin guardar. ¿Usar esta fotografía en ese mismo registro?', 'Usar aquí'))) return;
       await setPhotoFromFile(file, a);
     });

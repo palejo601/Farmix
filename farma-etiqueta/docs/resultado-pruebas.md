@@ -1,6 +1,6 @@
 # Resultado de las pruebas automáticas
 
-Ejecución: 2026-11-11 17:06 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
+Ejecución: 2026-11-11 17:15 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
 
 | Estado | Comprobación | Detalle |
 |---|---|---|
@@ -26,6 +26,8 @@ Ejecución: 2026-11-11 17:06 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | La revisión muestra nivel de confianza y advierte que no es información verificada |  |
 | OK | Nada se escribe en el formulario antes de confirmar |  |
 | OK | Corrección manual en la revisión y aplicación al formulario |  |
+| OK | El OCR lee también el código de barras en el mismo paso | 7701234567897 |
+| OK | «Leer datos de otra foto»: propone los datos sin marcar los que ya están en el formulario y no cambia la foto guardada | [["Nombre del producto",false],["Principio activo",false],["Fecha de vencimiento",false],["Número de lote",false],["Registro sanitario",false],["Laboratorio",false],["Concentración",false],["Forma farmacéutica",false],["Presentación",false]] |
 | OK | Empaque sin lote ni fecha: no inventa esos campos y advierte que falta el vencimiento |  |
 | OK | Código de barras leído dentro de la foto del empaque |  |
 | OK | Registro confirmado y guardado |  |
@@ -71,4 +73,4 @@ Ejecución: 2026-11-11 17:06 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Botones con altura táctil ≥ 40 px | 0 pequeños |
 | OK | Sin errores de JavaScript durante toda la sesión |  |
 
-**66 de 66 correctas.**
+**68 de 68 correctas.**
