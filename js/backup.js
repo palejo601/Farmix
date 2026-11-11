@@ -98,7 +98,7 @@ export async function refreshBackup() {
   const [n, last] = await Promise.all([db.countRecords().catch(() => 0), db.kvGet('lastBackup').catch(() => null)]);
   const txt = last ? `Último respaldo: ${fmtDate(last.at)} (${last.records} registros, ${last.photos} fotografías).` : 'Aún no se ha creado ningún respaldo en este dispositivo.';
   $('#bk-info').textContent = `Registros actuales: ${n}. ${txt}`;
-  $('#home-backup').textContent = last ? 'Último: ' + new Date(last.at).toLocaleDateString('es') : 'Sin respaldos aún';
+  const hb = $('#home-backup'); if (hb) hb.textContent = last ? 'Último: ' + new Date(last.at).toLocaleDateString('es') : 'Sin respaldos aún';
   $('#bk-export').disabled = !n;
 }
 

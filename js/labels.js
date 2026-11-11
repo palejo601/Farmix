@@ -1,8 +1,7 @@
 // Motor de rótulos: calcula la distribución en milímetros una sola vez y la misma geometría
 // se usa para la vista previa, la impresión (SVG), el PDF y el Word. Así la vista previa es fiel.
 export const SIZES = [
-  ['Grande', 100, 70], ['Mediano', 70, 50], ['Pequeño', 50, 30], ['Blíster', 40, 20], ['Tableta o cápsula individual', 20, 10],
-  ['Frasco', 50, 30], ['Ampolla o vial', 30, 15], ['Bolsa o sobre', 70, 40], ['Dispositivo médico', 70, 50], ['Estantería', 100, 50],
+  ['Grande', 100, 70], ['Mediano', 70, 50], ['Pequeño', 50, 30], ['Blíster', 40, 20], ['Ampolla o vial', 30, 15], ['Tableta o cápsula', 20, 10],
 ];
 export const LABEL_FIELDS = [
   ['nombre', 'Nombre del producto'], ['principioActivo', 'Principio activo'], ['concentracion', 'Concentración'], ['presentacion', 'Presentación'],

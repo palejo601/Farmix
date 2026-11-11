@@ -254,6 +254,8 @@ export async function initLabels() {
   initZoom();
   const saved = await db.kvGet('labelCfg').catch(() => null);
   if (saved) cfg = { ...cfg, ...saved, fields: { ...cfg.fields, ...(saved.fields || {}) } };
+  // Tamaños de versiones anteriores: se buscan por medidas; si ya no están en la lista, quedan como personalizados.
+  if (cfg.size >= 0) cfg.size = SIZES.findIndex(([, w, hh]) => w === cfg.w && hh === cfg.h);
   $('#lb-size').replaceChildren(...SIZES.map(([n, w, hh], i) => h('option', { value: i }, `${n} — ${w} × ${hh} mm`)), h('option', { value: -1 }, 'Personalizado'));
   $('#lb-fields').replaceChildren(...LABEL_FIELDS.map(([f, label]) => h('label', { class: 'check' }, h('input', { type: 'checkbox', id: 'lbf-' + f }), label)));
   writeCfg();

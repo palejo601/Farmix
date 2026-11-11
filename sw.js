@@ -3,15 +3,14 @@
 // - Guarda los recursos OCR la primera vez que se usan (caché separada que NO se borra al actualizar).
 // - Nunca toca IndexedDB: actualizar la aplicación no elimina registros ni fotografías.
 // Para publicar una versión nueva, cambie VERSION.
-const VERSION = '1.5.0';
+const VERSION = '1.6.0';
 const SHELL = 'fe-shell-' + VERSION;
 const OCR = 'fe-ocr-v1';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
-  'js/app.js', 'js/ui.js', 'js/db.js', 'js/photos.js', 'js/barcode.js', 'js/ocr.js', 'js/extract.js', 'js/form.js',
+  'js/app.js', 'js/ui.js', 'js/db.js', 'js/photos.js', 'js/ocr.js', 'js/extract.js', 'js/form.js',
   'js/history.js', 'js/labels.js', 'js/labelsview.js', 'js/backup.js', 'js/settings.js',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
-  'vendor/zxing/zxing-reader.js', 'vendor/zxing/zxing_reader.wasm',
   'vendor/lib/JsBarcode.all.min.js', 'vendor/lib/jspdf.umd.min.js', 'vendor/lib/docx.iife.min.js',
 ];
 

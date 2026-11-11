@@ -1,6 +1,6 @@
 # Resultado de las pruebas automáticas
 
-Ejecución: 2026-11-11 18:51 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
+Ejecución: 2026-11-11 22:14 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
 
 | Estado | Comprobación | Detalle |
 |---|---|---|
@@ -12,12 +12,10 @@ Ejecución: 2026-11-11 18:51 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Archivo dañado: mensaje comprensible y sin bloqueo | La fotografía está dañada o no se puede abrir. Elija otra imagen. |
 | OK | Archivo que no es imagen: rechazado por contenido, no por extensión |  |
 | OK | El código no usa getUserMedia ni solicita cámara |  |
-| OK | EAN-13 nítido: el código leído es exacto | 7701234567897 · Formato: EAN-13 · Motor: ZXing · Dígito de control correcto |
-| OK | El código confirmado se incorpora al formulario |  |
-| OK | Imagen borrosa: se lee exacto o se informa que no se detectó (nunca un valor distinto) | leído 7701234567897 |
-| OK | Imagen sin código: mensaje claro y ningún dato inventado |  |
-| OK | Se ofrece reintentar |  |
-| OK | Motor usado en esta prueba: ZXing (BarcodeDetector no existe en este Chromium) |  |
+| OK | La pantalla principal tiene únicamente: Escanear fotografía, Crear rótulo, Historial | Escanear fotografía · Crear rótulo · Historial |
+| OK | Lector de códigos eliminado (sin barcode.js, ZXing ni BarcodeDetector) |  |
+| OK | «Crear rótulo» abre el generador |  |
+| OK | «Historial» abre el historial |  |
 | OK | OCR extrae el nombre | CALMADOL |
 | OK | OCR extrae la concentración | 500 mg |
 | OK | OCR extrae el lote sin alterarlo | AB12345 |
@@ -26,12 +24,11 @@ Ejecución: 2026-11-11 18:51 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | La revisión muestra nivel de confianza y advierte que no es información verificada |  |
 | OK | Nada se escribe en el formulario antes de confirmar |  |
 | OK | Corrección manual en la revisión y aplicación al formulario |  |
-| OK | El OCR lee también el código de barras en el mismo paso | 7701234567897 |
 | OK | «Marcar lote y fechas»: lee la zona ampliada y muestra los tres campos para confirmar | [["Número de lote","AB12345","Leído"],["Fecha de fabricación","","Sin leer"],["Fecha de vencimiento","05/2027","Leído"]] |
 | OK | La zona de otra foto no reemplaza la foto guardada y nada se aplica sin confirmar |  |
 | OK | Al confirmar se aplican lote, fabricación (escrita a mano) y vencimiento |  |
 | OK | Empaque sin lote ni fecha: no inventa esos campos y advierte que falta el vencimiento |  |
-| OK | Código de barras leído dentro de la foto del empaque |  |
+| OK | Antes de guardar se exige confirmar lote/fechas leídos por la foto | Confirme los datos leídos de la foto Compare con el empaque: Fecha de vencimiento: 05/2027. ¿Confirma que los revisó? Cancelar Sí, revisé y guardar |
 | OK | Registro confirmado y guardado |  |
 | OK | Tras cerrar y reabrir, el registro sigue disponible |  |
 | OK | La miniatura de la fotografía sigue disponible |  |
@@ -44,7 +41,6 @@ Ejecución: 2026-11-11 18:51 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Indicador: recursos OCR disponibles sin conexión (tras el primer uso) |  |
 | OK | Sin internet: la aplicación abre y muestra el historial |  |
 | OK | Sin internet: el indicador de conexión lo informa |  |
-| OK | Sin internet: lectura de código de barras |  |
 | OK | Sin internet: OCR completo (motor, WASM e idiomas locales) | AB12345 |
 | OK | Sin internet: registrar un producto |  |
 | OK | Sin internet: editar un registro y buscarlo por nombre + lote |  |
@@ -54,7 +50,8 @@ Ejecución: 2026-11-11 18:51 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Filtro «vencidos» (ninguno en los datos de prueba) |  |
 | OK | Sin internet: se generan rótulos con vista previa |  |
 | OK | 30 rótulos con 10 por hoja → 3 páginas | 70 × 50 mm · 10 rótulo(s) por hoja (2 × 5) · 30 rótulo(s) en total · 3 página(s) de 210 × 297 mm |
-| OK | Los 10 tamaños predefinidos: texto dentro del rótulo, sin cortes ni superposición | 100×70: 5 líneas+barras · 70×50: 5 líneas+barras · 50×30: 5 líneas+barras · 40×20: 4 líneas+barras · 20×10: 4 líneas (aviso) · 50×30: 5 líneas+barras · 30×15: 4 líneas+barras · 70×40: 4 líneas+barras · 70×50: 5 líneas+barras · 100×50: 4 líneas+barras |
+| OK | Lista de tamaños según la especificación | Grande — 100 × 70 mm · Mediano — 70 × 50 mm · Pequeño — 50 × 30 mm · Blíster — 40 × 20 mm · Ampolla o vial — 30 × 15 mm · Tableta o cápsula — 20 × 10 mm · Personalizado |
+| OK | Los 6 tamaños predefinidos (100×70, 70×50, 50×30, 40×20, 30×15, 20×10): texto dentro del rótulo, sin cortes ni superposición | 100×70: 5 líneas+barras · 70×50: 5 líneas+barras · 50×30: 5 líneas+barras · 40×20: 4 líneas+barras · 30×15: 4 líneas+barras · 20×10: 4 líneas (aviso) |
 | OK | Rótulo 20 × 10 mm: el código de barras se omite con aviso en vez de imprimirse ilegible |  |
 | OK | Tamaño personalizado 60 × 35 mm | 60 × 35 mm · 21 rótulo(s) por hoja (3 × 7) · 30 rótulo(s) en total · 2 página(s) de 210 × 297 mm |
 | OK | Distribución imposible: error claro e impresión deshabilitada |  |
@@ -72,12 +69,13 @@ Ejecución: 2026-11-11 18:51 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Restauración: advierte sobre registros que ya existen |  |
 | OK | Tras restaurar: el registro y su fotografía se recuperan |  |
 | OK | Sobrescribir exige una confirmación adicional |  |
-| OK | Solo con elegir la foto se llenan nombre, código, concentración, lote, vencimiento, registro y laboratorio | 0.9 s · {"nombre":"CALMADOL","codigoBarras":"7701234567897","concentracion":"500 mg","lote":"AB12345","vencimiento":"05/2027","registroSanitario":"INVIMA 2019M-0012345","laboratorio":"Laboratorios Andinos S.A"} |
+| OK | Solo con elegir la foto se llenan nombre, concentración, lote, vencimiento, registro y laboratorio | 0.9 s · {"nombre":"CALMADOL","concentracion":"500 mg","lote":"AB12345","vencimiento":"05/2027","registroSanitario":"INVIMA 2019M-0012345","laboratorio":"Laboratorios Andinos S.A"} |
 | OK | Sin ventanas que confirmar: aviso en el formulario para revisar antes de guardar |  |
+| OK | Tiempo de lectura medido y mostrado (objetivo ≤ 10 s) | 0.4 s medidos por la app |
 | OK | Lo escrito a mano no se reemplaza: lo leído queda como sugerencia |  |
 | OK | Tocar la sugerencia la aplica |  |
 | OK | Ninguna pantalla se desborda horizontalmente en teléfono (412 px) |  |
 | OK | Botones con altura táctil ≥ 40 px | 0 pequeños |
 | OK | Sin errores de JavaScript durante toda la sesión |  |
 
-**75 de 75 correctas.**
+**73 de 73 correctas.**

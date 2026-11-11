@@ -12,10 +12,10 @@ Aplicación web progresiva (PWA) para identificar, registrar y rotular medicamen
 |---|---|
 | Registrar producto | Formulario completo (información general + lote), editable en todo momento. |
 | Fotografía | Selector real de archivos (galería o archivos), vista previa, cambiar, eliminar. Corrige orientación, reduce a 1800 px y comprime a JPEG. Se guarda en IndexedDB. **No usa cámara en vivo ni pide permisos de cámara.** |
-| Código de barras | Lee EAN-13, EAN-8, UPC-A, UPC-E, Code 128, Code 39 e ITF **desde la fotografía**. Usa `BarcodeDetector` si existe y ZXing (local) como alternativa. Copiar, reintentar, usar en el formulario. |
+| Pantalla principal | Solo tres opciones: **Escanear fotografía**, **Crear rótulo** e **Historial** (respaldo y configuración quedan en la barra inferior y el engranaje). El lector de códigos de barras se eliminó en la 1.6.0; el código se puede escribir a mano y se dibuja en el rótulo. |
 | OCR | Tesseract.js (español + inglés), local. Propone nombre, principio activo, concentración, forma, presentación, laboratorio/fabricante, registro sanitario, lote y vencimiento en una **pantalla de revisión** con confianza, avisos de duda y corrección manual. |
 | Historial | Búsqueda (nombre, principio activo, lote, código, laboratorio), filtros, detalle con foto, edición, eliminación con confirmación, trazabilidad de cambios. |
-| Rótulos | 10 tamaños predefinidos + personalizado, campos configurables, vista previa fiel, hoja A4/Carta/Legal/personalizada, márgenes, separaciones, cálculo de páginas. |
+| Rótulos | 6 tamaños predefinidos (100×70, 70×50, 50×30, 40×20, 30×15, 20×10 mm) + personalizado, campos configurables, vista previa fiel, hoja A4/Carta/Legal/personalizada, márgenes, separaciones, cálculo de páginas. |
 | Impresión y exportación | Impresión con CSS en mm reales, PDF vectorial y Word (DOCX) con tablas y texto editables. |
 | Copias de seguridad | Exporta/restaura registros con fotografías, verificación de integridad, aviso de duplicados. |
 | Configuración | Estado de conexión, almacenamiento, recursos OCR, instalación, actualización. |
@@ -71,7 +71,7 @@ Abra `http://localhost:3000` (o el puerto indicado). `localhost` cuenta como con
 ## 3. Uso
 
 1. **Registrar**: pulse *Elegir de la galería* o *Elegir de archivos*, seleccione la foto del empaque.
-2. **Leer código de barras**: compare el número mostrado con el impreso y pulse *Usar en el formulario*.
+2. **Antes de guardar**, la app pide confirmar el lote y las fechas leídos de la foto y avisa de los datos dudosos sin resolver.
 3. **Reconocer texto (OCR)**: revise cada dato propuesto, corríjalo si hace falta, marque los que quiere usar y pulse *Aplicar al formulario*.
 4. Complete o corrija a mano lo que falte y pulse **Guardar registro** (esa es la confirmación).
 5. **Historial**: busque, abra, edite, elimine o pulse *Rótulo*.
@@ -85,13 +85,13 @@ Desde Inicio, *Identificar por fotografía* hace los pasos 1-3 seguidos.
 - Nada se escribe en el formulario sin que usted lo confirme; nada se guarda sin pulsar *Guardar*.
 - El OCR nunca corrige caracteres (O/0, I/1, S/5, B/8): solo avisa cuando un lote o fecha contiene combinaciones dudosas.
 - Datos con confianza baja se muestran sin marcar. Si no se detecta la fecha de vencimiento, se advierte.
-- El código de barras se devuelve exactamente como fue decodificado; no se consulta ninguna base de datos externa.
+- El código de barras solo se escribe a mano; la app ya no lo lee de la foto.
 - Cada campo guarda su origen (manual, OCR confirmado, código leído) y cada registro lleva un historial de cambios.
 - La fecha de vencimiento se guarda como texto, tal como usted la confirma. Los avisos «Vencido / Próximo a vencer» son orientativos (interpretan `MM/AAAA`, `DD/MM/AAAA`, `AAAA-MM`, `MAY 2027`; sin día se asume fin de mes).
 
 ## 4. Funcionamiento sin conexión
 
-- En la primera visita con internet, el *service worker* guarda la aplicación completa (interfaz, lector de códigos ZXing, generadores de PDF y Word).
+- En la primera visita con internet, el *service worker* guarda la aplicación completa (interfaz y generadores de PDF y Word).
 - **OCR**: sus recursos (worker, núcleo WebAssembly e idiomas español/inglés, ≈ 9 MB para un dispositivo) se guardan **la primera vez que se usa el OCR** o al pulsar *Configuración → Preparar OCR para uso sin conexión*. Hasta entonces el indicador muestra «OCR: recursos pendientes» y el OCR requiere internet. Después funciona sin conexión.
 - Registros y fotografías están en IndexedDB: historial, edición, rótulos, PDF, Word y respaldos funcionan sin internet.
 - Ninguna función usa servicios externos; todas las bibliotecas están incluidas en `vendor/`.
@@ -147,18 +147,17 @@ Resultado completo: [`docs/resultado-pruebas.md`](docs/resultado-pruebas.md) (75
 | Prueba del encargo | Qué se comprobó |
 |---|---|
 | 1. Selector de fotos | El botón abre el selector de archivos del sistema; `input type=file` sin `capture`; vista previa; cambiar; eliminar; archivo dañado y archivo que no es imagen dan mensaje claro. |
-| 2. Código de barras | EAN-13 leído exacto (`7701234567897`); imagen borrosa leída exacta; imagen sin código → mensaje claro, sin datos inventados; reintentar disponible. |
+| 2. Inicio | Exactamente tres opciones y cada una abre su pantalla; no queda código del lector (barcode.js, ZXing, BarcodeDetector). |
 | 3. OCR | Nombre, concentración, lote, vencimiento, registro, laboratorio, forma y presentación extraídos sin alteración; empaque sin lote/fecha → no los inventa y advierte; corrección manual; confirmación y guardado. |
 | 4. Almacenamiento | Cerrar y reabrir: registro, miniatura y foto completa siguen; la foto está en IndexedDB como bytes; borrador recuperado tras cierre inesperado; aviso de duplicados. |
-| 5. Offline | Con la red desconectada: abrir, consultar, registrar, editar, buscar, código de barras, OCR completo y rótulos. |
-| 6. Impresión | 10 tamaños sin texto cortado ni superpuesto; 30 rótulos/10 por hoja = 3 páginas; hoja Carta con márgenes y separaciones exactos; PDF del motor de impresión y PDF exportado con medida real y sin páginas extra; DOCX con tablas, texto editable, medidas en twips y código de barras. |
+| 5. Offline | Con la red desconectada: abrir, consultar, registrar, editar, buscar, OCR completo y rótulos. |
+| 6. Impresión | 6 tamaños sin texto cortado ni superpuesto; 30 rótulos/10 por hoja = 3 páginas; hoja Carta con márgenes y separaciones exactos; PDF del motor de impresión y PDF exportado con medida real y sin páginas extra; DOCX con tablas, texto editable, medidas en twips y código de barras. |
 | 7. Respaldo | Exportar con fotos; borrar un registro; archivo truncado y archivo alterado rechazados; restaurar recupera registro y foto; sobrescribir pide doble confirmación. |
 
 ### Lo que NO se probó (debe verificarse en dispositivos reales)
 
 - **No se probó en ningún teléfono físico**: ni Android con Chrome ni iPhone con Safari. La prueba 1 confirma que el navegador recibe la orden de abrir el selector, pero no qué pantalla muestra cada teléfono (galería, Fotos, Archivos).
 - **Safari / iOS no se probó en absoluto** (ni emulado: solo había Chromium disponible). Tampoco Edge ni Firefox.
-- **`BarcodeDetector` nativo no se ejercitó**: el Chromium de prueba no lo trae; todas las lecturas pasaron por ZXing. En Android Chrome se usará primero el nativo.
 - **OCR y códigos con fotografías reales** de empaques (curvos, brillantes, impresión por puntos o en relieve, poca luz) no se probaron; el rendimiento real será inferior al de las imágenes sintéticas.
 - **Impresión en papel** y medición con regla no se hizo; se verificaron las dimensiones en el PDF generado por el motor de impresión.
 - **El DOCX no se abrió en Microsoft Word**: se verificó su estructura interna (tablas, textos, medidas), no su apariencia.
@@ -169,7 +168,7 @@ Resultado completo: [`docs/resultado-pruebas.md`](docs/resultado-pruebas.md) (75
 - **Fotos HEIC** (iPhone): Safari normalmente las entrega convertidas a JPEG; si llega un HEIC sin convertir, se rechaza con un mensaje.
 - **OCR**: el texto de lote/vencimiento grabado en relieve, por puntos o con bajo contraste suele no leerse; la aplicación entonces no propone nada y hay que escribirlo. El nombre y el principio activo se deducen por tamaño y posición del texto y siempre deben confirmarse. En teléfonos de gama baja el OCR puede tardar 10-40 s.
 - **Lote y fechas impresos por puntos (inyección) o en relieve**: en la prueba con una imagen sintética de impresión por puntos el OCR devolvió texto ilegible o valores equivocados con apariencia válida (p. ej. «85/2027»). Por eso esas lecturas nunca se premarcan y las fechas imposibles se señalan; en la práctica esos datos suelen tener que escribirse a mano. También puede confundir B/8 u O/0 sin que sea detectable («4B0123» leído «480123»).
-- **Códigos de barras**: solo 1D de la lista indicada (no QR ni DataMatrix). En rótulos menores a ~30 mm de ancho un EAN-13 no cabe con barras legibles: se omite y se avisa.
+- **Códigos de barras en rótulos**: se dibujan a partir del número escrito. En rótulos menores a ~30 mm de ancho un EAN-13 no cabe con barras legibles: se omite y se avisa.
 - **Impresión en iPhone/iPad**: Safari ignora el tamaño de página CSS; use *Exportar PDF* e imprima ese archivo. En cualquier navegador, desactive «ajustar a la página».
 - **PDF y Word** usan Helvetica/Arial; si un texto resulta más ancho que en la vista previa, se reduce esa línea para que nunca se salga del rótulo. En Word, textos muy largos pueden requerir ajuste manual (las filas tienen alto exacto).
 - **Almacenamiento**: los datos existen solo en ese navegador/dispositivo. Borrar datos del sitio, desinstalar la PWA o (en Safari sin instalar) varias semanas sin uso pueden eliminarlos. No hay sincronización entre dispositivos: use los respaldos.
@@ -190,7 +189,6 @@ farma-etiqueta/
 │   ├── ui.js               Avisos, modales, progreso, carga diferida
 │   ├── db.js               IndexedDB (registros, fotos, ajustes, borrador)
 │   ├── photos.js           Validación, orientación, redimensión, compresión
-│   ├── barcode.js          BarcodeDetector + ZXing
 │   ├── ocr.js              Motor Tesseract
 │   ├── extract.js          Reglas de extracción de campos (función pura)
 │   ├── form.js             Registro / edición / revisión OCR
@@ -204,7 +202,7 @@ farma-etiqueta/
 └── docs/resultado-pruebas.md
 ```
 
-Los módulos pesados (OCR, ZXing, PDF, DOCX) se cargan solo cuando se usan y cada uno falla de forma aislada: un error de OCR no afecta el almacenamiento, el historial ni la impresión.
+Los módulos pesados (OCR, PDF, DOCX) se cargan solo cuando se usan y cada uno falla de forma aislada: un error de OCR no afecta el almacenamiento, el historial ni la impresión.
 
 ### Dependencias (incluidas en `vendor/`, sin compilación)
 
@@ -213,7 +211,6 @@ Los módulos pesados (OCR, ZXing, PDF, DOCX) se cargan solo cuando se usan y cad
 | tesseract.js | 7.0.0 | OCR | Apache-2.0 |
 | tesseract.js-core (LSTM: base, SIMD, relaxed-SIMD) | 7.0.0 | Motor WebAssembly | Apache-2.0 |
 | @tesseract.js-data/spa, /eng (4.0.0_best_int) | 1.0.0 | Idiomas | Apache-2.0 |
-| zxing-wasm (ZXing-C++), lector | 3.1.6 | Códigos de barras | MIT / Apache-2.0 |
 | JsBarcode | 3.12.3 | Codificación de barras en rótulos | MIT |
 | jsPDF | 4.2.1 | PDF | MIT |
 | docx | 9.15.3 | Word (DOCX) | MIT |
