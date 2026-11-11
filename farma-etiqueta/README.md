@@ -97,6 +97,15 @@ Desde Inicio, *Identificar por fotografía* hace los pasos 1-3 seguidos.
 - Ninguna función usa servicios externos; todas las bibliotecas están incluidas en `vendor/`.
 - Indicadores en Inicio y Configuración: conexión, aplicación sin conexión, recursos OCR, registros, almacenamiento usado y persistente.
 
+### Reconocimiento en línea (opcional)
+
+Con internet, la app puede leer las fotos con el servicio externo **OCR.space** en lugar del OCR local. Se activa en *Configuración → Reconocimiento en línea* pegando una clave gratuita (registro en `ocr.space/ocrapi/freekey`; el plan gratuito indica 25.000 lecturas al mes y archivos de hasta 1 MB, por lo que la app reduce la foto antes de enviarla).
+
+- Si hay internet y clave, se usa el servicio en línea; si no hay conexión, la clave falla o se supera el límite, se usa automáticamente el OCR local y la revisión indica cuál se usó y por qué.
+- **Las fotografías leídas en línea salen del dispositivo** hacia ese servicio. La clave se guarda solo en el dispositivo (no va en respaldos ni en el código).
+- En la prueba con una imagen sintética de lote impreso por puntos, el servicio en línea leyó correctamente lote, fabricación y vencimiento, donde el OCR local no leyó nada. No es infalible: la pantalla de revisión y la confirmación siguen siendo obligatorias.
+- El servicio no entrega nivel de confianza por dato; la app muestra «Confianza n/d».
+
 ## 5. Respaldo y restauración
 
 **Guardar**: *Respaldo → Exportar respaldo completo*. Se descarga `farma-etiqueta-respaldo-FECHA.json` con todos los registros y sus fotografías (cada foto vinculada a su registro por el mismo identificador). Cópielo fuera del teléfono (correo, nube, computador). Hágalo periódicamente y siempre antes de cambiar de teléfono o borrar datos del navegador.

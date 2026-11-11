@@ -2,9 +2,9 @@
 import { $, h, toast, confirmDlg, fmtBytes, errMsg, isNative, nativePlatform } from './ui.js';
 const appName = () => nativePlatform() === 'ios' ? 'App iPhone / iPad' : 'App Android';
 import * as db from './db.js';
-import { initOCR, OCR_BASE, OCR_CORES } from './ocr.js';
+import { initOCR, recognizeOnline, OCR_BASE, OCR_CORES } from './ocr.js';
 
-export const APP_VERSION = '1.2.1';
+export const APP_VERSION = '1.3.0';
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const secure = () => self.isSecureContext && 'serviceWorker' in navigator && 'caches' in self;
 let installEvt = null, swReg = null;
@@ -35,6 +35,7 @@ function netChip() {
 
 export async function refreshStatus() {
   netChip();
+  const on = await db.kvGet('onlineOcr').catch(() => null), onOK = !!(on?.enabled && on.key);
   const [ocr, n, est, persisted] = await Promise.all([ocrOffline(), db.countRecords().catch(() => null),
     navigator.storage?.estimate?.().catch(() => null), navigator.storage?.persisted?.().catch(() => false)]);
   const sw = isNative() ? 'Activo' : secure() ? (navigator.serviceWorker.controller ? 'Activo' : 'Instalándose…') : 'No disponible';
@@ -43,6 +44,7 @@ export async function refreshStatus() {
     ['Modo de uso', mode(), secure() || isNative() ? '' : 'bad'],
     ['Aplicación sin conexión', sw, sw === 'Activo' ? '' : 'warn'],
     ['Recursos OCR', ocr ? 'Disponibles sin conexión' : 'Pendientes (requieren internet la primera vez)', ocr ? '' : 'warn'],
+    ['Reconocimiento en línea', onOK ? (navigator.onLine ? 'Activo (OCR.space)' : 'Configurado; sin conexión se usa el OCR local') : 'No configurado (solo OCR local)', onOK ? '' : 'warn'],
     ['Lector de códigos de barras', ('BarcodeDetector' in self ? 'Nativo + ZXing' : 'ZXing') + ' (local)', ''],
     ['Registros guardados', n == null ? 'No disponible' : String(n), n == null ? 'bad' : ''],
     ['Almacenamiento usado', est ? `${fmtBytes(est.usage)} de ${fmtBytes(est.quota)}` : 'No informado por el navegador', ''],
@@ -105,6 +107,29 @@ export function initSettings() {
   addEventListener('appinstalled', () => { installEvt = null; refreshStatus(); });
   $('#cf-install-btn').addEventListener('click', async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; refreshStatus(); });
   $('#cf-ocr').addEventListener('click', prepareOCR);
+  // Reconocimiento en línea
+  db.kvGet('onlineOcr').then(o => { $('#on-key').value = o?.key || ''; $('#on-enabled').checked = !!o?.enabled; }).catch(() => {});
+  const saveOnline = async () => {
+    const key = $('#on-key').value.trim(), enabled = $('#on-enabled').checked;
+    if (enabled && !key) { toast('Pegue primero la clave para poder activar el servicio en línea.', 'warn'); $('#on-enabled').checked = false; return false; }
+    await db.kvSet('onlineOcr', { key, enabled });
+    refreshStatus(); return true;
+  };
+  $('#on-save').addEventListener('click', async () => { if (await saveOnline()) toast($('#on-enabled').checked ? 'Servicio en línea activado: con internet las fotos se leerán con OCR.space.' : 'Guardado. El servicio en línea está desactivado.', 'ok', 5000); });
+  $('#on-test').addEventListener('click', async e => {
+    const key = $('#on-key').value.trim();
+    if (!key) { toast('Pegue primero la clave.', 'warn'); return; }
+    if (!navigator.onLine) { toast('Sin conexión: no se puede probar la clave ahora.', 'warn'); return; }
+    const c = document.createElement('canvas'); c.width = 600; c.height = 160;
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, 600, 160); x.fillStyle = '#000'; x.font = 'bold 64px Arial, sans-serif'; x.fillText('PRUEBA 2468', 40, 105);
+    e.target.disabled = true;
+    try {
+      const r = await recognizeOnline(c, key);
+      if (/2468/.test(r.text)) { $('#on-enabled').checked = true; await saveOnline(); toast('La clave funciona. Servicio en línea activado.', 'ok', 5000); }
+      else toast('El servicio respondió, pero no leyó la imagen de prueba. Intente de nuevo.', 'warn', 6000);
+    } catch (err) { toast('No se pudo usar la clave: ' + errMsg(err) + '.', 'err', 7000); }
+    finally { e.target.disabled = false; }
+  });
   $('#cf-persist').addEventListener('click', async () => {
     const ok = await navigator.storage.persist().catch(() => false);
     toast(ok ? 'Almacenamiento persistente concedido.' : 'El navegador no lo concedió. Suele concederlo cuando la aplicación está instalada; mantenga respaldos periódicos.', ok ? 'ok' : 'warn', 6000);
