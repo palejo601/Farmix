@@ -7,6 +7,22 @@ const DATE = new RegExp(DATE_SRC, 'i');
 const DATE_G = new RegExp(DATE_SRC, 'ig');
 const EXP_KW = /(?:^|[^A-Za-z])(EXPIRY(?:\s*DATE)?|EXPIRATION(?:\s*DATE)?|EXP(?:IRA)?|CADUCIDAD|CAD|VENCIMIENTO|VENCE|VENC|VTO|F\.?\s?V(?:ENC)?|FECHA\s+(?:DE\s+)?(?:VENC\w*|EXP\w*|CAD\w*)|USE\s+BY|V[AÁ]LIDO\s+HASTA)(?![A-Za-z])\.?\s*(?:DATE)?\s*[:.\-]?\s*/i;
 const MFG_KW = /(?:^|[^A-Za-z])(MFG|MFD|FAB|ELAB|F\.?\s?F|FECHA\s+(?:DE\s+)?(?:FAB\w*|ELAB\w*)|MANUFACTUR\w*|PRODUCCI[OÓ]N)(?![A-Za-z])/i;
+const MFG_DATE = /(?:^|[^A-Za-z])(MFG|MFD|MAN|F\.?\s?FAB|FAB(?:RICACI[OÓ]N)?|ELAB(?:ORACI[OÓ]N)?|F\.\s?F|F\.?\s?ELAB|FECHA\s+(?:DE\s+)?(?:FAB\w*|ELAB\w*|MANUF\w*)|MANUFACTUR(?:ING|E)\s*DATE)(?![A-Za-z])\.?\s*(?:DATE)?\s*[:.\-]?\s*/i;
+const LOT_ONLY = /(?:^|[^A-Za-z0-9])(L[O0]TE|L[O0]T|BATCH)(?:\s*\/\s*[A-Za-z]+)?\.?\s*(?:N[°ºo]\.?|NO\.?|#)?\s*[:.\-]?\s*$/i;
+const HEAD = [['lote', /(?:^|[^A-Za-z])(L[O0]TE|L[O0]T|BATCH)(?![A-Za-z])/i, 'LOTE'], ['fab', /(?:^|[^A-Za-z])(F\.?\s?FAB|FAB|MFG|MFD|ELAB|F\.\s?F)(?![A-Za-z])/i, 'FAB'], ['exp', /(?:^|[^A-Za-z])(F\.?\s?VENC?|VENCE|VENC|VTO|EXP|CAD|F\.\s?V)(?![A-Za-z])/i, 'VENCE']];
+// Aproximación año*12+mes para ordenar dos fechas (no altera el texto leído).
+function ym(s) {
+  const MM = { ENE: 1, JAN: 1, FEB: 2, MAR: 3, ABR: 4, APR: 4, MAY: 5, JUN: 6, JUL: 7, AGO: 8, AUG: 8, SEP: 9, SET: 9, OCT: 10, NOV: 11, DIC: 12, DEC: 12 };
+  const n = (s.match(/\d+/g) || []).map(Number), mon = (s.match(/[A-Za-z]{3}/) || [''])[0].toUpperCase();
+  let y, m;
+  if (MM[mon]) { m = MM[mon]; y = n[n.length - 1]; }
+  else if (n.length >= 2 && n[0] > 31) { y = n[0]; m = n[1]; }
+  else if (n.length === 2) { m = n[0]; y = n[1]; }
+  else if (n.length >= 3) { m = n[1]; y = n[2]; }
+  else return null;
+  if (y < 100) y += 2000;
+  return m >= 1 && m <= 12 && y > 2000 && y < 2100 ? y * 12 + m : null;
+}
 const LOT_KW = /(?:^|[^A-Za-z0-9])(L[O0]TE|L[O0]T|BATCH|LT)(?![A-Za-z])\.?\s*(?:N[°ºo]\.?|NO\.?|NUM\.?|#)?\s*[:.\-]?\s*([A-Z0-9][A-Z0-9\-\/]{1,19})/i;
 const REG_KW = /(?:^|[^A-Za-z])(?:REG(?:ISTRO)?\.?\s*(?:SAN(?:ITARIO)?\.?)?\s*(?:N[°ºo]\.?|NO\.?)?\s*[:.\-]?\s*(?:INVIMA)?|INVIMA|R\.\s?S\.)\s*(?:N[°ºo]\.?|NO\.?)?\s*[:.\-]?\s*(\d{4}\s?[A-Z]{1,2}\s?-?\s?[\dA-Z][\dA-Z\-]{2,}|[A-Z0-9][A-Z0-9\-\/.]{4,})/i;
 const CONC = /\d+(?:[.,]\d+)?\s?(?:mg|mcg|µg|μg|ug|g|ml|mL|UI|U\.I\.|IU|mEq|%)(?![A-Za-z])(?:\s?\/\s?\d*(?:[.,]\d+)?\s?(?:ml|mL|g|mg|L|dosis|tableta|c[aá]psula|comprimido))?/i;
@@ -22,21 +38,58 @@ const AMBIG = /\d[OISBl]|[OISBl]\d|[A-Z][0158]|[0158][A-Z]/;
 
 const LETTER = /[A-Za-zÁÉÍÓÚÑáéíóúñ]/;
 const inWord = (text, m) => /^[A-Za-z]/.test(m[0]) && m.index > 0 && LETTER.test(text[m.index - 1]);
+// Fechas válidas de un texto: no pueden empezar dentro de una palabra o de un número más largo («4B0123 05/2024»).
+function findDates(text) {
+  const re = new RegExp(DATE_SRC, 'ig'), out = []; let m;
+  while ((m = re.exec(text))) {
+    if (m.index > 0 && /[A-Za-z0-9ÁÉÍÓÚÑáéíóúñ]/.test(text[m.index - 1])) { re.lastIndex = m.index + 1; continue; }
+    out.push(m);
+  }
+  return out;
+}
 const clean = s => s.replace(/\s+/g, ' ').replace(/^[\s:.\-–|]+|[\s:.\-–|,;]+$/g, '').trim();
 const LOW = 60, OK = 80;
 
 export function extractFields(lines) {
   lines = lines.map(l => ({ text: clean(l.text || ''), conf: l.conf ?? null, height: l.height || 0 })).filter(l => l.text.length > 1);
+  // Rótulos en tabla: una fila de encabezados («LOTE  FAB  VENCE») y debajo la fila de valores. Se reordenan como «etiqueta: valor».
+  for (let i = 0; i + 1 < lines.length; i++) {
+    const hd = lines[i].text, vals = lines[i + 1].text;
+    if (/\d/.test(hd)) continue;
+    const keys = HEAD.map(([k, re, lab]) => ({ k, lab, at: hd.search(re) })).filter(x => x.at >= 0).sort((a, b) => a.at - b.at);
+    if (keys.length < 2 || !/\d/.test(vals)) continue;
+    const dates = findDates(vals).map(d => d[0]);
+    let rest = vals; for (const d of dates) rest = rest.replace(d, ' ');
+    const lot = rest.split(/\s+/).find(t => /\d/.test(t) && /^[A-Z0-9][A-Z0-9\-\/]{2,19}$/i.test(t));
+    const nd = keys.filter(x => x.k !== 'lote').length;
+    if (dates.length !== nd || (keys.some(x => x.k === 'lote') && !lot)) continue;
+    const conf = Math.min(lines[i].conf ?? 100, lines[i + 1].conf ?? 100), made = []; let di = 0;
+    for (const x of keys) made.push({ text: x.lab + ': ' + (x.k === 'lote' ? lot : dates[di++]), conf: lines[i].conf == null ? null : conf, height: 0 });
+    lines.splice(i, 2, ...made); i += made.length - 1;
+  }
   const out = [], used = new Set(), warnings = [];
   const add = (field, label, value, i, notes = [], forceDoubt = false) => {
     value = clean(value); if (!value) return;
     const conf = lines[i]?.conf ?? null;
+    // Una fecha con mes o año imposibles («85/2027») es una lectura errónea: se muestra, pero nunca se premarca.
+    if ((field === 'vencimiento' || field === 'fechaFabricacion') && ym(value) == null) { notes.push('La fecha leída no parece válida (mes o año fuera de rango): probablemente está mal leída.'); forceDoubt = true; }
     if (conf != null && conf < OK) notes.push('Confianza de lectura baja.');
     const doubt = forceDoubt || (conf != null && conf < OK);
     // Solo se premarcan los datos leídos con seguridad suficiente.
     out.push({ field, label, value, conf, doubt, notes, checked: !forceDoubt && (conf == null || conf >= LOW) });
     used.add(i);
   };
+
+  // --- Fecha de fabricación ---
+  let mfgFound = false;
+  for (let i = 0; i < lines.length && !mfgFound; i++) {
+    const m = lines[i].text.match(MFG_DATE); if (!m) continue;
+    const rest = lines[i].text.slice(m.index + m[0].length);
+    let d = rest.match(DATE), src = i;
+    if (d && (d.index > 4 || inWord(rest, d))) d = null;
+    if (!d && !rest.trim() && lines[i + 1]) { d = lines[i + 1].text.match(DATE); src = i + 1; if (d && d.index > 4) d = null; }
+    if (d) { mfgFound = true; add('fechaFabricacion', 'Fecha de fabricación', d[0], src); }
+  }
 
   // --- Vencimiento (antes que el lote, para no confundirlos) ---
   let expLabelNoDate = false, expFound = false;
@@ -53,9 +106,20 @@ export function extractFields(lines) {
   });
   if (!expFound) {
     const loose = [];
-    lines.forEach((l, i) => { for (const d of l.text.matchAll(DATE_G)) { const before = l.text.slice(0, d.index); if (!MFG_KW.test(before) && !LOT_KW.test(before + d[0]) && !inWord(l.text, d) && !(d.index > 0 && /\d/.test(l.text[d.index - 1])) && !(/^\d{1,2} \d{4}$/.test(d[0]) && +d[0].split(' ')[0] > 12) && /20\d{2}|\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2}/.test(d[0])) loose.push([d[0], i]); } });
+    lines.forEach((l, i) => { for (const d of findDates(l.text)) { const before = l.text.slice(0, d.index); if (!MFG_KW.test(before) && !LOT_KW.test(before + d[0]) && !inWord(l.text, d) && !(d.index > 0 && /\d/.test(l.text[d.index - 1])) && !(/^\d{1,2} \d{4}$/.test(d[0]) && +d[0].split(' ')[0] > 12) && /20\d{2}|\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2}/.test(d[0])) loose.push([d[0], i]); } });
+    // Dos fechas sin etiqueta: la más antigua suele ser la fabricación y la posterior el vencimiento. Se proponen como dudosas.
+    if (loose.length === 2 && !mfgFound) {
+      const a = ym(loose[0][0]), b = ym(loose[1][0]);
+      if (a && b && a !== b) {
+        const [fab, ven] = a < b ? loose : [loose[1], loose[0]];
+        add('fechaFabricacion', 'Fecha de fabricación', fab[0], fab[1], ['Fecha sin etiqueta: se asume fabricación por ser la más antigua. Confírmela.'], true);
+        add('vencimiento', 'Fecha de vencimiento', ven[0], ven[1], ['Fecha sin etiqueta: se asume vencimiento por ser la posterior. Confírmela.'], true);
+        expFound = true; warnings.push('Las fechas no tienen etiqueta en la foto: se proponen como dudosas, confírmelas con el empaque.');
+      }
+    }
+    if (expFound) { /* ya propuestas */ } else
     if (loose.length === 1) add('vencimiento', 'Fecha de vencimiento', loose[0][0], loose[0][1], ['Fecha encontrada sin la etiqueta EXP/VENCE: podría no ser el vencimiento.'], true);
-    warnings.push(expLabelNoDate ? 'Se encontró la etiqueta de vencimiento, pero la fecha no es legible. Revísela en el empaque e ingrésela manualmente.'
+    if (!expFound) warnings.push(expLabelNoDate ? 'Se encontró la etiqueta de vencimiento, pero la fecha no es legible. Revísela en el empaque e ingrésela manualmente.'
       : loose.length === 1 ? 'No se detectó una fecha rotulada como vencimiento. Se propone una fecha dudosa: confírmela con el empaque.'
       : 'No se detectó la fecha de vencimiento. Revísela en el empaque e ingrésela manualmente.');
   }
@@ -70,6 +134,14 @@ export function extractFields(lines) {
     if (AMBIG.test(v)) notes.push('Combina letras y números que el OCR suele confundir (O/0, I/1, S/5, B/8). No se corrigió nada: verifique con el empaque.');
     add('lote', 'Número de lote', v, i, notes, notes.length > 1);
     break;
+  }
+  // «LOTE» en un renglón y el valor en el siguiente
+  if (!out.some(f => f.field === 'lote')) for (let i = 0; i + 1 < lines.length; i++) {
+    if (!LOT_ONLY.test(lines[i].text)) continue;
+    const m = lines[i + 1].text.match(/^[A-Z0-9][A-Z0-9\-\/]{2,19}/i);
+    if (!m || !/\d/.test(m[0]) || new RegExp('^' + DATE_SRC + '$', 'i').test(m[0])) continue;
+    add('lote', 'Número de lote', m[0], i + 1, AMBIG.test(m[0]) ? ['Combina letras y números que el OCR suele confundir (O/0, I/1, S/5, B/8). No se corrigió nada: verifique con el empaque.'] : []);
+    used.add(i); break;
   }
 
   // --- Registro sanitario ---
@@ -125,7 +197,7 @@ export function extractFields(lines) {
 
   // --- Nombre: la línea de texto más grande entre las legibles que no son lote/fecha/registro/laboratorio ---
   const letters = s => (s.match(/[A-Za-zÁÉÍÓÚÑáéíóúñ]/g) || []).length;
-  const cand = lines.map((l, i) => ({ l, i })).filter(({ l, i }) => !used.has(i) && letters(l.text) >= 3 && letters(l.text) / l.text.length > .55 && (l.conf == null || l.conf >= LOW));
+  const cand = lines.map((l, i) => ({ l, i })).filter(({ l, i }) => !used.has(i) && !HEAD.some(([, re]) => re.test(l.text)) && letters(l.text) >= 3 && letters(l.text) / l.text.length > .55 && (l.conf == null || l.conf >= LOW));
   let nameI = -1;
   if (cand.length) {
     const best = cand.reduce((a, b) => (b.l.height > a.l.height * 1.05 ? b : a));

@@ -77,3 +77,30 @@ export async function blobToCanvas(blob, maxSide = 2200) {
 // Forma de guardado en IndexedDB: bytes reales (ArrayBuffer), nunca una URL temporal.
 export const toStored = async p => ({ type: p.blob.type, data: await p.blob.arrayBuffer(), w: p.w, h: p.h });
 export const fromStored = s => s ? { blob: new Blob([s.data], { type: s.type || 'image/jpeg' }), w: s.w, h: s.h } : null;
+
+// Realce para una lectura adicional: binarización adaptativa (compensa sombras y brillos) y engrosado leve del trazo,
+// que une los puntos de las impresiones por inyección (lote y fechas). Devuelve un canvas nuevo.
+export function enhance(src, maxSide = 2400) {
+  const c = toCanvas(src, maxSide), w = c.width, h = c.height;
+  const ctx = c.getContext('2d', { willReadFrequently: true }), img = ctx.getImageData(0, 0, w, h), p = img.data;
+  const g = new Uint8Array(w * h), W1 = w + 1, integ = new Uint32Array(W1 * (h + 1));
+  for (let y = 0, i = 0; y < h; y++) {
+    let row = 0;
+    for (let x = 0; x < w; x++, i++) { const v = (p[i * 4] * 3 + p[i * 4 + 1] * 6 + p[i * 4 + 2]) / 10 | 0; g[i] = v; row += v; integ[(y + 1) * W1 + x + 1] = integ[y * W1 + x + 1] + row; }
+  }
+  const r = Math.max(8, Math.round(Math.min(w, h) / 40)), dark = new Uint8Array(w * h);
+  for (let y = 0, i = 0; y < h; y++) {
+    const y0 = Math.max(0, y - r), y1 = Math.min(h, y + r + 1);
+    for (let x = 0; x < w; x++, i++) {
+      const x0 = Math.max(0, x - r), x1 = Math.min(w, x + r + 1);
+      const sum = integ[y1 * W1 + x1] - integ[y0 * W1 + x1] - integ[y1 * W1 + x0] + integ[y0 * W1 + x0];
+      if (g[i] * (x1 - x0) * (y1 - y0) < sum * 0.80) dark[i] = 1;
+    }
+  }
+  for (let y = 0, i = 0; y < h; y++) for (let x = 0; x < w; x++, i++) {
+    const d = dark[i] || (x > 0 && dark[i - 1]) || (x < w - 1 && dark[i + 1]) || (y > 0 && dark[i - w]) || (y < h - 1 && dark[i + w]);
+    const v = d ? 0 : 255; p[i * 4] = p[i * 4 + 1] = p[i * 4 + 2] = v; p[i * 4 + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  return c;
+}
