@@ -72,12 +72,51 @@ export const nativePlatform = () => (self.Capacitor?.isNativePlatform?.() ? self
 export const isNative = () => !!self.Capacitor?.isNativePlatform?.();
 
 // En la app Android el WebView no descarga archivos: se escribe el archivo y se abre el menú del sistema para guardarlo, abrirlo o enviarlo.
-async function nativeSave(blob, name) {
-  const { Filesystem, Share } = self.Capacitor.Plugins;
+async function nativeWrite(blob, name) {
   const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
-  const f = await Filesystem.writeFile({ path: name, data, directory: 'CACHE' });
-  try { await Share.share({ title: name, files: [f.uri], dialogTitle: 'Guardar o enviar ' + name }); }
+  return (await self.Capacitor.Plugins.Filesystem.writeFile({ path: name, data, directory: 'CACHE' })).uri;
+}
+async function nativeSave(blob, name) {
+  const uri = await nativeWrite(blob, name);
+  try { await self.Capacitor.Plugins.Share.share({ title: name, files: [uri], dialogTitle: 'Guardar o enviar ' + name }); }
   catch (e) { if (!/cancel/i.test(e?.message || '')) throw e; }
+}
+export const isAndroid = () => /android/i.test(navigator.userAgent);
+
+// VER: abre el archivo en una aplicación del teléfono (visor de PDF, Word, WPS…), sin pasar por Compartir.
+// win = ventana abierta en el momento del toque (en la web, el navegador bloquea las ventanas abiertas después).
+export function preopen() { return !isNative() && !isAndroid() ? window.open('', '_blank') : null; }
+export async function viewFile(blob, name, win = null) {
+  if (isNative()) {
+    const uri = await nativeWrite(blob, name), FO = self.Capacitor.Plugins.FileOpener;
+    if (!FO) throw new Error('Esta versión de la app no puede abrir archivos. Instale la versión más reciente.');
+    try { await FO.open({ filePath: uri, contentType: blob.type, openWithDefault: true }); }
+    catch (e) { throw new Error(/activity|no app|not found|handle/i.test(errMsg(e)) ? `No hay ninguna aplicación instalada que abra ${/pdf/.test(blob.type) ? 'PDF' : 'Word'}. Instale una (por ejemplo WPS Office o Word) o use «Compartir».` : errMsg(e)); }
+    return;
+  }
+  // iPhone y computador: el navegador muestra el PDF y la vista previa del Word en una pestaña.
+  if (win && !win.closed) { const url = URL.createObjectURL(blob); win.location.href = url; setTimeout(() => URL.revokeObjectURL(url), 120000); return; }
+  // Android (navegador): se descarga y el sistema ofrece «Abrir» con la aplicación instalada.
+  const url = URL.createObjectURL(blob), a = h('a', { href: url, download: name });
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000);
+  toast('Archivo descargado: tóquelo en la notificación o en Descargas para abrirlo.', 'ok', 6000);
+}
+
+// COMPARTIR: menú del sistema (WhatsApp, correo, Drive…). Si el navegador no lo permite, se descarga.
+export async function shareFile(blob, name) {
+  if (isNative()) return nativeSave(blob, name);
+  const file = new File([blob], name, { type: blob.type || 'application/octet-stream' });
+  if (navigator.canShare?.({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: name }); return; }
+    catch (e) { if (e?.name === 'AbortError') return; if (e?.name !== 'NotAllowedError') throw e; }
+    busy(false);                                   // Safari pide un toque directo: se ofrece el botón
+    await modal('Archivo listo', h('p', {}, `«${name}» está listo para compartir.`), [{ label: 'Cerrar', value: null },
+      { label: 'Compartir', class: 'primary', keep: true, onclick: async () => { try { await navigator.share({ files: [file], title: name }); } catch (e) { if (e?.name !== 'AbortError') toast('No se pudo abrir el menú Compartir: ' + errMsg(e), 'err'); } } }]);
+    return;
+  }
+  const url = URL.createObjectURL(blob), a = h('a', { href: url, download: name });
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000);
+  toast('Este navegador no permite compartir archivos: se descargó para que lo envíe desde Descargas.', 'warn', 6000);
 }
 
 export async function download(blob, name) {

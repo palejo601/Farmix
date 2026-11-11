@@ -4,7 +4,7 @@ Empaqueta la aplicación web de `../farma-etiqueta/` como app Android con [Capac
 
 ## Instalar en el teléfono
 
-1. Descargue `dist/FARMA-ETIQUETA-1.6.1.apk` en el teléfono Android (Android 6.0 o superior).
+1. Descargue `dist/FARMA-ETIQUETA-1.7.0.apk` en el teléfono Android (Android 6.0 o superior).
 2. Ábralo. Android pedirá permitir «instalar aplicaciones desconocidas» para el navegador o gestor de archivos usado: acepte.
 3. Si Play Protect avisa de que no reconoce al desarrollador, elija *Instalar de todas formas* (la app no está en Play Store).
 

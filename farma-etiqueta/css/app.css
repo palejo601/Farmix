@@ -183,3 +183,8 @@ details.more summary{cursor:pointer;min-height:44px;display:flex;align-items:cen
 /* Inicio con tres opciones: la principal ocupa todo el ancho */
 .grid.actions.home3{grid-template-columns:repeat(2,minmax(0,1fr))}
 .grid.actions.home3 .tile.primary{grid-column:1/-1;min-height:120px}
+/* Rótulos: Imprimir · Ver PDF · Ver Word / Compartir PDF · Compartir Word, en dos filas compactas */
+#v-rotulos .sticky-actions{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+#v-rotulos .sticky-actions .btn{grid-column:span 2;padding-left:6px;padding-right:6px;font-size:.92rem;min-height:44px;white-space:nowrap}
+#v-rotulos .sticky-actions #lb-pdf-share,#v-rotulos .sticky-actions #lb-docx-share{grid-column:span 3}
+#v-rotulos .sticky-actions .btn svg{width:18px;height:18px}

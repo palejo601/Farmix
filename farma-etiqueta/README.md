@@ -136,7 +136,7 @@ Los registros viven en IndexedDB, separados de los archivos de la aplicación; a
 3. Cambie `VERSION` en `sw.js` (p. ej. `1.0.0` → `1.0.1`) para que los dispositivos detecten la versión nueva.
 4. En cada dispositivo aparecerá «Hay una nueva versión» → *Actualizar*. También: *Configuración → Buscar actualización*.
 
-Reglas para quien modifique el código: no cambie el nombre de la base (`farma-etiqueta`) ni borre almacenes; si necesita cambiar la estructura, suba `DB_VERSION` en `js/db.js` y **agregue** almacenes/índices en `onupgradeneeded`. No cambie el nombre de la caché `fe-ocr-v1` salvo que cambien los recursos OCR.
+Reglas para quien modifique el código: no cambie el nombre de la base (`farma-etiqueta`) ni borre almacenes; si necesita cambiar la estructura, suba `DB_VERSION` en `js/db.js` y **agregue** almacenes/índices en `onupgradeneeded`. No cambie el nombre de la caché `fe-ocr-v2` salvo que cambien los recursos OCR.
 
 ## 7. Pruebas realizadas
 
@@ -210,7 +210,7 @@ Los módulos pesados (OCR, PDF, DOCX) se cargan solo cuando se usan y cada uno f
 |---|---|---|---|
 | tesseract.js | 7.0.0 | OCR | Apache-2.0 |
 | tesseract.js-core (LSTM: base, SIMD, relaxed-SIMD) | 7.0.0 | Motor WebAssembly | Apache-2.0 |
-| @tesseract.js-data/spa, /eng (4.0.0_best_int) | 1.0.0 | Idiomas | Apache-2.0 |
+| tessdata_fast (spa, eng) de tesseract-ocr | 4.1 | Idiomas (modelos rápidos) | Apache-2.0 |
 | JsBarcode | 3.12.3 | Codificación de barras en rótulos | MIT |
 | jsPDF | 4.2.1 | PDF | MIT |
 | docx | 9.15.3 | Word (DOCX) | MIT |

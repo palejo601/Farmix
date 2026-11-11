@@ -261,6 +261,12 @@ const EAN = '7701234567897';
   const media = require('child_process').execSync(`unzip -l "${docxPath}"`).toString();
   check('Exportar Word: DOCX con tablas y texto editable (no una imagen pegada)', (xml.match(/<w:tbl>/g) || []).length === 4 && /<w:t[^>]*>CALMADOL<\/w:t>/.test(xml) && /Lote: AB12346/.test(xml), `${(xml.match(/<w:tbl>/g) || []).length} tablas, ${(xml.match(/<w:tc>/g) || []).length} celdas`);
   check('Exportar Word: medidas configuradas (celda 70 mm = 3969 twips, fila 50 mm exacta) y código de barras incluido', /w:w="3969"/.test(xml) && /w:val="2835" w:hRule="exact"|w:hRule="exact" w:val="2835"/.test(xml) && /media\/.*\.png/.test(media));
+  const lbls = await page.$$eval('#v-rotulos .sticky-actions button', b => b.map(x => x.textContent.trim()));
+  check('Botones separados: Ver PDF, Ver Word, Compartir PDF, Compartir Word', ['Ver PDF', 'Ver Word', 'Compartir PDF', 'Compartir Word'].every(t => lbls.includes(t)), lbls.join(' · '));
+  check('«Ver» en Android (navegador) descarga el archivo y explica cómo abrirlo', /Descargas para abrirlo/.test(await page.locator('#toasts').innerText()));
+  const [s1] = await Promise.all([page.waitForEvent('download'), page.click('#lb-pdf-share')]);
+  const [s2] = await Promise.all([page.waitForEvent('download'), page.click('#lb-docx-share')]);
+  check('Compartir PDF y Compartir Word entregan archivos reales (sin menú Compartir en este navegador: se descargan)', /\.pdf$/.test(s1.suggestedFilename()) && /\.docx$/.test(s2.suggestedFilename()) && fs.statSync(await s1.path()).size > 1000 && fs.statSync(await s2.path()).size > 1000);
 
   console.log('\nPrueba 7 — Respaldo y restauración');
   await page.click('.tabbar a[data-tab=respaldo]');
