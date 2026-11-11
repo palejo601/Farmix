@@ -1,6 +1,6 @@
 # Resultado de las pruebas automáticas
 
-Ejecución: 2026-11-11 17:54 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
+Ejecución: 2026-11-11 18:17 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
 
 | Estado | Comprobación | Detalle |
 |---|---|---|
@@ -27,7 +27,9 @@ Ejecución: 2026-11-11 17:54 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Nada se escribe en el formulario antes de confirmar |  |
 | OK | Corrección manual en la revisión y aplicación al formulario |  |
 | OK | El OCR lee también el código de barras en el mismo paso | 7701234567897 |
-| OK | «Leer datos de otra foto»: propone los datos sin marcar los que ya están en el formulario y no cambia la foto guardada | [["Nombre del producto",false],["Principio activo",false],["Fecha de vencimiento",false],["Número de lote",false],["Registro sanitario",false],["Laboratorio",false],["Concentración",false],["Forma farmacéutica",false],["Presentación",false]] |
+| OK | «Marcar lote y fechas»: lee la zona ampliada y muestra los tres campos para confirmar | [["Número de lote","AB12345","Leído"],["Fecha de fabricación","","Sin leer"],["Fecha de vencimiento","05/2027","Leído"]] |
+| OK | La zona de otra foto no reemplaza la foto guardada y nada se aplica sin confirmar |  |
+| OK | Al confirmar se aplican lote, fabricación (escrita a mano) y vencimiento |  |
 | OK | Empaque sin lote ni fecha: no inventa esos campos y advierte que falta el vencimiento |  |
 | OK | Código de barras leído dentro de la foto del empaque |  |
 | OK | Registro confirmado y guardado |  |
@@ -37,6 +39,7 @@ Ejecución: 2026-11-11 17:54 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | El detalle distingue datos leídos (OCR / código) de datos manuales |  |
 | OK | La foto está guardada como bytes en IndexedDB (no como URL temporal) | [{"bytes":96794,"isBuf":true}] |
 | OK | Cierre inesperado: el formulario sin guardar se recupera |  |
+| OK | Al guardar sin lote ni vencimiento se advierte y se pide confirmación |  |
 | OK | Control de duplicados: avisa antes de guardar un registro repetido |  |
 | OK | Indicador: recursos OCR disponibles sin conexión (tras el primer uso) |  |
 | OK | Sin internet: la aplicación abre y muestra el historial |  |
@@ -73,4 +76,4 @@ Ejecución: 2026-11-11 17:54 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Botones con altura táctil ≥ 40 px | 0 pequeños |
 | OK | Sin errores de JavaScript durante toda la sesión |  |
 
-**68 de 68 correctas.**
+**71 de 71 correctas.**

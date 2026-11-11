@@ -121,12 +121,20 @@ const EAN = '7701234567897';
   await btn('Aplicar al formulario').click();
   check('Corrección manual en la revisión y aplicación al formulario', await page.inputValue('#f-lote') === 'AB12346' && await page.inputValue('#f-nombre') === 'CALMADOL');
   check('El OCR lee también el código de barras en el mismo paso', get('Código de barras') === EAN && await page.inputValue('#f-codigoBarras') === EAN, get('Código de barras'));
-  // Segunda fotografía (otra cara del empaque): solo se lee, no reemplaza la foto ni pisa datos ya escritos
+  // Zona marcada en otra fotografía: se amplía, se lee varias veces y se confirma viendo la imagen
   const infoBefore = await page.locator('#photo-info').innerText();
-  await choose('#photo-box label[data-after=extra]', F.pack); await page.waitForSelector('.ocr-row', { timeout: 180000 });
-  const ex = await page.$$eval('.ocr-row', rs => rs.map(r => [r.querySelector('b').textContent, r.querySelector('input[type=checkbox]').checked]));
-  check('«Leer datos de otra foto»: propone los datos sin marcar los que ya están en el formulario y no cambia la foto guardada', ex.length >= 4 && ex.filter(r => r[0] === 'Nombre del producto' || r[0] === 'Número de lote').every(r => r[1] === false) && await page.locator('#photo-info').innerText() === infoBefore, JSON.stringify(ex));
-  await btn('Cancelar').click();
+  const dragZone = async (x0, y0, x1, y1) => { const b = await page.locator('.zone-wrap').boundingBox(); await page.mouse.move(b.x + b.width * x0, b.y + b.height * y0); await page.mouse.down(); await page.mouse.move(b.x + b.width * x1, b.y + b.height * y1, { steps: 6 }); await page.mouse.up(); };
+  await choose('#photo-box label[data-after=extra]', F.pack); await page.waitForSelector('.zone-wrap img');
+  await page.waitForFunction(() => document.querySelector('.zone-wrap img').naturalWidth > 0);
+  await dragZone(0.03, 0.70, 0.61, 0.92); await btn('Leer zona marcada').click();
+  await page.waitForSelector('.zone-shot', { timeout: 180000 }); await waitIdle();
+  const zr = await page.$$eval('.modal .ocr-row', rs => rs.map(r => [r.querySelector('b').textContent, r.querySelector('input').value, r.querySelector('.chip').textContent]));
+  check('«Marcar lote y fechas»: lee la zona ampliada y muestra los tres campos para confirmar', zr.length === 3 && zr[0][1] === 'AB12345' && zr[2][1] === '05/2027' && zr[1][1] === '', JSON.stringify(zr));
+  check('La zona de otra foto no reemplaza la foto guardada y nada se aplica sin confirmar', await page.locator('#photo-info').innerText() === infoBefore && await page.inputValue('#f-lote') === 'AB12346');
+  await page.locator('.modal .ocr-row input').nth(1).fill('05/2025');
+  await btn('Usar estos datos').click();
+  check('Al confirmar se aplican lote, fabricación (escrita a mano) y vencimiento', await page.inputValue('#f-lote') === 'AB12345' && await page.inputValue('#f-fechaFabricacion') === '05/2025' && await page.inputValue('#f-vencimiento') === '05/2027');
+  await page.fill('#f-lote', 'AB12346');
   // No inventa: empaque sin lote ni vencimiento
   await choose('#photo-box label[for=pick-gallery]', F.pack2); await page.waitForTimeout(700);
   await page.click('#btn-ocr'); await page.waitForSelector('.ocr-row', { timeout: 180000 });
@@ -159,8 +167,11 @@ const EAN = '7701234567897';
   await page.close(); page = await ctx.newPage(); watch(page); await page.goto(URL0); await page.waitForSelector('#v-registrar:not([hidden])');
   check('Cierre inesperado: el formulario sin guardar se recupera', await page.inputValue('#f-nombre') === 'Borrador de prueba');
   await page.click('#btn-form-clear'); await btn('Descartar').click();
+  await page.fill('#f-nombre', 'Sin lote'); await page.click('#btn-save'); await page.waitForSelector('.modal');
+  check('Al guardar sin lote ni vencimiento se advierte y se pide confirmación', /no tiene número de lote ni fecha de vencimiento/.test(await modalText()));
+  await btn('Cancelar').click(); await page.click('#btn-form-clear'); await btn('Descartar').click();
   // duplicados
-  await page.fill('#f-nombre', 'calmadol'); await page.fill('#f-lote', 'ab12346'); await page.fill('#f-concentracion', '500 mg'); await page.fill('#f-codigoBarras', EAN);
+  await page.fill('#f-nombre', 'calmadol'); await page.fill('#f-lote', 'ab12346'); await page.fill('#f-concentracion', '500 mg'); await page.fill('#f-codigoBarras', EAN); await page.fill('#f-vencimiento', '05/2027');
   await page.click('#btn-save'); await page.waitForSelector('.modal');
   check('Control de duplicados: avisa antes de guardar un registro repetido', /duplicado/i.test(await modalText()));
   await btn('Cancelar').click(); await page.click('#btn-form-clear'); await btn('Descartar').click();

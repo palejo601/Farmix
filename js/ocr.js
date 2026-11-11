@@ -39,11 +39,12 @@ export function initOCR(progress) {
 }
 
 // Devuelve {text, confidence, lines:[{text, conf, height}]}
+// sparse también admite un modo de segmentación concreto ('6' = bloque de texto, '7' = un renglón).
 // sparse=true usa segmentación de «texto disperso»: recupera textos sueltos (lote, fecha) junto a códigos de barras o gráficos.
 export async function recognize(canvas, progress = () => {}, sparse = false) {
   const w = await initOCR(progress);
   try {
-    await w.setParameters({ tessedit_pageseg_mode: sparse ? '11' : '3', user_defined_dpi: '300' });
+    await w.setParameters({ tessedit_pageseg_mode: sparse === true ? '11' : sparse || '3', user_defined_dpi: '300' });
     const { data } = await w.recognize(canvas, {}, { text: true, blocks: true });
     const lines = [];
     for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || [])
