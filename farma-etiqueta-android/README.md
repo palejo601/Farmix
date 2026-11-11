@@ -51,6 +51,21 @@ y coloque el archivo `.jks` en `farma-etiqueta-android/keystore/`. Conserve ese 
 - Verificado: el APK compila, está firmado (esquema v2), contiene todos los recursos, y las rutas de código propias de la app (guardar/compartir archivos, estado sin conexión) funcionan con un puente nativo simulado.
 - **No verificado: ejecución en un teléfono o emulador Android** (el entorno de compilación no permite emuladores). Falta comprobar en un dispositivo real: apertura del selector de fotos, OCR dentro del WebView y el menú Compartir.
 
-## iPhone
+## iPhone / iPad (.ipa)
 
-Apple no permite instalar apps fuera de la App Store sin un Mac y una cuenta Apple Developer de pago. En iPhone se usa la versión web (`../farma-etiqueta/`) publicada en HTTPS y agregada a la pantalla de inicio desde Safari.
+El proyecto iOS está en `ios/`. El archivo `dist/FARMA-ETIQUETA-<versión>.ipa` lo compila automáticamente GitHub Actions en macOS (`.github/workflows/ios-ipa.yml`) cada vez que cambia la app, y lo guarda en esta carpeta. Se entrega **sin firmar**: el iPhone no lo instala directamente.
+
+### Instalarlo desde un computador (gratis, se renueva cada 7 días)
+
+1. En el computador (Windows o Mac) instale [Sideloadly](https://sideloadly.io). En Windows instale también iTunes desde la página de Apple (no la versión de Microsoft Store).
+2. Descargue el `.ipa` al computador.
+3. Conecte el iPhone por cable, desbloquéelo y toque *Confiar en este computador*.
+4. Abra Sideloadly, arrastre el `.ipa`, escriba su Apple ID y pulse *Start*. Sideloadly firma la app con su cuenta.
+5. En el iPhone: *Ajustes → General → VPN y gestión de dispositivos* → su Apple ID → *Confiar*.
+6. En iOS 16 o superior: *Ajustes → Privacidad y seguridad → Modo de desarrollador* → activar y reiniciar.
+
+Con un Apple ID gratuito la firma vence a los **7 días**: la app deja de abrir hasta repetir el paso 4. Instálela siempre **encima** (sin borrarla) para conservar los registros, y exporte respaldos con regularidad. Con una cuenta Apple Developer de pago la firma dura un año.
+
+Estado de las pruebas: el `.ipa` compila y contiene el ejecutable arm64, los complementos y todos los recursos web y de OCR. **No se ha instalado ni ejecutado en ningún iPhone.**
+
+Alternativa sin computador ni caducidad: la versión web (`../farma-etiqueta/`) abierta en Safari y agregada a la pantalla de inicio.
