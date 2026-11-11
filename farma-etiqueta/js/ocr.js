@@ -1,6 +1,6 @@
 // OCR con Tesseract.js (español + inglés). Todos los recursos son locales (vendor/tesseract):
 // biblioteca, worker, núcleo WASM y datos de idioma. No se consulta ningún servicio externo.
-import { loadScript } from './ui.js';
+import { loadScript, isNative } from './ui.js';
 
 const abs = p => new URL(p, document.baseURI).href;
 export const OCR_BASE = ['vendor/tesseract/tesseract.min.js', 'vendor/tesseract/worker.min.js',
@@ -17,16 +17,22 @@ export function initOCR(progress) {
   if (worker) return Promise.resolve(worker);
   return starting ||= (async () => {
     await loadScript('vendor/tesseract/tesseract.min.js');
-    const w = await Tesseract.createWorker(['spa', 'eng'], 1, {
+    // En la app Android el empaquetador descomprime los .gz y les quita la extensión: allí los idiomas son «.traineddata» sin comprimir.
+    const native = isNative();
+    let timer;
+    const create = Tesseract.createWorker(['spa', 'eng'], 1, {
       workerPath: abs('vendor/tesseract/worker.min.js'),
       corePath: abs('vendor/tesseract/core'),
       langPath: abs('vendor/tesseract/lang'),
-      gzip: true, workerBlobURL: false,
+      gzip: !native, cacheMethod: native ? 'none' : 'write', workerBlobURL: false,
       logger: m => onProgress(STEP[m.status] || 'Procesando…', m.status === 'recognizing text' ? m.progress : null),
-      errorHandler: () => {},
     });
-    worker = w;
-    return w;
+    // Nunca se queda esperando indefinidamente: si el motor no arranca, se informa el error.
+    const limit = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('El motor OCR tardó demasiado en iniciar (más de 2 minutos).')), 120000); });
+    try { worker = await Promise.race([create, limit]); }
+    catch (e) { create.then(w => w.terminate()).catch(() => {}); throw e; }
+    finally { clearTimeout(timer); }
+    return worker;
   })().catch(e => {
     throw new Error('No se pudo iniciar el OCR. ' + (navigator.onLine ? '' : 'Está sin conexión y los recursos OCR aún no se han guardado en este dispositivo. ') + (e?.message || e || ''));
   }).finally(() => { starting = null; });
