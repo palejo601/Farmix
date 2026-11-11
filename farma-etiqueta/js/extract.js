@@ -216,3 +216,54 @@ export function extractFields(lines) {
   if (comp) { add('principioActivo', 'Principio activo', comp.pa, comp.i, ['Tomado de la composición («contiene…»): confírmelo.']); out.splice(Math.min(1, out.length - 1), 0, out.pop()); }
   return { fields: out, warnings };
 }
+
+// ---------- Lectura de una ZONA marcada por el usuario (se sabe que contiene lote y fechas) ----------
+const lev1 = (a, b) => {                       // ¿distancia de edición ≤ 1?
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0, j = 0, d = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) { i++; j++; continue; }
+    if (++d > 1) return false;
+    if (a.length > b.length) i++; else if (a.length < b.length) j++; else { i++; j++; }
+  }
+  return d + (a.length - i) + (b.length - j) <= 1;
+};
+const FUZZY = [['LOTE', 'LOTE'], ['BATCH', 'LOTE'], ['VENCE', 'VENCE'], ['VENC', 'VENCE'], ['VENCIMIENTO', 'VENCE'], ['EXPIRA', 'VENCE'], ['FABRICACION', 'FAB'], ['ELAB', 'FAB']];
+// Corrige solo las ETIQUETAS mal leídas («LUTE», «VENLE»); los valores nunca se tocan.
+function fixLabels(text) {
+  return text.replace(/[A-Za-zÁÉÍÓÚáéíóú0]{4,11}(?=\s*[:.\-]?\s|\s*[:.\-]|$)/g, w => {
+    if (/\d/.test(w.replace(/0/g, ''))) return w;
+    const u = w.toUpperCase().replace(/0/g, 'O').normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const hit = FUZZY.find(([k]) => lev1(u, k));
+    return hit ? hit[1] : w;
+  });
+}
+const ZKEY = /^(LOTE?|LOT|BATCH|VENCE|VENC|VTO|EXP|CAD|FAB|MFG|MFD|ELAB|FECHA|DATE|DE|NO|N[°º]?)$/i;
+// Devuelve {lote, fechaFabricacion, vencimiento}: cada uno {value, labelled} o ausente.
+export function extractZone(lines) {
+  const ls = lines.map(l => ({ ...l, text: fixLabels(clean(l.text || '')) })).filter(l => l.text.length > 1);
+  const out = {};
+  for (const f of extractFields(ls).fields) if (['lote', 'fechaFabricacion', 'vencimiento'].includes(f.field) && !f.doubt && !out[f.field]) out[f.field] = { value: f.value, labelled: true };
+  // Sin etiqueta legible: en la zona marcada, las fechas válidas y el código alfanumérico restante son los candidatos.
+  const taken = new Set(Object.values(out).map(o => o.value));
+  const dates = [];
+  let rest = '';
+  for (const l of ls) {
+    let t = l.text;
+    for (const d of findDates(l.text)) { if (ym(d[0]) != null && !taken.has(d[0])) dates.push(d[0]); t = t.replace(d[0], ' '); }
+    rest += ' ' + t;
+  }
+  const uniq = [...new Set(dates)].sort((a, b) => ym(a) - ym(b));
+  if (!out.vencimiento && !out.fechaFabricacion) {
+    if (uniq.length >= 2) { out.fechaFabricacion = { value: uniq[0] }; out.vencimiento = { value: uniq[uniq.length - 1] }; }
+    else if (uniq.length === 1) out.vencimiento = { value: uniq[0] };
+  } else if (!out.vencimiento) { const v = uniq.filter(d => ym(d) > ym(out.fechaFabricacion.value)).pop(); if (v) out.vencimiento = { value: v }; }
+  else if (!out.fechaFabricacion) { const v = uniq.find(d => ym(d) < ym(out.vencimiento.value)); if (v) out.fechaFabricacion = { value: v }; }
+  if (!out.lote) {
+    const tok = rest.split(/[\s:;,|]+/).map(t => t.replace(/^[.\-]+|[.\-]+$/g, '')).find(t => /^[A-Z0-9][A-Z0-9\-\/]{2,15}$/i.test(t) && /\d/.test(t) && !ZKEY.test(t));
+    if (tok) out.lote = { value: tok };
+  }
+  return out;
+}
+export const dateOK = s => ym(s) != null;

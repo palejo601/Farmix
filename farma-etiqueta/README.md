@@ -97,6 +97,17 @@ Desde Inicio, *Identificar por fotografía* hace los pasos 1-3 seguidos.
 - Ninguna función usa servicios externos; todas las bibliotecas están incluidas en `vendor/`.
 - Indicadores en Inicio y Configuración: conexión, aplicación sin conexión, recursos OCR, registros, almacenamiento usado y persistente.
 
+### Lote, fecha de fabricación y vencimiento: zona marcada
+
+Estos datos suelen estar impresos aparte, pequeños, por puntos o en relieve, y son los que peor lee cualquier OCR. Por eso tienen un flujo propio:
+
+1. *Marcar lote y fechas en esta foto* (o *desde otra foto* si están en otra cara del empaque).
+2. Se arrastra el dedo para encerrar la zona. La app la recorta y la amplía.
+3. La zona se lee varias veces (normal, realzada, texto disperso, invertida y, con internet y clave, en línea) y se comparan las lecturas.
+4. Se muestra la **zona ampliada** junto a los tres campos: lo que coincide entre lecturas llega escrito; lo dudoso se ofrece como opción; lo que no se pudo leer queda para escribirlo mirando la imagen.
+
+Así los tres datos siempre quedan revisados contra la imagen antes de guardarse. Al guardar un registro sin lote o sin vencimiento, la app lo advierte y pide confirmación.
+
 ### Reconocimiento en línea (opcional)
 
 Con internet, la app puede leer las fotos con el servicio externo **OCR.space** en lugar del OCR local. Se activa en *Configuración → Reconocimiento en línea* pegando una clave gratuita (registro en `ocr.space/ocrapi/freekey`; el plan gratuito indica 25.000 lecturas al mes y archivos de hasta 1 MB, por lo que la app reduce la foto antes de enviarla).
@@ -129,7 +140,7 @@ Reglas para quien modifique el código: no cambie el nombre de la base (`farma-e
 
 ## 7. Pruebas realizadas
 
-Resultado completo: [`docs/resultado-pruebas.md`](docs/resultado-pruebas.md) (68 de 68 comprobaciones correctas). Se ejecutan con `node tests/e2e.cjs` (requiere `npm i playwright`).
+Resultado completo: [`docs/resultado-pruebas.md`](docs/resultado-pruebas.md) (71 de 71 comprobaciones correctas). Se ejecutan con `node tests/e2e.cjs` (requiere `npm i playwright`).
 
 **Cómo se probó**: automatización con Chromium real emulando un teléfono Android (Pixel 7, pantalla táctil de 412 px), con la aplicación servida por HTTP local y service worker activo. Imágenes de prueba **sintéticas** generadas por el propio script (empaque con texto impreso y código EAN-13).
 

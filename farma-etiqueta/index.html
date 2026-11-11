@@ -93,9 +93,10 @@
           <button type="button" class="btn danger-outline" id="btn-photo-del">Eliminar foto</button>
         </div>
         <div class="row">
-          <label class="btn" for="pick-gallery" data-after="extra" role="button" tabindex="0"><svg viewBox="0 0 24 24"><use href="#i-plus"/></svg>Leer datos de otra foto (lote, vencimiento…)</label>
+          <button type="button" class="btn primary" id="btn-zone"><svg viewBox="0 0 24 24"><use href="#i-label"/></svg>Marcar lote y fechas en esta foto</button>
+          <label class="btn" for="pick-gallery" data-after="extra" role="button" tabindex="0"><svg viewBox="0 0 24 24"><use href="#i-plus"/></svg>Lote y fechas desde otra foto</label>
         </div>
-        <p class="hint">Si el lote, la fecha o el código están en otra cara del empaque, tómele otra foto y léala aquí. No reemplaza la foto guardada.</p>
+        <p class="hint">Encierre con el dedo el lote, la fecha de fabricación y la de vencimiento: la app amplía esa zona, la lee y se la muestra para confirmar. Si están en otra cara del empaque, use «desde otra foto» (no reemplaza la foto guardada).</p>
       </div>
       <div id="photo-progress" class="progress" hidden role="status"><div class="bar"><i></i></div><span></span></div>
     </fieldset>

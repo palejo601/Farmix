@@ -4,7 +4,7 @@ import * as db from './db.js';
 import { processFile, toStored, fromStored, blobToCanvas, freeCanvas, enhance } from './photos.js';
 import { readBarcode, gtinCheck } from './barcode.js';
 import { recognize, recognizeOnline } from './ocr.js';
-import { extractFields } from './extract.js';
+import { extractFields, extractZone, dateOK } from './extract.js';
 
 export const FIELDS = [
   ['nombre', 'Nombre del producto'], ['codigoBarras', 'Código de barras'], ['principioActivo', 'Principio activo'],
@@ -201,6 +201,10 @@ async function runOCR(extra = null) {
   catch (e) { busy(false); await modal('No se pudo reconocer el texto', h('div', {}, h('p', {}, errMsg(e)), h('p', { class: 'muted small' }, 'Los datos del formulario no se modificaron. Puede ingresarlos manualmente.'))); return; }
   finally { freeCanvas(canvas); busy(false); }
 
+  return review(fields, warnings, res, onlineErr, extra, code);
+}
+
+async function review(fields, warnings, res, onlineErr, extra, code) {
   if (code) fields.push({ field: 'codigoBarras', label: 'Código de barras', value: code.value, conf: null, doubt: false, checked: true, code,
     notes: [`Decodificado de las barras (${code.format}), no del texto. Compárelo con el número impreso.`] });
   const rows = fields.map(f => {
@@ -236,12 +240,125 @@ async function runOCR(extra = null) {
   toast(n ? `${n} dato(s) aplicados. Revise el formulario y pulse Guardar para confirmar.` : 'No se aplicó ningún dato.', n ? 'ok' : 'warn', 5500);
 }
 
+// ---- Lote y fechas: el usuario marca la zona, se amplía, se lee varias veces y se confirma viendo la imagen ----
+const ZF = [['lote', 'Número de lote'], ['fechaFabricacion', 'Fecha de fabricación'], ['vencimiento', 'Fecha de vencimiento']];
+
+// Selector de zona sobre la fotografía. Devuelve {x,y,w,h} en fracciones, 'all' (leer toda la foto) o null.
+async function pickZone(blob) {
+  const url = URL.createObjectURL(blob);
+  let r = { x: .08, y: .35, w: .84, h: .3 };
+  const box = h('div', { class: 'zone-box' });
+  const img = h('img', { src: url, alt: 'Fotografía para marcar la zona', draggable: false });
+  const wrap = h('div', { class: 'zone-wrap' }, img, box);
+  const draw = () => { box.style.left = r.x * 100 + '%'; box.style.top = r.y * 100 + '%'; box.style.width = r.w * 100 + '%'; box.style.height = r.h * 100 + '%'; };
+  let p0 = null;
+  const pos = e => { const b = wrap.getBoundingClientRect(); return [Math.min(1, Math.max(0, (e.clientX - b.left) / b.width)), Math.min(1, Math.max(0, (e.clientY - b.top) / b.height))]; };
+  wrap.addEventListener('pointerdown', e => { p0 = pos(e); wrap.setPointerCapture(e.pointerId); e.preventDefault(); });
+  wrap.addEventListener('pointermove', e => { if (!p0) return; const [x, y] = pos(e); r = { x: Math.min(p0[0], x), y: Math.min(p0[1], y), w: Math.abs(x - p0[0]), h: Math.abs(y - p0[1]) }; draw(); });
+  const end = () => { p0 = null; if (r.w < .04 || r.h < .02) { r = { x: .08, y: .35, w: .84, h: .3 }; draw(); } };
+  wrap.addEventListener('pointerup', end); wrap.addEventListener('pointercancel', end);
+  draw();
+  try {
+    const act = await modal('Marque dónde están el lote y las fechas', h('div', {},
+      h('p', { class: 'small' }, 'Arrastre el dedo sobre la foto para encerrar el lote, la fecha de fabricación y la de vencimiento. Cuanto más ajustado el recuadro, mejor se lee.'), wrap),
+      [{ label: 'Cancelar', value: null }, { label: 'Leer zona marcada', value: 'zone', class: 'primary' }], { sticky: true });
+    return act === 'zone' ? r : null;
+  } finally { URL.revokeObjectURL(url); }
+}
+
+function cropCanvas(src, r, target = 1800) {
+  const sx = Math.round(r.x * src.width), sy = Math.round(r.y * src.height), sw = Math.max(8, Math.round(r.w * src.width)), sh = Math.max(8, Math.round(r.h * src.height));
+  const k = Math.max(1, Math.min(4, target / Math.max(sw, sh))), c = document.createElement('canvas');
+  c.width = Math.round(sw * k); c.height = Math.round(sh * k);
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.imageSmoothingQuality = 'high';
+  x.drawImage(src, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  return c;
+}
+function inverted(src) {
+  const c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
+  const x = c.getContext('2d'); x.drawImage(src, 0, 0);
+  const d = x.getImageData(0, 0, c.width, c.height), p = d.data;
+  for (let i = 0; i < p.length; i += 4) { p[i] = 255 - p[i]; p[i + 1] = 255 - p[i + 1]; p[i + 2] = 255 - p[i + 2]; }
+  x.putImageData(d, 0, 0); return c;
+}
+
+async function runZone(file = null) {
+  if (!(file instanceof Blob)) file = null;
+  if (!file && !st.photo) { toast('Primero seleccione una fotografía.', 'warn'); return; }
+  const source = file || st.src || st.photo.blob;
+  const zone = await pickZone(source);
+  if (!zone) return;
+  let full, crop, shot = '', onlineErr = '', usedOnline = false;
+  const passes = [];                                   // [{name, weight, found, text}]
+  busy('Preparando la zona…');
+  try {
+    full = await blobToCanvas(source, 4000);
+    crop = cropCanvas(full, zone);
+    shot = crop.toDataURL('image/jpeg', .85);
+    const on = await db.kvGet('onlineOcr').catch(() => null);
+    if (on?.enabled && on.key && navigator.onLine) {
+      try { const r = await recognizeOnline(crop, on.key, busy); passes.push({ name: 'en línea', weight: 2, found: extractZone(r.lines), text: r.text }); usedOnline = true; }
+      catch (e) { onlineErr = errMsg(e); }
+    }
+    // Varias lecturas locales de la misma zona con distintos tratamientos: lo que coincide entre ellas es más fiable.
+    const variants = [['normal', () => crop, '6'], ['realzada', () => enhance(crop), '6'], ['dispersa', () => crop, '11'], ['invertida', () => enhance(inverted(crop)), '6']];
+    for (let i = 0; i < variants.length; i++) {
+      const [name, make, psm] = variants[i];
+      busy(`Leyendo la zona (${i + 1} de ${variants.length})…`, (i + 1) / (variants.length + 1));
+      const c = make();
+      try { const r = await recognize(c, () => {}, psm); passes.push({ name, weight: 1, found: extractZone(r.lines), text: r.text }); }
+      catch { /* una lectura fallida no impide las demás */ }
+      finally { if (c !== crop) freeCanvas(c); }
+    }
+  }
+  catch (e) { busy(false); await modal('No se pudo leer la zona', h('p', {}, errMsg(e))); return; }
+  finally { freeCanvas(full); freeCanvas(crop); busy(false); }
+
+  // Votación por campo
+  const rows = ZF.map(([field, label]) => {
+    const votes = new Map();
+    for (const p of passes) { const f = p.found[field]; if (!f) continue; const k = f.value.toUpperCase().replace(/\s+/g, ''); const v = votes.get(k) || { value: f.value, w: 0, n: 0, labelled: false }; v.w += p.weight + (f.labelled ? .5 : 0); v.n++; v.labelled ||= !!f.labelled; votes.set(k, v); }
+    const cands = [...votes.values()].sort((a, b) => b.w - a.w), best = cands[0], cur = input(field).value.trim();
+    const badDate = best && field !== 'lote' && !dateOK(best.value);
+    const sure = best && !badDate && (cands.length === 1 || best.w >= 2);
+    // Un valor sin etiqueta que solo apareció en una lectura no se escribe en el campo: se ofrece como opción.
+    const fill = best && (sure || best.labelled || best.n > 1);
+    const inp = h('input', { value: fill ? best.value : cur, placeholder: 'Escríbalo mirando la imagen', 'aria-label': label, spellcheck: false, autocapitalize: 'characters' });
+    const note = !best ? 'No se pudo leer: escríbalo mirando la imagen de arriba.'
+      : !fill ? 'Lectura poco fiable: no se escribió. Si coincide con la imagen, tóquela; si no, escríbalo.'
+      : badDate ? 'La fecha leída no es válida: corríjala mirando la imagen.'
+      : cands.length > 1 ? `Las lecturas no coinciden (${best.n} de ${passes.length} leyeron este valor). Verifíquelo con la imagen.`
+      : best.n === 1 && passes.length > 1 ? 'Solo una de las lecturas obtuvo este valor. Verifíquelo con la imagen.' : `${best.n} de ${passes.length} lecturas coinciden.`;
+    const node = h('div', { class: 'ocr-row' + (sure ? '' : ' doubt') },
+      h('div', { class: 'top' }, h('b', {}, label), best && fill ? h('span', { class: 'chip ' + (sure ? '' : 'warn') }, sure ? 'Leído' : 'Dudoso') : h('span', { class: 'chip ' + (cur ? '' : 'bad') }, cur ? 'Ya en el formulario' : 'Sin leer')),
+      inp,
+      cands.length > 1 || (best && !fill) ? h('div', { class: 'row', style: 'margin-top:6px' }, cands.slice(0, 4).map(c => h('button', { type: 'button', class: 'btn small', onclick: () => { inp.value = c.value; } }, c.value))) : null,
+      h('p', { class: 'why' }, note),
+      cur && best && cur !== best.value ? h('p', { class: 'why' }, `Valor actual en el formulario: «${cur}»`) : null);
+    return { field, inp, node, proposed: fill ? best.value : '' };
+  });
+  const body = h('div', {},
+    h('img', { class: 'zone-shot', src: shot, alt: 'Zona marcada ampliada' }),
+    h('p', { class: 'muted small' }, usedOnline ? 'Leído con el servicio en línea y con el OCR local.' : 'Leído con el OCR local' + (onlineErr ? ` (el servicio en línea no se pudo usar: ${onlineErr}).` : '.')),
+    h('p', { class: 'banner', style: 'border-radius:10px' }, 'Compare cada dato con la imagen ampliada y corrija lo que no coincida. Deje vacío lo que el empaque no tenga.'),
+    rows.map(r => r.node),
+    h('details', {}, h('summary', {}, 'Texto leído en cada intento'), h('pre', { class: 'raw' }, passes.map(p => `[${p.name}]\n${(p.text || '').trim() || '(nada)'}`).join('\n\n'))));
+  const ok = await modal('Lote y fechas', body, [{ label: 'Cancelar', value: false }, { label: 'Usar estos datos', value: true, class: 'primary' }], { sticky: true });
+  if (!ok) return;
+  let n = 0;
+  for (const r of rows) { const v = r.inp.value.trim(); if (!v || v === input(r.field).value.trim()) continue; setField(r.field, v, r.proposed && v === r.proposed ? 'ocr' : 'manual'); n++; }
+  chips(); scheduleDraft();
+  toast(n ? `${n} dato(s) del lote aplicados. Pulse Guardar para confirmar el registro.` : 'No se cambió ningún dato.', n ? 'ok' : 'warn', 5000);
+}
+
 // ---- Guardado ----
 async function save(ev) {
   ev.preventDefault();
   const v = values(), err = $('#form-error');
   err.hidden = true;
   if (!v.nombre) { input('nombre').classList.add('invalid'); err.textContent = 'Escriba el nombre del producto para poder guardar.'; err.hidden = false; input('nombre').focus(); return; }
+  const falta = [!v.lote && 'número de lote', !v.vencimiento && 'fecha de vencimiento'].filter(Boolean);
+  if (falta.length && !(await confirmDlg('Faltan datos del lote', `Este registro no tiene ${falta.join(' ni ')}. Puede completarlos con «Marcar lote y fechas en la foto» o escribirlos. ¿Guardar así de todas formas?`, 'Guardar así'))) return;
   const btn = $('#btn-save'); btn.disabled = true;
   try {
     const all = await db.allRecords();
@@ -279,6 +396,7 @@ export function initForm() {
   $('#btn-photo-del').addEventListener('click', removePhoto);
   $('#btn-barcode').addEventListener('click', () => runBarcode());
   $('#btn-ocr').addEventListener('click', () => runOCR());
+  $('#btn-zone').addEventListener('click', () => runZone());
 
   // Selectores de archivo: la apertura la hace el propio <label for>, en el mismo gesto del usuario.
   let after = null;
@@ -292,7 +410,7 @@ export function initForm() {
       e.target.value = '';                                   // permite volver a elegir el mismo archivo
       const a = after; after = null;
       if (!file) return;
-      if (a === 'extra') { if (st.photo) await runOCR(file); return; }
+      if (a === 'extra') { if (st.photo) await runZone(file); return; }
       if (a && st.dirty && !(await confirmDlg('Formulario con datos', 'El formulario tiene datos sin guardar. ¿Usar esta fotografía en ese mismo registro?', 'Usar aquí'))) return;
       await setPhotoFromFile(file, a);
     });
