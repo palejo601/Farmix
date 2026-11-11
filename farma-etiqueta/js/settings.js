@@ -4,7 +4,7 @@ const appName = () => nativePlatform() === 'ios' ? 'App iPhone / iPad' : 'App An
 import * as db from './db.js';
 import { initOCR, recognizeOnline, OCR_BASE, OCR_CORES } from './ocr.js';
 
-export const APP_VERSION = '1.4.0';
+export const APP_VERSION = '1.5.0';
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const secure = () => self.isSecureContext && 'serviceWorker' in navigator && 'caches' in self;
 let installEvt = null, swReg = null;
@@ -107,6 +107,9 @@ export function initSettings() {
   addEventListener('appinstalled', () => { installEvt = null; refreshStatus(); });
   $('#cf-install-btn').addEventListener('click', async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; refreshStatus(); });
   $('#cf-ocr').addEventListener('click', prepareOCR);
+  // Llenado automático (activo por defecto)
+  db.kvGet('autoFill').then(v => { $('#cf-autofill').checked = v !== false; }).catch(() => { $('#cf-autofill').checked = true; });
+  $('#cf-autofill').addEventListener('change', async e => { await db.kvSet('autoFill', e.target.checked).catch(() => {}); toast(e.target.checked ? 'Al elegir una foto, el formulario se llenará solo.' : 'Llenado automático desactivado.', 'ok'); });
   // Reconocimiento en línea
   db.kvGet('onlineOcr').then(o => { $('#on-key').value = o?.key || ''; $('#on-enabled').checked = !!o?.enabled; }).catch(() => {});
   const saveOnline = async () => {

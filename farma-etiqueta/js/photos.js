@@ -2,6 +2,7 @@
 const MAX_BYTES = 30 * 1024 * 1024;
 const MAX_SIDE = 1800;   // lado mayor de la fotografía guardada
 const QUALITY = 0.82;
+const READ_SIDE = 2600;  // copia en memoria para leer texto y códigos (no se guarda)
 
 async function sniff(file) {
   const b = new Uint8Array(await file.slice(0, 12).arrayBuffer());
@@ -20,7 +21,7 @@ async function decode(blob) {
   try {
     const img = new Image();
     img.decoding = 'async';
-    await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('decode')); img.src = url; });
+    await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('El teléfono no pudo abrir la imagen (archivo no disponible o memoria insuficiente).')); img.src = url; });
     return img; // los navegadores actuales aplican EXIF al dibujar <img> en canvas
   } finally { URL.revokeObjectURL(url); }
 }
@@ -57,11 +58,19 @@ export async function processFile(file, progress = () => {}) {
     canvas = toCanvas(src, MAX_SIDE);
     progress('Comprimiendo…', .8);
     const blob = await toBlob(canvas, 'image/jpeg', QUALITY);
+    // Copia de lectura en alta resolución, en memoria. No se vuelve a abrir el archivo original del teléfono:
+    // en Android ese acceso puede perderse al rato (era la causa del error «decode»).
+    let hi = blob;
+    if (Math.max(src.width || src.naturalWidth, src.height || src.naturalHeight) > MAX_SIDE) {
+      progress('Preparando copia para lectura…', .9);
+      let hc;
+      try { hc = toCanvas(src, READ_SIDE); hi = await toBlob(hc, 'image/jpeg', 0.9); } catch { hi = blob; } finally { freeCanvas(hc); }
+    }
     const tc = toCanvas(canvas, 144);
     const thumb = tc.toDataURL('image/jpeg', 0.7);
     freeCanvas(tc);
     progress('Lista', 1);
-    return { blob, w: canvas.width, h: canvas.height, thumb, original: file.size };
+    return { blob, hi, w: canvas.width, h: canvas.height, thumb, original: file.size };
   } finally {
     src.close?.();
     freeCanvas(canvas);
@@ -70,7 +79,9 @@ export async function processFile(file, progress = () => {}) {
 
 // Convierte la fotografía guardada en un canvas para OCR / lectura de códigos.
 export async function blobToCanvas(blob, maxSide = 2200) {
-  const src = await decode(blob);
+  let src;
+  try { src = await decode(blob); }
+  catch (e) { throw new Error(e?.message?.startsWith('El teléfono') ? e.message : 'El teléfono no pudo abrir la imagen. Intente de nuevo o elija la foto otra vez.'); }
   try { return toCanvas(src, maxSide); } finally { src.close?.(); }
 }
 

@@ -48,7 +48,7 @@
   </div>
   <div class="grid actions">
     <label class="tile primary" for="pick-gallery" data-after="all" role="button" tabindex="0">
-      <svg viewBox="0 0 24 24"><use href="#i-photo"/></svg><b>Identificar por fotografía</b><small>Elegir foto: lee código de barras y texto</small></label>
+      <svg viewBox="0 0 24 24"><use href="#i-photo"/></svg><b>Identificar por fotografía</b><small>Elija la foto y el formulario se llena solo</small></label>
     <label class="tile" for="pick-gallery" data-after="barcode" role="button" tabindex="0">
       <svg viewBox="0 0 24 24"><use href="#i-barcode"/></svg><b>Leer código de barras</b><small>Desde una fotografía</small></label>
     <label class="tile" for="pick-gallery" data-after="ocr" role="button" tabindex="0">
@@ -84,22 +84,30 @@
         <img id="photo-preview" alt="Fotografía seleccionada del producto">
         <p id="photo-info" class="muted small"></p>
         <div class="row">
-          <button type="button" class="btn primary" id="btn-barcode"><svg viewBox="0 0 24 24"><use href="#i-barcode"/></svg>Leer código de barras</button>
-          <button type="button" class="btn primary" id="btn-ocr"><svg viewBox="0 0 24 24"><use href="#i-text"/></svg>Reconocer texto (OCR)</button>
+          <button type="button" class="btn primary" id="btn-auto"><svg viewBox="0 0 24 24"><use href="#i-text"/></svg>Volver a leer la foto</button>
+          <button type="button" class="btn primary" id="btn-zone"><svg viewBox="0 0 24 24"><use href="#i-label"/></svg>Marcar lote y fechas</button>
         </div>
         <div class="row">
-          <label class="btn" for="pick-gallery" role="button" tabindex="0">Cambiar (galería)</label>
-          <label class="btn" for="pick-files" role="button" tabindex="0">Cambiar (archivos)</label>
+          <label class="btn" for="pick-gallery" role="button" tabindex="0">Cambiar foto</label>
           <button type="button" class="btn danger-outline" id="btn-photo-del">Eliminar foto</button>
         </div>
-        <div class="row">
-          <button type="button" class="btn primary" id="btn-zone"><svg viewBox="0 0 24 24"><use href="#i-label"/></svg>Marcar lote y fechas en esta foto</button>
-          <label class="btn" for="pick-gallery" data-after="extra" role="button" tabindex="0"><svg viewBox="0 0 24 24"><use href="#i-plus"/></svg>Lote y fechas desde otra foto</label>
-        </div>
-        <p class="hint">Encierre con el dedo el lote, la fecha de fabricación y la de vencimiento: la app amplía esa zona, la lee y se la muestra para confirmar. Si están en otra cara del empaque, use «desde otra foto» (no reemplaza la foto guardada).</p>
+        <details class="more" id="more-opts">
+          <summary>Más opciones de lectura</summary>
+          <div class="row">
+            <button type="button" class="btn" id="btn-barcode"><svg viewBox="0 0 24 24"><use href="#i-barcode"/></svg>Solo código de barras</button>
+            <button type="button" class="btn" id="btn-ocr"><svg viewBox="0 0 24 24"><use href="#i-text"/></svg>Leer con revisión dato por dato</button>
+          </div>
+          <div class="row">
+            <label class="btn" for="pick-gallery" data-after="extra" role="button" tabindex="0"><svg viewBox="0 0 24 24"><use href="#i-plus"/></svg>Lote y fechas desde otra foto</label>
+            <label class="btn" for="pick-files" role="button" tabindex="0">Cambiar foto (archivos)</label>
+          </div>
+          <p class="hint">«Marcar lote y fechas»: encierre con el dedo el lote y las fechas; la app amplía esa zona y la lee varias veces. Si están en otra cara del empaque, use «desde otra foto».</p>
+        </details>
       </div>
       <div id="photo-progress" class="progress" hidden role="status"><div class="bar"><i></i></div><span></span></div>
     </fieldset>
+
+    <div id="autofill-note" class="banner" hidden role="status"></div>
 
     <fieldset class="card">
       <legend>Información general</legend>
@@ -230,6 +238,10 @@
       <button type="button" class="btn" id="cf-update">Buscar actualización</button>
     </div>
     <div id="cf-progress" class="progress" hidden role="status"><div class="bar"><i></i></div><span></span></div>
+  </div>
+  <div class="card"><h3>Lectura de fotos</h3>
+    <label class="check"><input type="checkbox" id="cf-autofill"> Llenar el formulario automáticamente al elegir una foto</label>
+    <p class="muted small">Lo escrito a mano nunca se reemplaza. Las lecturas dudosas no se escriben: aparecen como sugerencia bajo el campo.</p>
   </div>
   <div class="card"><h3>Reconocimiento en línea (opcional)</h3>
     <p>Con internet, la app puede leer las fotos con el servicio <b>OCR.space</b>, que acierta más que el OCR del teléfono (sobre todo en lote y fechas impresos por puntos). Sin internet, o si el servicio falla, se usa el OCR local como siempre.</p>

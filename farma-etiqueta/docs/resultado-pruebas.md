@@ -1,6 +1,6 @@
 # Resultado de las pruebas automáticas
 
-Ejecución: 2026-11-11 18:17 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
+Ejecución: 2026-11-11 18:51 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
 
 | Estado | Comprobación | Detalle |
 |---|---|---|
@@ -72,8 +72,12 @@ Ejecución: 2026-11-11 18:17 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Restauración: advierte sobre registros que ya existen |  |
 | OK | Tras restaurar: el registro y su fotografía se recuperan |  |
 | OK | Sobrescribir exige una confirmación adicional |  |
+| OK | Solo con elegir la foto se llenan nombre, código, concentración, lote, vencimiento, registro y laboratorio | 0.9 s · {"nombre":"CALMADOL","codigoBarras":"7701234567897","concentracion":"500 mg","lote":"AB12345","vencimiento":"05/2027","registroSanitario":"INVIMA 2019M-0012345","laboratorio":"Laboratorios Andinos S.A"} |
+| OK | Sin ventanas que confirmar: aviso en el formulario para revisar antes de guardar |  |
+| OK | Lo escrito a mano no se reemplaza: lo leído queda como sugerencia |  |
+| OK | Tocar la sugerencia la aplica |  |
 | OK | Ninguna pantalla se desborda horizontalmente en teléfono (412 px) |  |
 | OK | Botones con altura táctil ≥ 40 px | 0 pequeños |
 | OK | Sin errores de JavaScript durante toda la sesión |  |
 
-**71 de 71 correctas.**
+**75 de 75 correctas.**

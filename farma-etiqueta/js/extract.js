@@ -163,6 +163,14 @@ export function extractFields(lines) {
     break;
   }
 
+  // --- Empresa sin la palabra «Laboratorios» ni «Fabricado por»: razón social (S.A., S.A.S., Ltda., Inc.…) ---
+  if (!out.some(f => f.field === 'laboratorio')) for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].text.match(/([A-ZÁÉÍÓÚÑ][\wÁÉÍÓÚÑáéíóúñ&.\- ]{2,50}?\s(?:S\.?\s?A\.?\s?S\.?|S\.?\s?A\.?|Ltda\.?|LTDA\.?|Inc\.?|S\.?\s?L\.?|GmbH|AG|Corp\.?|LLC)(?![A-Za-z]))[^\n]{0,40}/);
+    if (!m || used.has(i) || /reg|invima|lote|vence/i.test(m[0])) continue;
+    add('laboratorio', 'Laboratorio', m[0], i, ['Identificado por la razón social: confirme que sea el laboratorio o fabricante.']);
+    break;
+  }
+
   // --- Concentración, forma farmacéutica, presentación ---
   let concI = -1, concM = null;
   for (let i = 0; i < lines.length; i++) { const m = lines[i].text.match(CONC); if (m) { concI = i; concM = m; break; } }
