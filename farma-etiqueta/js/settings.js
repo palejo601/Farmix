@@ -4,7 +4,7 @@ const appName = () => nativePlatform() === 'ios' ? 'App iPhone / iPad' : 'App An
 import * as db from './db.js';
 import { initOCR, recognizeOnline, OCR_BASE, OCR_CORES } from './ocr.js';
 
-export const APP_VERSION = '1.5.0';
+export const APP_VERSION = '1.6.0';
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const secure = () => self.isSecureContext && 'serviceWorker' in navigator && 'caches' in self;
 let installEvt = null, swReg = null;
@@ -45,13 +45,12 @@ export async function refreshStatus() {
     ['Aplicación sin conexión', sw, sw === 'Activo' ? '' : 'warn'],
     ['Recursos OCR', ocr ? 'Disponibles sin conexión' : 'Pendientes (requieren internet la primera vez)', ocr ? '' : 'warn'],
     ['Reconocimiento en línea', onOK ? (navigator.onLine ? 'Activo (OCR.space)' : 'Configurado; sin conexión se usa el OCR local') : 'No configurado (solo OCR local)', onOK ? '' : 'warn'],
-    ['Lector de códigos de barras', ('BarcodeDetector' in self ? 'Nativo + ZXing' : 'ZXing') + ' (local)', ''],
     ['Registros guardados', n == null ? 'No disponible' : String(n), n == null ? 'bad' : ''],
     ['Almacenamiento usado', est ? `${fmtBytes(est.usage)} de ${fmtBytes(est.quota)}` : 'No informado por el navegador', ''],
     ['Almacenamiento persistente', persisted ? 'Concedido' : 'No concedido (el navegador podría liberar datos si falta espacio)', persisted ? '' : 'warn'],
   ];
   $('#cf-status').replaceChildren(...rows.map(([k, v, c]) => h('div', {}, h('dt', {}, k), h('dd', {}, h('span', { class: 'chip ' + c }, v)))));
-  $('#home-status').replaceChildren(h('div', { class: 'row', style: 'margin:0' },
+  $('#home-status')?.replaceChildren(h('div', { class: 'row', style: 'margin:0' },
     h('span', { class: 'chip' + (navigator.onLine ? '' : ' off') }, navigator.onLine ? 'En línea' : 'Sin conexión'),
     h('span', { class: 'chip' + (ocr ? '' : ' warn') }, ocr ? 'OCR disponible sin conexión' : 'OCR: recursos pendientes'),
     h('span', { class: 'chip' + (sw === 'Activo' ? '' : ' warn') }, sw === 'Activo' ? 'App lista sin conexión' : 'Modo offline: ' + sw.toLowerCase()),
@@ -66,7 +65,7 @@ export async function refreshStatus() {
     : !secure() ? 'Para instalarla y usarla sin conexión, la aplicación debe abrirse desde una dirección HTTPS.'
     : ios ? 'iPhone / iPad: abra esta página en Safari, toque Compartir (cuadro con flecha) y elija «Agregar a pantalla de inicio». No requiere App Store ni cuenta de desarrollador.'
     : 'Android / computador: use el botón «Instalar aplicación» o el menú del navegador (⋮) → «Instalar aplicación» / «Agregar a pantalla principal».'));
-  $('#cf-about').textContent = `FARMA-ETIQUETA ${APP_VERSION}. Herramienta de apoyo para identificación y rotulado; no es un sistema de validación sanitaria. OCR: Tesseract.js 7 · Códigos: ZXing (zxing-wasm 3) · PDF: jsPDF 4 · Word: docx 9 · Barras: JsBarcode 3.`;
+  $('#cf-about').textContent = `FARMA-ETIQUETA ${APP_VERSION}. Herramienta de apoyo para identificación y rotulado; no es un sistema de validación sanitaria. OCR: Tesseract.js 7 · PDF: jsPDF 4 · Word: docx 9 · Dibujo de barras en rótulos: JsBarcode 3.`;
 }
 
 async function prepareOCR() {

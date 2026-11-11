@@ -1,8 +1,7 @@
-// Registro y edición de productos: formulario, fotografía, lectura de código, OCR con revisión humana.
+// Registro y edición de productos: formulario, fotografía, OCR con revisión humana.
 import { $, $$, h, toast, modal, confirmDlg, busy, fmtBytes, errMsg } from './ui.js';
 import * as db from './db.js';
 import { processFile, toStored, fromStored, blobToCanvas, freeCanvas, enhance } from './photos.js';
-import { readBarcode, gtinCheck } from './barcode.js';
 import { recognize, recognizeOnline } from './ocr.js';
 import { extractFields, extractZone, dateOK } from './extract.js';
 
@@ -115,8 +114,7 @@ export async function setPhotoFromFile(file, after) {
     return;
   } finally { setTimeout(() => photoProgress(false), 600); }
   if ((await db.kvGet('autoFill').catch(() => null)) !== false) { await autoFill(); return; }
-  if (after === 'barcode') await runBarcode();
-  else if (after === 'ocr' || after === 'all') await runOCR();
+  if (after === 'ocr' || after === 'all') await runOCR();
 }
 
 async function removePhoto() {
@@ -130,44 +128,13 @@ function setField(f, v, src) {
   input(f).value = v; st.origen[f] = src; input(f).classList.remove('invalid');
 }
 
-async function runBarcode(chained = false) {
-  if (!st.photo) { toast('Primero seleccione una fotografía.', 'warn'); return; }
-  for (;;) {
-    let r, err = null;
-    busy('Buscando código de barras…');
-    try { r = await withPhoto(src => readBarcode(src, busy)); } catch (e) { err = e; } finally { busy(false); }
-    if (err) { await modal('No se pudo leer el código', h('p', {}, errMsg(err))); return; }
-    if (!r) {
-      const again = await modal('No se detectó ningún código de barras', h('div', {},
-        h('p', {}, 'No se encontró un código legible en la fotografía. No se completó ningún dato.'),
-        h('p', { class: 'muted small' }, 'Sugerencias: que el código ocupe buena parte de la imagen, esté enfocado, sin reflejos y completo. Puede reintentar, elegir otra fotografía o escribir el código manualmente.')),
-        [{ label: chained ? 'Continuar sin código' : 'Cerrar', value: null }, { label: 'Reintentar', value: 'retry', class: 'primary' }]);
-      if (again === 'retry') continue;
-      return;
-    }
-    const chk = gtinCheck(r.value);
-    const act = await modal('Código de barras leído', h('div', {},
-      h('div', { class: 'code-result', id: 'bc-value' }, r.value),
-      h('p', { class: 'muted small', style: 'margin-top:8px' }, `Formato: ${r.format} · Motor: ${r.engine}` + (chk === true ? ' · Dígito de control correcto' : chk === false ? ' · ATENCIÓN: el dígito de control no coincide' : '')),
-      h('p', {}, 'Compare el número con el impreso bajo las barras del empaque antes de usarlo.')),
-      [{ label: 'Descartar', value: null },
-        { label: 'Copiar', keep: true, onclick: async () => { try { await navigator.clipboard.writeText(r.value); toast('Código copiado.', 'ok'); } catch { toast('No se pudo copiar automáticamente. Mantenga pulsado el número para copiarlo.', 'warn'); } } },
-        { label: 'Reintentar', value: 'retry' },
-        { label: 'Usar en el formulario', value: 'use', class: 'primary' }]);
-    if (act === 'retry') continue;
-    if (act === 'use') { setField('codigoBarras', r.value, 'codigo'); st.formatoCodigo = r.format; chips(); scheduleDraft(); toast('Código incorporado al formulario.', 'ok'); }
-    return act;
-  }
-}
-
 // ---- OCR con pantalla de revisión ----
 // extra = otra fotografía (otra cara del empaque) que solo se lee; no reemplaza la foto guardada del registro.
 // Lectura completa de una foto: código de barras, texto (en línea si está configurado; si no, en el teléfono)
 // y lecturas extra cuando faltan lote o vencimiento. No toca el formulario.
-async function analyze(source, wantCode) {
-  let res, canvas, fields, warnings, code = null, onlineErr = '';
+async function analyze(source) {
+  let res, canvas, fields, warnings, onlineErr = '';
   try {
-    if (wantCode) { try { code = await readBarcode(source, busy); } catch { code = null; } }
     busy('Leyendo el texto de la foto…');
     canvas = await blobToCanvas(source, 2600);
     // Con internet y clave configurada se usa primero el servicio en línea; si falla o no hay conexión, el OCR local.
@@ -197,7 +164,7 @@ async function analyze(source, wantCode) {
       finally { freeCanvas(ec); }
     }
   } finally { freeCanvas(canvas); }
-  return { fields, warnings, res, onlineErr, code };
+  return { fields, warnings, res, onlineErr };
 }
 
 // Usa la copia de lectura en alta resolución; si no se puede abrir, la foto guardada del registro.
@@ -209,13 +176,12 @@ async function withPhoto(fn) {
 async function runOCR(extra = null) {
   if (!(extra instanceof Blob)) extra = null;
   if (!extra && !st.photo) { toast('Primero seleccione una fotografía.', 'warn'); return; }
-  const wantCode = !input('codigoBarras').value.trim();
   let r;
   busy('Preparando la lectura…');
-  try { r = extra ? await analyze(extra, wantCode) : await withPhoto(src => analyze(src, wantCode)); }
+  try { r = extra ? await analyze(extra) : await withPhoto(src => analyze(src)); }
   catch (e) { busy(false); await modal('No se pudo reconocer el texto', h('div', {}, h('p', {}, errMsg(e)), h('p', { class: 'muted small' }, 'Los datos del formulario no se modificaron. Puede ingresarlos manualmente.'))); return; }
   finally { busy(false); }
-  return review(r.fields, r.warnings, r.res, r.onlineErr, extra, r.code);
+  return review(r.fields, r.warnings, r.res, r.onlineErr, extra);
 }
 
 // ---- Llenado automático: al elegir la foto el formulario se completa solo ----
@@ -230,25 +196,23 @@ export async function autoFill() {
   if (!st.photo) { toast('Primero seleccione una fotografía.', 'warn'); return; }
   clearSuggestions();
   const note = $('#autofill-note'), label = Object.fromEntries(FIELDS);
-  let r;
+  let r; const t0 = performance.now();
   busy('Leyendo la foto…');
-  try { r = await withPhoto(src => analyze(src, true)); }
+  try { r = await withPhoto(src => analyze(src)); }
   catch (e) {
     busy(false); note.hidden = false; note.className = 'banner danger';
     note.textContent = 'No se pudo leer la foto: ' + errMsg(e) + ' Puede volver a intentarlo o escribir los datos.';
     return;
   } finally { busy(false); }
-  const { fields, res, onlineErr, code } = r;
-  if (code) fields.push({ field: 'codigoBarras', value: code.value, conf: null, doubt: false, code });
+  const { fields, res, onlineErr } = r, secs = ((performance.now() - t0) / 1000).toFixed(1);
   let filled = 0; const doubts = [];
   for (const f of fields) {
     const cur = input(f.field).value.trim(), src = st.origen[f.field];
-    const mine = cur && src !== 'ocr' && src !== 'codigo';          // lo escrito por el usuario nunca se reemplaza
+    const mine = cur && src !== 'ocr';          // lo escrito por el usuario nunca se reemplaza
     if (cur === f.value) continue;
     const weak = f.doubt || (f.conf != null && f.conf < 60);
     if (weak || mine) { suggest(f.field, f.value, weak ? 'Lectura dudosa, verifíquela:' : 'En la foto se leyó otro valor:'); doubts.push(label[f.field]); continue; }
-    setField(f.field, f.value, f.code ? 'codigo' : 'ocr');
-    if (f.code) st.formatoCodigo = f.code.format;
+    setField(f.field, f.value, 'ocr');
     filled++;
   }
   chips(); scheduleDraft();
@@ -256,15 +220,13 @@ export async function autoFill() {
   note.hidden = false; note.className = 'banner' + (filled ? '' : ' danger');
   note.replaceChildren(h('div', {},
     h('b', {}, filled ? `Se llenaron ${filled} campo(s) desde la foto` : 'No se pudo llenar ningún campo con seguridad'),
-    ` (${res.online ? 'lectura en línea' : 'lectura en el teléfono'}${onlineErr ? '; el servicio en línea no respondió' : ''}). Compruebe que coincidan con el empaque antes de guardar.`,
+    ` (${res.online ? 'lectura en línea' : 'lectura en el teléfono'}, ${secs} s${onlineErr ? '; el servicio en línea no respondió' : ''}). Compruebe que coincidan con el empaque antes de guardar.`,
     doubts.length ? h('div', { style: 'margin-top:6px' }, `Para revisar: ${doubts.join(', ')} (vea la sugerencia bajo cada campo).`) : null,
     missing.length ? h('div', { style: 'margin-top:6px' }, `No se encontró ${missing.join(' ni ')}: use «Marcar lote y fechas» o escríbalo.`) : null));
   toast(filled ? `Formulario llenado con ${filled} dato(s) de la foto.` : 'No se pudieron leer datos con seguridad en esta foto.', filled ? 'ok' : 'warn');
 }
 
-async function review(fields, warnings, res, onlineErr, extra, code) {
-  if (code) fields.push({ field: 'codigoBarras', label: 'Código de barras', value: code.value, conf: null, doubt: false, checked: true, code,
-    notes: [`Decodificado de las barras (${code.format}), no del texto. Compárelo con el número impreso.`] });
+async function review(fields, warnings, res, onlineErr, extra) {
   const rows = fields.map(f => {
     const inp = h('input', { value: f.value, 'aria-label': f.label + ' detectado', spellcheck: false });
     const cur = input(f.field).value.trim();
@@ -272,7 +234,7 @@ async function review(fields, warnings, res, onlineErr, extra, code) {
     const cb = h('input', { type: 'checkbox', checked: f.checked && !(extra && cur), 'aria-label': 'Usar ' + f.label });
     const node = h('div', { class: 'ocr-row' + (f.doubt ? ' doubt' : '') },
       h('div', { class: 'top' }, cb, h('b', {}, f.label),
-        h('span', { class: 'chip ' + (f.conf == null ? '' : f.conf >= 80 ? '' : f.conf >= 60 ? 'warn' : 'bad') }, f.code ? 'Código decodificado' : f.conf == null ? 'Confianza n/d' : `Confianza ${Math.round(f.conf)} %`),
+        h('span', { class: 'chip ' + (f.conf == null ? '' : f.conf >= 80 ? '' : f.conf >= 60 ? 'warn' : 'bad') }, f.conf == null ? 'Confianza n/d' : `Confianza ${Math.round(f.conf)} %`),
         f.doubt ? h('span', { class: 'chip warn' }, 'Dudoso') : null),
       inp,
       ...f.notes.map(n => h('p', { class: 'why' }, '⚠ ' + n)),
@@ -291,8 +253,7 @@ async function review(fields, warnings, res, onlineErr, extra, code) {
   for (const r of rows) {
     const v = r.inp.value.trim();
     if (!r.cb.checked || !v) continue;
-    setField(r.f.field, v, v !== r.f.value ? 'manual' : r.f.code ? 'codigo' : 'ocr'); n++;
-    if (r.f.code && v === r.f.value) st.formatoCodigo = r.f.code.format;     // si el usuario lo corrigió, pasa a ser dato manual
+    setField(r.f.field, v, v !== r.f.value ? 'manual' : 'ocr'); n++;
   }
   chips(); scheduleDraft();
   toast(n ? `${n} dato(s) aplicados. Revise el formulario y pulse Guardar para confirmar.` : 'No se aplicó ningún dato.', n ? 'ok' : 'warn', 5500);
@@ -415,6 +376,11 @@ async function save(ev) {
   const v = values(), err = $('#form-error');
   err.hidden = true;
   if (!v.nombre) { input('nombre').classList.add('invalid'); err.textContent = 'Escriba el nombre del producto para poder guardar.'; err.hidden = false; input('nombre').focus(); return; }
+  const label = Object.fromEntries(FIELDS);
+  const pend = $$('#product-form .sugg').map(e => label[e.parentElement.querySelector('input,textarea')?.name]).filter(Boolean);
+  const leidos = ['lote', 'fechaFabricacion', 'vencimiento'].filter(k => v[k] && st.origen[k] === 'ocr').map(k => `${label[k]}: ${v[k]}`);
+  if ((pend.length || leidos.length) && !(await confirmDlg('Confirme los datos leídos de la foto',
+    (pend.length ? `Datos dudosos sin resolver (no se guardarán): ${pend.join(', ')}. ` : '') + (leidos.length ? `Compare con el empaque: ${leidos.join(' · ')}. ` : '') + '¿Confirma que los revisó?', 'Sí, revisé y guardar'))) return;
   const falta = [!v.lote && 'número de lote', !v.vencimiento && 'fecha de vencimiento'].filter(Boolean);
   if (falta.length && !(await confirmDlg('Faltan datos del lote', `Este registro no tiene ${falta.join(' ni ')}. Puede completarlos con «Marcar lote y fechas en la foto» o escribirlos. ¿Guardar así de todas formas?`, 'Guardar así'))) return;
   const btn = $('#btn-save'); btn.disabled = true;
@@ -452,7 +418,6 @@ export function initForm() {
   });
   $('#btn-form-clear').addEventListener('click', () => newRecord());
   $('#btn-photo-del').addEventListener('click', removePhoto);
-  $('#btn-barcode').addEventListener('click', () => runBarcode());
   $('#btn-ocr').addEventListener('click', () => runOCR());
   $('#btn-zone').addEventListener('click', () => runZone());
   $('#btn-auto').addEventListener('click', () => autoFill());
