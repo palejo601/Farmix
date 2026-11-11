@@ -3,7 +3,7 @@ import { $, h, toast, confirmDlg, fmtBytes, errMsg, isNative } from './ui.js';
 import * as db from './db.js';
 import { initOCR, OCR_BASE, OCR_CORES } from './ocr.js';
 
-export const APP_VERSION = '1.0.2';
+export const APP_VERSION = '1.0.3';
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const secure = () => self.isSecureContext && 'serviceWorker' in navigator && 'caches' in self;
 let installEvt = null, swReg = null;

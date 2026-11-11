@@ -67,6 +67,7 @@ export function loadScript(src) {
   });
 }
 
+export const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 export const isNative = () => !!self.Capacitor?.isNativePlatform?.();
 
 // En la app Android el WebView no descarga archivos: se escribe el archivo y se abre el menú del sistema para guardarlo, abrirlo o enviarlo.
@@ -80,6 +81,19 @@ async function nativeSave(blob, name) {
 
 export async function download(blob, name) {
   if (isNative()) return nativeSave(blob, name);
+  // iPhone / iPad: una PWA instalada no descarga archivos de forma fiable. Se ofrece un botón que abre el menú Compartir
+  // (Guardar en Archivos, imprimir, enviar). Debe pulsarlo el usuario: Safari exige un gesto directo.
+  if (isIOS() && navigator.canShare) {
+    const file = new File([blob], name, { type: blob.type || 'application/octet-stream' });
+    if (navigator.canShare({ files: [file] })) {
+      busy(false);                                   // el indicador de proceso no debe tapar el botón
+      await modal('Archivo listo', h('p', {}, `«${name}» está listo. Pulse el botón y elija «Guardar en Archivos», imprimir o enviarlo.`), [
+        { label: 'Cerrar', value: null },
+        { label: 'Guardar o compartir', class: 'primary', keep: true, onclick: async () => { try { await navigator.share({ files: [file], title: name }); } catch (e) { if (e?.name !== 'AbortError') toast('No se pudo abrir el menú Compartir: ' + errMsg(e), 'err'); } } },
+      ]);
+      return;
+    }
+  }
   const url = URL.createObjectURL(blob);
   const a = h('a', { href: url, download: name });
   document.body.append(a); a.click(); a.remove();
