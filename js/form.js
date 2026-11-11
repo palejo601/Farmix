@@ -1,7 +1,7 @@
 // Registro y edición de productos: formulario, fotografía, lectura de código, OCR con revisión humana.
 import { $, $$, h, toast, modal, confirmDlg, busy, fmtBytes, errMsg } from './ui.js';
 import * as db from './db.js';
-import { processFile, toStored, fromStored, blobToCanvas, freeCanvas } from './photos.js';
+import { processFile, toStored, fromStored, blobToCanvas, freeCanvas, enhance } from './photos.js';
 import { readBarcode, gtinCheck } from './barcode.js';
 import { recognize } from './ocr.js';
 import { extractFields } from './extract.js';
@@ -10,7 +10,7 @@ export const FIELDS = [
   ['nombre', 'Nombre del producto'], ['codigoBarras', 'Código de barras'], ['principioActivo', 'Principio activo'],
   ['concentracion', 'Concentración'], ['formaFarmaceutica', 'Forma farmacéutica'], ['presentacion', 'Presentación'],
   ['laboratorio', 'Laboratorio o fabricante'], ['registroSanitario', 'Registro sanitario'], ['lote', 'Número de lote'],
-  ['vencimiento', 'Fecha de vencimiento'], ['ubicacion', 'Ubicación'], ['condiciones', 'Condiciones de almacenamiento'], ['observaciones', 'Observaciones'],
+  ['fechaFabricacion', 'Fecha de fabricación'], ['vencimiento', 'Fecha de vencimiento'], ['ubicacion', 'Ubicación'], ['condiciones', 'Condiciones de almacenamiento'], ['observaciones', 'Observaciones'],
 ];
 export const SRC_LABEL = { manual: 'Manual', ocr: 'OCR · confirmado por el usuario', codigo: 'Leído del código de barras' };
 const SRC_CHIP = { ocr: 'OCR', codigo: 'Código leído' };
@@ -172,16 +172,23 @@ async function runOCR(extra = null) {
     busy('Preparando OCR…');
     canvas = await blobToCanvas(source, 3000); res = await recognize(canvas, busy);
     ({ fields, warnings } = extractFields(res.lines));
-    // Segunda pasada solo si faltan lote o vencimiento: suelen estar impresos aparte, junto a barras o gráficos.
+    // Lecturas adicionales solo si faltan lote o vencimiento: suelen estar impresos aparte, por puntos o con poco contraste.
     const miss = f => !fields.some(x => x.field === f && !x.doubt);
-    if (miss('lote') || miss('vencimiento')) {
-      const r2 = await recognize(canvas, (t, f) => busy('Segunda lectura (lote y vencimiento)…', f), true);
-      const e2 = extractFields(r2.lines);
-      for (const f of ['lote', 'vencimiento']) {
+    const need = () => miss('lote') || miss('vencimiento');
+    const merge = (r, note, doubt) => {
+      const e2 = extractFields(r.lines);
+      for (const f of ['lote', 'vencimiento', 'fechaFabricacion']) {
         const hit = e2.fields.find(x => x.field === f && !x.doubt);
-        if (miss(f) && hit) { fields = fields.filter(x => x.field !== f).concat({ ...hit, notes: [...hit.notes, 'Detectado en una segunda lectura de la imagen.'] }); if (f === 'vencimiento') warnings = []; }
+        if (miss(f) && hit) { fields = fields.filter(x => x.field !== f).concat({ ...hit, doubt, checked: hit.checked && !doubt, notes: [...hit.notes, note] }); if (f === 'vencimiento') warnings = []; }
       }
-      res.text += '\n— Segunda lectura —\n' + r2.text;
+      res.text += '\n— Lectura adicional —\n' + r.text;
+    };
+    if (need()) merge(await recognize(canvas, (t, f) => busy('Segunda lectura (lote y fechas)…', f), true), 'Detectado en una segunda lectura de la imagen.', false);
+    if (need()) {
+      busy('Realzando la imagen…');
+      const ec = enhance(canvas);
+      try { merge(await recognize(ec, (t, f) => busy('Tercera lectura con imagen realzada…', f), true), 'Leído tras realzar la imagen (impresión tenue o por puntos): este tipo de lectura falla con frecuencia. Compárelo carácter por carácter con el empaque antes de marcarlo.', true); }
+      finally { freeCanvas(ec); }
     }
   }
   catch (e) { busy(false); await modal('No se pudo reconocer el texto', h('div', {}, h('p', {}, errMsg(e)), h('p', { class: 'muted small' }, 'Los datos del formulario no se modificaron. Puede ingresarlos manualmente.'))); return; }
