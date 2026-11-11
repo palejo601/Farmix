@@ -130,10 +130,10 @@ function setField(f, v, src) {
 
 // ---- OCR con pantalla de revisión ----
 // extra = otra fotografía (otra cara del empaque) que solo se lee; no reemplaza la foto guardada del registro.
-// Lectura completa de una foto: código de barras, texto (en línea si está configurado; si no, en el teléfono)
-// y lecturas extra cuando faltan lote o vencimiento. No toca el formulario.
-async function analyze(source) {
-  let res, canvas, fields, warnings, onlineErr = '';
+// Lectura de una foto: texto (en línea si está configurado; si no, en el teléfono).
+// extras=true añade en el mismo paso las lecturas extra de lote y fechas. No toca el formulario.
+async function analyze(source, extras = true) {
+  let res, canvas, onlineErr = '';
   try {
     busy('Leyendo el texto de la foto…');
     canvas = await blobToCanvas(source, 2600);
@@ -144,27 +144,33 @@ async function analyze(source) {
       catch (e) { onlineErr = errMsg(e); }
     }
     if (!res) res = await recognize(canvas, busy);
-    ({ fields, warnings } = extractFields(res.lines));
-    // Lecturas adicionales solo si faltan lote o vencimiento: suelen estar impresos aparte, por puntos o con poco contraste.
-    const miss = f => !fields.some(x => x.field === f && !x.doubt);
-    const need = () => miss('lote') || miss('vencimiento');
-    const merge = (r, note, doubt) => {
-      const e2 = extractFields(r.lines);
-      for (const f of ['lote', 'vencimiento', 'fechaFabricacion']) {
-        const hit = e2.fields.find(x => x.field === f && !x.doubt);
-        if (miss(f) && hit) { fields = fields.filter(x => x.field !== f).concat({ ...hit, doubt, checked: hit.checked && !doubt, notes: [...hit.notes, note] }); if (f === 'vencimiento') warnings = []; }
-      }
-      res.text += '\n— Lectura adicional —\n' + r.text;
-    };
-    if (need()) merge(await recognize(canvas, (t, f) => busy('Segunda lectura (lote y fechas)…', f), true), 'Detectado en una segunda lectura de la imagen.', false);
-    if (need()) {
-      busy('Realzando la imagen…');
-      const ec = enhance(canvas);
-      try { merge(await recognize(ec, (t, f) => busy('Tercera lectura con imagen realzada…', f), true), 'Leído tras realzar la imagen (impresión tenue o por puntos): este tipo de lectura falla con frecuencia. Compárelo carácter por carácter con el empaque antes de marcarlo.', true); }
-      finally { freeCanvas(ec); }
-    }
+    const o = { ...extractFields(res.lines), res, onlineErr };
+    if (extras) await morePasses(canvas, o, busy);
+    return o;
   } finally { freeCanvas(canvas); }
-  return { fields, warnings, res, onlineErr };
+}
+
+// Lecturas adicionales solo si faltan lote o vencimiento: suelen estar impresos aparte, por puntos o con poco contraste.
+// alive() permite cancelarlas entre una lectura y otra (por ejemplo, si el usuario cambió de foto).
+const LD = ['lote', 'vencimiento', 'fechaFabricacion'];
+async function morePasses(canvas, o, prog, alive = () => true) {
+  const miss = f => !o.fields.some(x => x.field === f && !x.doubt);
+  const need = () => alive() && (miss('lote') || miss('vencimiento'));
+  const merge = (r, note, doubt) => {
+    const e2 = extractFields(r.lines);
+    for (const f of LD) {
+      const hit = e2.fields.find(x => x.field === f && !x.doubt);
+      if (miss(f) && hit) { o.fields = o.fields.filter(x => x.field !== f).concat({ ...hit, doubt, checked: hit.checked && !doubt, notes: [...hit.notes, note] }); if (f === 'vencimiento') o.warnings = []; }
+    }
+    o.res.text += '\n— Lectura adicional —\n' + r.text;
+  };
+  if (need()) merge(await recognize(canvas, (t, f) => prog('Segunda lectura (lote y fechas)…', f), true), 'Detectado en una segunda lectura de la imagen.', false);
+  if (need()) {
+    prog('Realzando la imagen…');
+    const ec = enhance(canvas);
+    try { merge(await recognize(ec, (t, f) => prog('Tercera lectura con imagen realzada…', f), true), 'Leído tras realzar la imagen (impresión tenue o por puntos): este tipo de lectura falla con frecuencia. Compárelo carácter por carácter con el empaque antes de marcarlo.', true); }
+    finally { freeCanvas(ec); }
+  }
 }
 
 // Usa la copia de lectura en alta resolución; si no se puede abrir, la foto guardada del registro.
@@ -198,13 +204,14 @@ export async function autoFill() {
   const note = $('#autofill-note'), label = Object.fromEntries(FIELDS);
   let r; const t0 = performance.now();
   busy('Leyendo la foto…');
-  try { r = await withPhoto(src => analyze(src)); }
+  const seq = ++readSeq;
+  try { r = await withPhoto(src => analyze(src, false)); }
   catch (e) {
     busy(false); note.hidden = false; note.className = 'banner danger';
     note.textContent = 'No se pudo leer la foto: ' + errMsg(e) + ' Puede volver a intentarlo o escribir los datos.';
     return;
   } finally { busy(false); }
-  const { fields, res, onlineErr } = r, secs = ((performance.now() - t0) / 1000).toFixed(1);
+  const { res, onlineErr } = r, fields = [...r.fields], secs = ((performance.now() - t0) / 1000).toFixed(1);
   let filled = 0; const doubts = [];
   for (const f of fields) {
     const cur = input(f.field).value.trim(), src = st.origen[f.field];
@@ -222,8 +229,36 @@ export async function autoFill() {
     h('b', {}, filled ? `Se llenaron ${filled} campo(s) desde la foto` : 'No se pudo llenar ningún campo con seguridad'),
     ` (${res.online ? 'lectura en línea' : 'lectura en el teléfono'}, ${secs} s${onlineErr ? '; el servicio en línea no respondió' : ''}). Compruebe que coincidan con el empaque antes de guardar.`,
     doubts.length ? h('div', { style: 'margin-top:6px' }, `Para revisar: ${doubts.join(', ')} (vea la sugerencia bajo cada campo).`) : null,
-    missing.length ? h('div', { style: 'margin-top:6px' }, `No se encontró ${missing.join(' ni ')}: use «Marcar lote y fechas» o escríbalo.`) : null));
+    missing.length ? h('div', { class: 'miss', style: 'margin-top:6px' }, `No se encontró ${missing.join(' ni ')}: use «Marcar lote y fechas» o escríbalo.`) : null));
   toast(filled ? `Formulario llenado con ${filled} dato(s) de la foto.` : 'No se pudieron leer datos con seguridad en esta foto.', filled ? 'ok' : 'warn');
+  if (missing.length || doubts.some(d => /lote|vencim|fabric/i.test(d))) background(r, seq, missing);
+}
+
+// Busca lote y fechas sin bloquear la pantalla: el usuario puede revisar y escribir mientras tanto.
+let readSeq = 0;
+async function background(r, seq, missing) {
+  const note = $('#autofill-note'), label = Object.fromEntries(FIELDS), alive = () => seq === readSeq && !!st.photo;
+  const miss = note.querySelector('.miss'); if (miss) miss.hidden = true;
+  const line = h('div', { class: 'bg-read', style: 'margin-top:6px' }, 'Buscando lote y fechas con lecturas adicionales… Puede seguir revisando el formulario.');
+  note.append(line);
+  const prog = (t, f) => { if (alive()) line.textContent = t + (f != null ? ` ${Math.round(f * 100)} %` : '') + ' (puede seguir revisando el formulario)'; };
+  const before = new Set(r.fields.filter(x => !x.doubt).map(x => x.field)), t0 = performance.now();
+  let canvas;
+  try {
+    canvas = await withPhoto(src => blobToCanvas(src, 2600));
+    await morePasses(canvas, r, prog, alive);
+  } catch { /* se informa abajo como «no encontrado» */ } finally { freeCanvas(canvas); }
+  if (!alive()) return;
+  const found = [];
+  for (const f of r.fields.filter(x => LD.includes(x.field) && !before.has(x.field))) {
+    if (input(f.field).value.trim()) continue;                       // nunca pisa lo que ya escribió o aceptó el usuario
+    if (f.doubt) suggest(f.field, f.value, 'Lectura dudosa, verifíquela:'); else { setField(f.field, f.value, 'ocr'); found.push(label[f.field]); }
+  }
+  chips(); scheduleDraft();
+  const still = ['lote', 'vencimiento'].filter(k => !input(k).value.trim()).map(k => label[k].toLowerCase());
+  line.textContent = (found.length ? `Encontrado en segundo plano: ${found.join(', ')} (${((performance.now() - t0) / 1000).toFixed(1)} s más). ` : '')
+    + (still.length ? `No se encontró ${still.join(' ni ')}: use «Marcar lote y fechas» o escríbalo.` : 'Compare el lote y las fechas con el empaque.');
+  if (found.length) toast(`Se agregó ${found.join(', ').toLowerCase()} desde la foto.`, 'ok');
 }
 
 async function review(fields, warnings, res, onlineErr, extra) {
