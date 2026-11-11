@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FARMA-ETIQUETA</title>
+<meta name="description" content="Identificación, lectura y rotulado farmacéutico. Etiqueta con precisión, cuida con confianza.">
+<meta name="theme-color" content="#0b4d3a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FARMA-ETIQUETA">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<!-- Selectores reales de archivos. Se abren con <label for>, siempre por gesto directo del usuario. Sin capture ni getUserMedia. -->
+<input type="file" id="pick-gallery" class="visually-hidden" accept="image/jpeg,image/png,image/webp" tabindex="-1">
+<input type="file" id="pick-files" class="visually-hidden" accept=".jpg,.jpeg,.png,.webp" tabindex="-1">
+<input type="file" id="pick-backup" class="visually-hidden" accept=".json,application/json" tabindex="-1">
+
+<header class="topbar">
+  <a class="brand" href="#inicio" aria-label="FARMA-ETIQUETA, inicio">
+    <svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#logo"/></svg>
+    <span class="brand-name">FARMA-ETIQUETA</span>
+  </a>
+  <span id="net-chip" class="chip" role="status"></span>
+  <a class="icon-btn" href="#config" aria-label="Configuración">
+    <svg viewBox="0 0 24 24"><use href="#i-gear"/></svg>
+  </a>
+</header>
+
+<div id="file-warning" class="banner danger" hidden></div>
+<div id="update-banner" class="banner" hidden>
+  <span>Hay una nueva versión de la aplicación. Sus registros no se modifican.</span>
+  <button class="btn small" id="update-now">Actualizar</button>
+</div>
+
+<main id="main" tabindex="-1">
+
+<section id="v-inicio" class="view">
+  <div class="hero">
+    <svg class="logo big" viewBox="0 0 64 64" aria-hidden="true"><use href="#logo"/></svg>
+    <h1>FARMA-ETIQUETA</h1>
+    <p class="slogan">Etiqueta con precisión, cuida con confianza.</p>
+  </div>
+  <div class="grid actions">
+    <label class="tile primary" for="pick-gallery" data-after="all" role="button" tabindex="0">
+      <svg viewBox="0 0 24 24"><use href="#i-photo"/></svg><b>Identificar por fotografía</b><small>Elegir foto, leer código y texto</small></label>
+    <label class="tile" for="pick-gallery" data-after="barcode" role="button" tabindex="0">
+      <svg viewBox="0 0 24 24"><use href="#i-barcode"/></svg><b>Leer código de barras</b><small>Desde una fotografía</small></label>
+    <label class="tile" for="pick-gallery" data-after="ocr" role="button" tabindex="0">
+      <svg viewBox="0 0 24 24"><use href="#i-text"/></svg><b>Reconocer texto (OCR)</b><small>Lote, vencimiento, registro…</small></label>
+    <a class="tile" href="#registrar" data-new="1">
+      <svg viewBox="0 0 24 24"><use href="#i-plus"/></svg><b>Registrar producto</b><small>Ingreso manual</small></a>
+    <a class="tile" href="#historial">
+      <svg viewBox="0 0 24 24"><use href="#i-list"/></svg><b>Historial</b><small id="home-count">—</small></a>
+    <a class="tile" href="#rotulos">
+      <svg viewBox="0 0 24 24"><use href="#i-label"/></svg><b>Generar rótulos</b><small>Imprimir, PDF y Word</small></a>
+    <a class="tile" href="#respaldo">
+      <svg viewBox="0 0 24 24"><use href="#i-save"/></svg><b>Copias de seguridad</b><small id="home-backup">—</small></a>
+    <a class="tile" href="#config">
+      <svg viewBox="0 0 24 24"><use href="#i-gear"/></svg><b>Configuración</b><small>Estado y uso sin conexión</small></a>
+  </div>
+  <div class="card" id="home-status"></div>
+  <p class="note">Herramienta de apoyo para identificación y rotulado. No valida información sanitaria ni sustituye la revisión del empaque original.</p>
+</section>
+
+<section id="v-registrar" class="view" hidden>
+  <div class="view-head"><h2 id="form-title">Registrar producto</h2><span id="draft-chip" class="chip" hidden></span></div>
+  <form id="product-form" novalidate autocomplete="off">
+    <fieldset class="card">
+      <legend>Fotografía</legend>
+      <div id="photo-empty">
+        <p class="muted">Seleccione una fotografía guardada en el dispositivo (JPG, PNG o WEBP).</p>
+        <div class="row">
+          <label class="btn primary" for="pick-gallery" role="button" tabindex="0"><svg viewBox="0 0 24 24"><use href="#i-photo"/></svg>Elegir de la galería</label>
+          <label class="btn" for="pick-files" role="button" tabindex="0"><svg viewBox="0 0 24 24"><use href="#i-folder"/></svg>Elegir de archivos</label>
+        </div>
+      </div>
+      <div id="photo-box" hidden>
+        <img id="photo-preview" alt="Fotografía seleccionada del producto">
+        <p id="photo-info" class="muted small"></p>
+        <div class="row">
+          <button type="button" class="btn primary" id="btn-barcode"><svg viewBox="0 0 24 24"><use href="#i-barcode"/></svg>Leer código de barras</button>
+          <button type="button" class="btn primary" id="btn-ocr"><svg viewBox="0 0 24 24"><use href="#i-text"/></svg>Reconocer texto (OCR)</button>
+        </div>
+        <div class="row">
+          <label class="btn" for="pick-gallery" role="button" tabindex="0">Cambiar (galería)</label>
+          <label class="btn" for="pick-files" role="button" tabindex="0">Cambiar (archivos)</label>
+          <button type="button" class="btn danger-outline" id="btn-photo-del">Eliminar foto</button>
+        </div>
+      </div>
+      <div id="photo-progress" class="progress" hidden role="status"><div class="bar"><i></i></div><span></span></div>
+    </fieldset>
+
+    <fieldset class="card">
+      <legend>Información general</legend>
+      <div class="fields">
+        <div class="field wide"><label for="f-nombre">Nombre del producto *</label><input id="f-nombre" name="nombre" required maxlength="160"></div>
+        <div class="field"><label for="f-codigoBarras">Código de barras</label><input id="f-codigoBarras" name="codigoBarras" inputmode="text" maxlength="80"></div>
+        <div class="field"><label for="f-principioActivo">Principio activo</label><input id="f-principioActivo" name="principioActivo" maxlength="160"></div>
+        <div class="field"><label for="f-concentracion">Concentración</label><input id="f-concentracion" name="concentracion" maxlength="80"></div>
+        <div class="field"><label for="f-formaFarmaceutica">Forma farmacéutica</label><input id="f-formaFarmaceutica" name="formaFarmaceutica" list="dl-formas" maxlength="80"></div>
+        <div class="field"><label for="f-presentacion">Presentación</label><input id="f-presentacion" name="presentacion" maxlength="120"></div>
+        <div class="field"><label for="f-laboratorio">Laboratorio o fabricante</label><input id="f-laboratorio" name="laboratorio" maxlength="160"></div>
+        <div class="field"><label for="f-registroSanitario">Registro sanitario</label><input id="f-registroSanitario" name="registroSanitario" maxlength="80"></div>
+      </div>
+      <datalist id="dl-formas"><option>Tableta</option><option>Tableta recubierta</option><option>Cápsula</option><option>Jarabe</option><option>Suspensión oral</option><option>Solución oral</option><option>Solución inyectable</option><option>Polvo para reconstituir</option><option>Crema</option><option>Ungüento</option><option>Gel</option><option>Gotas</option><option>Supositorio</option><option>Óvulo</option><option>Aerosol</option><option>Parche</option><option>Dispositivo médico</option></datalist>
+    </fieldset>
+
+    <fieldset class="card">
+      <legend>Identificación del lote</legend>
+      <div class="fields">
+        <div class="field"><label for="f-lote">Número de lote</label><input id="f-lote" name="lote" maxlength="60" autocapitalize="characters" spellcheck="false"></div>
+        <div class="field"><label for="f-vencimiento">Fecha de vencimiento</label><input id="f-vencimiento" name="vencimiento" maxlength="30" placeholder="MM/AAAA o DD/MM/AAAA" spellcheck="false"><small class="hint">Escríbala tal como aparece en el empaque.</small></div>
+        <div class="field"><label for="f-ubicacion">Ubicación</label><input id="f-ubicacion" name="ubicacion" maxlength="120"></div>
+        <div class="field"><label for="f-condiciones">Condiciones de almacenamiento</label><input id="f-condiciones" name="condiciones" maxlength="160" list="dl-cond"></div>
+        <div class="field wide"><label for="f-observaciones">Observaciones</label><textarea id="f-observaciones" name="observaciones" rows="3" maxlength="600"></textarea></div>
+      </div>
+      <datalist id="dl-cond"><option>Almacenar a temperatura inferior a 30 °C</option><option>Refrigerar entre 2 °C y 8 °C</option><option>Proteger de la luz y la humedad</option></datalist>
+    </fieldset>
+
+    <p id="form-error" class="banner danger" hidden role="alert"></p>
+    <div class="sticky-actions">
+      <button type="button" class="btn" id="btn-form-clear">Limpiar</button>
+      <button type="submit" class="btn primary grow" id="btn-save"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Guardar registro</button>
+    </div>
+  </form>
+</section>
+
+<section id="v-historial" class="view" hidden>
+  <div class="view-head"><h2>Historial de registros</h2><span id="hist-count" class="chip"></span></div>
+  <div class="card filters">
+    <div class="field wide"><label for="h-search">Buscar</label><input id="h-search" type="search" placeholder="Nombre, principio activo, lote, código o laboratorio"></div>
+    <div class="field"><label for="h-filter">Filtrar</label><select id="h-filter">
+      <option value="">Todos</option><option value="foto">Con fotografía</option><option value="sinfoto">Sin fotografía</option>
+      <option value="vencido">Vencidos</option><option value="prox">Vencen en 90 días o menos</option><option value="sinvenc">Sin fecha de vencimiento</option></select></div>
+    <div class="field"><label for="h-sort">Ordenar</label><select id="h-sort"><option value="reciente">Más recientes</option><option value="nombre">Nombre (A-Z)</option><option value="venc">Vencimiento más próximo</option></select></div>
+  </div>
+  <div id="hist-list" class="list"></div>
+</section>
+
+<section id="v-rotulos" class="view" hidden>
+  <div class="view-head"><h2>Generación de rótulos</h2></div>
+  <div class="card">
+    <h3>1. Productos a rotular</h3>
+    <div id="lb-items" class="list compact"></div>
+    <button type="button" class="btn" id="lb-add"><svg viewBox="0 0 24 24"><use href="#i-plus"/></svg>Agregar productos</button>
+  </div>
+  <div class="card">
+    <h3>2. Tamaño y contenido del rótulo</h3>
+    <div class="fields">
+      <div class="field wide"><label for="lb-size">Tamaño</label><select id="lb-size"></select></div>
+      <div class="field"><label for="lb-w">Ancho (mm)</label><input id="lb-w" type="number" min="10" max="300" step="0.5" inputmode="decimal"></div>
+      <div class="field"><label for="lb-h">Alto (mm)</label><input id="lb-h" type="number" min="8" max="300" step="0.5" inputmode="decimal"></div>
+    </div>
+    <div id="lb-fields" class="checks"></div>
+    <label class="check"><input type="checkbox" id="lb-border"> Dibujar borde de corte</label>
+  </div>
+  <div class="card">
+    <h3>3. Hoja e impresión</h3>
+    <div class="fields">
+      <div class="field"><label for="sh-paper">Papel</label><select id="sh-paper"><option value="A4">A4 (210 × 297 mm)</option><option value="Carta">Carta (215,9 × 279,4 mm)</option><option value="Legal">Legal (215,9 × 355,6 mm)</option><option value="custom">Personalizado</option></select></div>
+      <div class="field"><label for="sh-orient">Orientación</label><select id="sh-orient"><option value="v">Vertical</option><option value="h">Horizontal</option></select></div>
+      <div class="field sh-custom"><label for="sh-pw">Ancho de hoja (mm)</label><input id="sh-pw" type="number" min="20" max="1200" step="0.1" inputmode="decimal"></div>
+      <div class="field sh-custom"><label for="sh-ph">Alto de hoja (mm)</label><input id="sh-ph" type="number" min="20" max="1200" step="0.1" inputmode="decimal"></div>
+      <div class="field"><label for="sh-cols">Rótulos por fila</label><input id="sh-cols" type="number" min="1" max="50" step="1" inputmode="numeric"></div>
+      <div class="field"><label for="sh-rows">Rótulos por columna</label><input id="sh-rows" type="number" min="1" max="80" step="1" inputmode="numeric"></div>
+      <div class="field"><label for="sh-mt">Margen superior (mm)</label><input id="sh-mt" type="number" min="0" max="100" step="0.5" inputmode="decimal"></div>
+      <div class="field"><label for="sh-ml">Margen izquierdo (mm)</label><input id="sh-ml" type="number" min="0" max="100" step="0.5" inputmode="decimal"></div>
+      <div class="field"><label for="sh-mb">Margen inferior (mm)</label><input id="sh-mb" type="number" min="0" max="100" step="0.5" inputmode="decimal"></div>
+      <div class="field"><label for="sh-mr">Margen derecho (mm)</label><input id="sh-mr" type="number" min="0" max="100" step="0.5" inputmode="decimal"></div>
+      <div class="field"><label for="sh-gh">Separación horizontal (mm)</label><input id="sh-gh" type="number" min="0" max="50" step="0.5" inputmode="decimal"></div>
+      <div class="field"><label for="sh-gv">Separación vertical (mm)</label><input id="sh-gv" type="number" min="0" max="50" step="0.5" inputmode="decimal"></div>
+    </div>
+    <button type="button" class="btn" id="sh-auto">Calcular máximo que cabe en la hoja</button>
+    <p id="sh-summary" class="summary" role="status"></p>
+    <p id="sh-error" class="banner danger" hidden role="alert"></p>
+    <ul id="lb-warnings" class="warnings"></ul>
+  </div>
+  <div class="card">
+    <h3>4. Vista previa</h3>
+    <p class="muted small">Representa la hoja a escala. Al imprimir, elija escala 100 % (sin «ajustar a la página») y márgenes «ninguno».</p>
+    <div class="zoombar" role="group" aria-label="Zoom de la vista previa">
+      <button type="button" class="btn small" id="zm-out" aria-label="Alejar">−</button>
+      <output id="zm-val" aria-live="polite">100 %</output>
+      <button type="button" class="btn small" id="zm-in" aria-label="Acercar">+</button>
+      <button type="button" class="btn small" id="zm-fit">Ajustar</button>
+      <span class="muted small">También puede pellizcar con dos dedos.</span>
+    </div>
+    <div id="lb-preview" class="preview"></div>
+  </div>
+  <div class="sticky-actions wrap">
+    <button type="button" class="btn primary" id="lb-print"><svg viewBox="0 0 24 24"><use href="#i-print"/></svg>Imprimir</button>
+    <button type="button" class="btn primary" id="lb-pdf">Exportar PDF</button>
+    <button type="button" class="btn primary" id="lb-docx">Exportar Word</button>
+  </div>
+</section>
+
+<section id="v-respaldo" class="view" hidden>
+  <div class="view-head"><h2>Copias de seguridad</h2></div>
+  <div class="card">
+    <h3>Crear respaldo</h3>
+    <p>Genera un archivo <b>.json</b> con todos los registros y sus fotografías. Guárdelo fuera del teléfono (correo, nube o computador): si se borran los datos del navegador o se desinstala la aplicación, este archivo es la única forma de recuperar la información.</p>
+    <p id="bk-info" class="muted"></p>
+    <button type="button" class="btn primary" id="bk-export"><svg viewBox="0 0 24 24"><use href="#i-save"/></svg>Exportar respaldo completo</button>
+  </div>
+  <div class="card">
+    <h3>Restaurar respaldo</h3>
+    <p>Seleccione un archivo de respaldo creado con FARMA-ETIQUETA. Antes de escribir se verifica su integridad y se le mostrará qué registros ya existen.</p>
+    <label class="btn" for="pick-backup" role="button" tabindex="0"><svg viewBox="0 0 24 24"><use href="#i-folder"/></svg>Seleccionar archivo de respaldo</label>
+  </div>
+</section>
+
+<section id="v-config" class="view" hidden>
+  <div class="view-head"><h2>Configuración</h2></div>
+  <div class="card"><h3>Estado</h3><dl id="cf-status" class="status"></dl>
+    <div class="row">
+      <button type="button" class="btn primary" id="cf-ocr">Preparar OCR para uso sin conexión</button>
+      <button type="button" class="btn" id="cf-persist">Solicitar almacenamiento persistente</button>
+      <button type="button" class="btn" id="cf-update">Buscar actualización</button>
+    </div>
+    <div id="cf-progress" class="progress" hidden role="status"><div class="bar"><i></i></div><span></span></div>
+  </div>
+  <div class="card"><h3>Instalación</h3><div id="cf-install"></div>
+    <button type="button" class="btn primary" id="cf-install-btn" hidden>Instalar aplicación</button></div>
+  <div class="card"><h3>Datos</h3>
+    <p>Los registros y fotografías se guardan únicamente en este dispositivo (IndexedDB). Actualizar la aplicación no los elimina.</p>
+    <button type="button" class="btn danger-outline" id="cf-wipe">Borrar todos los registros…</button></div>
+  <div class="card"><h3>Acerca de</h3><p id="cf-about" class="muted"></p></div>
+</section>
+
+</main>
+
+<nav class="tabbar" aria-label="Navegación principal">
+  <a href="#inicio" data-tab="inicio"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg><span>Inicio</span></a>
+  <a href="#registrar" data-tab="registrar"><svg viewBox="0 0 24 24"><use href="#i-plus"/></svg><span>Registrar</span></a>
+  <a href="#historial" data-tab="historial"><svg viewBox="0 0 24 24"><use href="#i-list"/></svg><span>Historial</span></a>
+  <a href="#rotulos" data-tab="rotulos"><svg viewBox="0 0 24 24"><use href="#i-label"/></svg><span>Rótulos</span></a>
+  <a href="#respaldo" data-tab="respaldo"><svg viewBox="0 0 24 24"><use href="#i-save"/></svg><span>Respaldo</span></a>
+</nav>
+
+<div id="modal-root"></div>
+<div id="toasts" aria-live="polite"></div>
+<div id="busy" hidden role="status"><div class="busy-box"><div class="spinner"></div><p id="busy-text">Procesando…</p><div class="bar"><i id="busy-bar"></i></div></div></div>
+<div id="print-root" aria-hidden="true"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="logo" viewBox="0 0 64 64">
+    <rect width="64" height="64" rx="14" fill="#0b4d3a"/>
+    <g transform="rotate(-40 32 34)">
+      <rect x="11" y="24" width="42" height="20" rx="10" fill="#fff"/>
+      <path d="M32 24h11a10 10 0 0 1 0 20H32z" fill="#10b981"/>
+    </g>
+    <path d="M40 9c9 0 15 5 15 14-9 1-15-4-15-14z" fill="#34d399"/>
+    <path d="M42 11c3 5 7 8 12 11" stroke="#0b4d3a" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  </symbol>
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10M10 20v-6h4v6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></symbol>
+  <symbol id="i-label" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></symbol>
+  <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-9 9"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6h6l2 2h10v11H3z"/></symbol>
+  <symbol id="i-barcode" viewBox="0 0 24 24"><path d="M4 5v14M7 5v14M11 5v14M14 5v14M17 5v14M20 5v14"/></symbol>
+  <symbol id="i-text" viewBox="0 0 24 24"><path d="M4 6V4h16v2M12 4v16M9 20h6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 8V3h10v5M7 17H4v-7h16v7h-3M7 14h10v7H7z"/></symbol>
+  </g>
+</svg>
+
+<script>
+// Aviso inmediato si se abre como archivo local: los módulos, el service worker y el OCR requieren HTTP(S).
+if (location.protocol === 'file:') {
+  var w = document.getElementById('file-warning');
+  w.hidden = false;
+  w.textContent = 'Esta aplicación se abrió como archivo local (file://). En este modo el navegador bloquea los módulos, el almacenamiento sin conexión y el OCR. Publíquela en un sitio HTTPS o ábrala con un servidor local (vea el archivo README).';
+}
+</script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
