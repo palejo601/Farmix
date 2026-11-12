@@ -54,7 +54,7 @@ function card(r) {
 function render() {
   const q = norm($('#h-search').value).trim().split(/\s+/).filter(Boolean), f = $('#h-filter').value, s = $('#h-sort').value;
   let list = cache.filter(r => {
-    const hay = norm([r.nombre, r.principioActivo, r.lote, r.codigoBarras, r.laboratorio, r.servicio, r.cantidad].join(' '));
+    const hay = norm([r.nombre, r.principioActivo, r.lote, r.codigoBarras, r.laboratorio, r.servicio, r.cantidad, r.unidades].join(' '));
     if (!q.every(t => hay.includes(t))) return false;
     if (f === 'foto') return r.tieneFoto; if (f === 'sinfoto') return !r.tieneFoto;
     if (f) return vencState(r.vencimiento) === f;
