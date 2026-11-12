@@ -6,7 +6,7 @@
 // 4) Si algo no es seguro (letra dudosa, valor dudoso, letras repetidas con valores distintos, fabricación ≥ vencimiento),
 //    el dato queda pendiente de revisión: nunca se intercambian ni se completan valores.
 import { recognize } from './ocr.js';
-import { ym, findDates, lotOK } from './extract.js';
+import { ym, findDates, lotOK, monthToNumber } from './extract.js';
 
 const FIELD = { L: ['lote', 'Número de lote'], F: ['fechaFabricacion', 'Fecha de fabricación'], V: ['vencimiento', 'Fecha de vencimiento'] };
 const MAX_BOXES = 8;
@@ -91,7 +91,7 @@ function parseValue(letter, text) {
   const t = clean(text);
   if (letter === 'L') return lotOK(t);
   const d = findDates(t).find(m => ym(m[0]) != null);
-  return d && d.index <= 3 ? d[0] : null;
+  return d && d.index <= 3 ? monthToNumber(d[0]) : null;
 }
 
 // Lee las casillas de la imagen. Devuelve campos con el formato de extractFields: {field, label, value, conf, doubt, notes}.

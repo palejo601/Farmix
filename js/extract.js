@@ -91,9 +91,23 @@ export function boxLabels(lines) {
 const clean = s => s.replace(/\s+/g, ' ').replace(/^[\s:.\-–|]+|[\s:.\-–|,;]+$/g, '').trim();
 const LOW = 60, OK = 80;
 
+const MFIX = [[/\bAG[O0Q](?=[\s\/\-.]?\d{2,4}\b)/gi, 'AGO'], [/\bA6[O0](?=[\s\/\-.]?\d{2,4}\b)/gi, 'AGO'], [/\b[O0]CT(?=[\s\/\-.]?\d{2,4}\b)/gi, 'OCT'], [/\bN[O0]V(?=[\s\/\-.]?\d{2,4}\b)/gi, 'NOV'],
+  [/\bF[E3]B(?=[\s\/\-.]?\d{2,4}\b)/gi, 'FEB'], [/\bS[E3]P(?=[\s\/\-.]?\d{2,4}\b)/gi, 'SEP'], [/\bD[I1l]C(?=[\s\/\-.]?\d{2,4}\b)/gi, 'DIC'], [/\bEN[E3](?=[\s\/\-.]?\d{2,4}\b)/gi, 'ENE']];
+// Mes escrito con letras (FEB, FEBRERO, AGO, AUG…) → número: «FEB2026» → «02/2026», «15 MAR 2027» → «15/03/2027».
+// El año se deja tal como está impreso. Si no hay mes en letras, la fecha se devuelve sin cambios.
+const MNUM = { ENE: 1, JAN: 1, FEB: 2, MAR: 3, ABR: 4, APR: 4, MAY: 5, JUN: 6, JUL: 7, AGO: 8, AUG: 8, SEP: 9, SET: 9, OCT: 10, NOV: 11, DIC: 12, DEC: 12 };
+export function monthToNumber(s) {
+  const w = (s.match(/[A-Za-zÁÉÍÓÚáéíóú]{3,}/) || [''])[0], n = MNUM[w.slice(0, 3).toUpperCase()];
+  if (!n) return s;
+  const nums = s.match(/\d+/g) || [], year = nums[nums.length - 1];
+  if (!year || year.length < 2) return s;
+  const before = s.slice(0, s.indexOf(w)).match(/\d{1,2}/);
+  return (before ? before[0].padStart(2, '0') + '/' : '') + String(n).padStart(2, '0') + '/' + year;
+}
+const fixMonth = t => MFIX.reduce((s, [re, m]) => s.replace(re, m), t);
 const unspace = t => t.replace(/(^|[\s:])([0-9](?: [0-9A-Z\/\-.]){3,})(?=$|\s)/g, (m, a, b) => /\d.*\d/.test(b) ? a + b.replace(/ /g, '') : m);
 export function extractFields(lines) {
-  lines = boxLabels(lines.map(l => ({ text: unspace((l.text || '').replace(/\s+/g, ' ').trim()), conf: l.conf ?? null, height: l.height || 0 })))
+  lines = boxLabels(lines.map(l => ({ text: fixMonth(unspace((l.text || '').replace(/\s+/g, ' ').trim())), conf: l.conf ?? null, height: l.height || 0 })))
     .map(l => ({ ...l, text: clean(l.text) })).filter(l => l.text.length > 1);
   // Rótulos en tabla: una fila de encabezados («LOTE  FAB  VENCE») y debajo la fila de valores. Se reordenan como «etiqueta: valor».
   for (let i = 0; i + 1 < lines.length; i++) {
@@ -113,6 +127,10 @@ export function extractFields(lines) {
   const out = [], used = new Set(), warnings = [];
   const add = (field, label, value, i, notes = [], forceDoubt = false) => {
     value = clean(value); if (!value) return;
+    if (field === 'vencimiento' || field === 'fechaFabricacion') {
+      const num = monthToNumber(value);
+      if (num !== value) { notes = [...notes, `En el empaque dice «${value}» (mes en letras): se convirtió a número.`]; value = num; }
+    }
     const conf = lines[i]?.conf ?? null;
     // Una fecha con mes o año imposibles («85/2027») es una lectura errónea: se muestra, pero nunca se premarca.
     if ((field === 'vencimiento' || field === 'fechaFabricacion') && ym(value) == null) { notes.push('La fecha leída no parece válida (mes o año fuera de rango): probablemente está mal leída.'); forceDoubt = true; }
@@ -248,7 +266,7 @@ export function extractFields(lines) {
 
   // --- Nombre: la línea de texto más grande entre las legibles que no son lote/fecha/registro/laboratorio ---
   const letters = s => (s.match(/[A-Za-zÁÉÍÓÚÑáéíóúñ]/g) || []).length;
-  const cand = lines.map((l, i) => ({ l, i })).filter(({ l, i }) => !used.has(i) && !HEAD.some(([, re]) => re.test(l.text)) && letters(l.text) >= 3 && letters(l.text) / l.text.length > .55 && (l.conf == null || l.conf >= LOW));
+  const cand = lines.map((l, i) => ({ l, i })).filter(({ l, i }) => !used.has(i) && !HEAD.some(([, re]) => re.test(l.text)) && letters(l.text) >= 3 && letters(l.text) / l.text.length > .55 && l.text.length <= 45 && l.text.split(' ').length <= 6 && (l.conf == null || l.conf >= LOW));
   let nameI = -1;
   if (cand.length) {
     const best = cand.reduce((a, b) => (b.l.height > a.l.height * 1.05 ? b : a));
@@ -297,7 +315,7 @@ function fixLabels(text) {
 const ZKEY = /^(LOTE?|LOT|BATCH|VENCE|VENC|VTO|EXP|CAD|FAB|MFG|MFD|ELAB|FECHA|DATE|DE|NO|N[°º]?)$/i;
 // Devuelve {lote, fechaFabricacion, vencimiento}: cada uno {value, labelled} o ausente.
 export function extractZone(lines) {
-  const ls = boxLabels(lines.map(l => ({ ...l, text: unspace((l.text || '').replace(/\s+/g, ' ').trim()) }))).map(l => ({ ...l, text: fixLabels(clean(l.text)) })).filter(l => l.text.length > 1);
+  const ls = boxLabels(lines.map(l => ({ ...l, text: fixMonth(unspace((l.text || '').replace(/\s+/g, ' ').trim())) }))).map(l => ({ ...l, text: fixLabels(clean(l.text)) })).filter(l => l.text.length > 1);
   const out = {};
   for (const f of extractFields(ls).fields) if (['lote', 'fechaFabricacion', 'vencimiento'].includes(f.field) && !f.doubt && !out[f.field]) out[f.field] = { value: f.value, labelled: true };
   // Sin etiqueta legible: en la zona marcada, las fechas válidas y el código alfanumérico restante son los candidatos.
@@ -319,6 +337,7 @@ export function extractZone(lines) {
     const tok = rest.split(/[\s:;,|]+/).map(t => t.replace(/^[.\-]+|[.\-]+$/g, '')).find(t => /^[A-Z0-9][A-Z0-9\-\/]{2,15}$/i.test(t) && /\d/.test(t) && !ZKEY.test(t));
     if (tok) out.lote = { value: tok };
   }
+  for (const f of ['fechaFabricacion', 'vencimiento']) if (out[f]) out[f].value = monthToNumber(out[f].value);
   return out;
 }
 export const dateOK = s => ym(s) != null;
