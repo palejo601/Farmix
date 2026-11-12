@@ -369,6 +369,43 @@ const EAN = '7701234567897';
   await page.waitForSelector('.live', { state: 'detached' }); await page.waitForSelector('#photo-box:not([hidden])');
   check('«Usar datos» llena el formulario, guarda una foto del escaneo y apaga la cámara', await page.inputValue('#f-lote') === 'AB12345' && await page.inputValue('#f-vencimiento') === '05/2027' && /CALMADOL/.test(await page.inputValue('#f-nombre')));
   await page.click('#btn-form-clear'); await btn('Descartar').click();
+  console.log('\nLector nativo (ML Kit / Apple Vision) — simulado: aquí no hay teléfono');
+  const natUnit = await page.evaluate(async () => {
+    const { mapNative } = await import('./js/ocr.js'); const { extractFields } = await import('./js/extract.js');
+    const W = (text, x0, y0, x1, y1) => ({ text, conf: 95, box: [x0, y0, x1, y1], symbols: [] });
+    const L = (angle, ...ws) => ({ text: ws.map(w => w.text).join(' '), conf: 95, angle, box: [Math.min(...ws.map(w => w.box[0])), Math.min(...ws.map(w => w.box[1])), Math.max(...ws.map(w => w.box[2])), Math.max(...ws.map(w => w.box[3]))], words: ws });
+    const pick = r => Object.fromEntries(extractFields(mapNative({ engine: 'mlkit', lines: r }).lines).fields.filter(f => ['lote', 'fechaFabricacion', 'vencimiento'].includes(f.field)).map(f => [f.field, f.value]));
+    // Solapa con texto vertical (etiquetas abajo, valores arriba), en los dos sentidos de giro
+    const flap = a => [L(a, W('Lote', 1460, 640, 1490, 700), W('N.:', 1460, 590, 1490, 630)), L(a, W('Prep.:', 1500, 610, 1530, 700)), L(a, W('Venc.:', 1540, 610, 1570, 700)),
+      L(a, W('41005B', 1460, 350, 1490, 470)), L(a, W('02.2024', 1500, 330, 1530, 470)), L(a, W('02.2027', 1540, 330, 1570, 470)), L(0, W('SPASMOMEN', 200, 300, 700, 380))];
+    // Etiquetas y valores en renglones separados por columnas, con otro texto a la izquierda
+    const cols = [L(0, W('MANTENER', 80, 300, 260, 330), W('FUERA', 270, 300, 380, 330)), L(0, W('Lote:', 800, 300, 880, 330)), L(0, W('5280924', 960, 296, 1150, 326)),
+      L(0, W('F.F.:', 800, 340, 870, 370)), L(0, W('SEP/2024', 960, 336, 1170, 366)), L(0, W('F.V.:', 800, 380, 870, 410)), L(0, W('SEP/2026', 960, 376, 1170, 406))];
+    const dots = [L(0, W('L:', 1050, 455, 1085, 480), W('S16057', 1100, 455, 1275, 480)), L(0, W('F:', 1050, 482, 1085, 507), W('11/2024', 1100, 482, 1300, 507)), L(0, W('V:', 1050, 509, 1085, 534), W('11/2026', 1100, 509, 1300, 534))];
+    return { up: pick(flap(-90)), down: pick(flap(90).map(l => l)), cols: pick(cols), dots: pick(dots) };
+  });
+  const srt = o => JSON.stringify(Object.keys(o).sort().map(k => [k, o[k]])), eq = (a, b) => srt(a) === srt(b);
+  check('Nativo: texto vertical de solapa (Lote N.: / Prep.: / Venc.:) → cada valor con su etiqueta', eq(natUnit.up, { lote: '41005B', fechaFabricacion: '02.2024', vencimiento: '02.2027' }) || eq(natUnit.down, { lote: '41005B', fechaFabricacion: '02.2024', vencimiento: '02.2027' }), JSON.stringify(natUnit.up) + ' / ' + JSON.stringify(natUnit.down));
+  check('Nativo: etiquetas y valores en columnas separadas (Lote: / F.F.: / F.V.:)', eq(natUnit.cols, { lote: '5280924', fechaFabricacion: '09/2024', vencimiento: '09/2026' }), JSON.stringify(natUnit.cols));
+  check('Nativo: «L: S16057 · F: 11/2024 · V: 11/2026»', eq(natUnit.dots, { lote: 'S16057', fechaFabricacion: '11/2024', vencimiento: '11/2026' }), JSON.stringify(natUnit.dots));
+  // Flujo completo con un lector nativo simulado: elegir foto → leer → verificar → llenar
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem('mockOcr')) return;
+    const W = (text, x0, y0, x1, y1) => ({ text, conf: 95, box: [x0, y0, x1, y1], symbols: [] });
+    const L = (...ws) => ({ text: ws.map(w => w.text).join(' '), conf: 95, angle: 0, box: [Math.min(...ws.map(w => w.box[0])), Math.min(...ws.map(w => w.box[1])), Math.max(...ws.map(w => w.box[2])), Math.max(...ws.map(w => w.box[3]))], words: ws });
+    self.__ocrCalls = 0;
+    self.Capacitor = { Plugins: { NativeOcr: { available: async () => ({ engine: 'mlkit' }), recognize: async () => { self.__ocrCalls++; return { engine: 'mlkit', lines: [L(W('CALMADOL', 80, 80, 700, 170)),
+      L(W('Lote:', 800, 300, 880, 330)), L(W('5280924', 960, 296, 1150, 326)), L(W('F.F.:', 800, 340, 870, 370)), L(W('SEP/2024', 960, 336, 1170, 366)), L(W('F.V.:', 800, 380, 870, 410)), L(W('SEP/2026', 960, 376, 1170, 406))] }; } } } };
+  });
+  await page.evaluate(() => sessionStorage.setItem('mockOcr', '1')); await page.reload(); await page.waitForSelector('#v-registrar:not([hidden])');
+  if (await page.inputValue('#f-nombre')) { await page.click('#btn-form-clear'); if (await btn('Descartar').count()) await btn('Descartar').click(); }
+  await choose('#photo-empty label[for=pick-gallery]', F.pack);
+  await page.waitForSelector('#autofill-note:not([hidden])', { timeout: 60000 }); await waitIdle();
+  const natF = {}; for (const k of ['nombre', 'lote', 'fechaFabricacion', 'vencimiento']) natF[k] = await page.inputValue('#f-' + k);
+  const natNote = await page.locator('#autofill-note').innerText(), natCalls = await page.evaluate(() => self.__ocrCalls);
+  check('Nativo (simulado): la app usa el lector del teléfono, verifica y llena lote y fechas', natF.lote === '5280924' && natF.fechaFabricacion === '09/2024' && natF.vencimiento === '09/2026' && /Google ML Kit/.test(natNote) && natCalls >= 3, JSON.stringify(natF) + ` · ${natCalls} lecturas · ` + natNote.split('\n')[0].slice(0, 90));
+  await page.click('#btn-form-clear'); if (await btn('Descartar').count()) await btn('Descartar').click();
+  await page.evaluate(() => sessionStorage.removeItem('mockOcr')); await page.reload(); await page.waitForTimeout(500);
   await setAuto(false);
   console.log('\nGeneral');
   const ovf = await page.evaluate(async () => { const out = []; for (const v of ['inicio', 'registrar', 'historial', 'rotulos', 'respaldo', 'config']) { location.hash = '#' + v; await new Promise(r => setTimeout(r, 150)); if (document.documentElement.scrollWidth > innerWidth + 1) out.push(v); } return out; });

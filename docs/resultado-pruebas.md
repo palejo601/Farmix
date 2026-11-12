@@ -1,6 +1,6 @@
 # Resultado de las pruebas automáticas
 
-Ejecución: 2026-11-12 02:34 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
+Ejecución: 2026-11-12 03:17 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
 
 | Estado | Comprobación | Detalle |
 |---|---|---|
@@ -81,10 +81,14 @@ Ejecución: 2026-11-12 02:34 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Al terminar informa lo que no encontró y no inventa lote ni vencimiento |  |
 | OK | Casillas [L] [F] [V]: cada valor va a su campo (lleno o propuesto), sin intercambiarse | {"lote":"4B0123","fechaFabricacion":"05/2024","vencimiento":"05/2027"} |
 | OK | B y 8 por la forma: nunca se confunden (si la forma no es clara, queda para revisión) | {"ok":16,"wrong":0,"none":8} |
-| OK | En vivo: nombre, lote y vencimiento se confirman leyéndolos varias veces | 0.3 s · ✓ Nombre: CALMADOL \| ✓ Concentración: 500 mg \| ✓ Lote: AB12345 \| ✓ Vencimiento: 05/2027 |
+| OK | En vivo: nombre, lote y vencimiento se confirman leyéndolos varias veces | 0.2 s · ✓ Nombre: CALMADOL \| ✓ Concentración: 500 mg \| ✓ Lote: AB12345 \| ✓ Vencimiento: 05/2027 |
 | OK | «Usar datos» llena el formulario, guarda una foto del escaneo y apaga la cámara |  |
+| OK | Nativo: texto vertical de solapa (Lote N.: / Prep.: / Venc.:) → cada valor con su etiqueta | {"fechaFabricacion":"02.2024","vencimiento":"02.2027","lote":"41005B"} / {"fechaFabricacion":"02.2024","vencimiento":"02.2027","lote":"41005B"} |
+| OK | Nativo: etiquetas y valores en columnas separadas (Lote: / F.F.: / F.V.:) | {"fechaFabricacion":"09/2024","vencimiento":"09/2026","lote":"5280924"} |
+| OK | Nativo: «L: S16057 · F: 11/2024 · V: 11/2026» | {"fechaFabricacion":"11/2024","vencimiento":"11/2026","lote":"S16057"} |
+| OK | Nativo (simulado): la app usa el lector del teléfono, verifica y llena lote y fechas | {"nombre":"CALMADOL","lote":"5280924","fechaFabricacion":"09/2024","vencimiento":"09/2026"} · 7 lecturas · Se llenaron 4 campo(s) desde la foto |
 | OK | Ninguna pantalla se desborda horizontalmente en teléfono (412 px) |  |
 | OK | Botones con altura táctil ≥ 40 px | 0 pequeños |
 | OK | Sin errores de JavaScript durante toda la sesión |  |
 
-**82 de 82 correctas.**
+**86 de 86 correctas.**
