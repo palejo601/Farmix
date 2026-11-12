@@ -238,7 +238,7 @@ const EAN = '7701234567897';
     detail.push(`${r.w}×${r.h}: ${r.n} líneas${r.bars ? '+barras' : ''}${r.warn ? ' (aviso)' : ''}`);
   }
   await page.selectOption('#lb-size', '0'); await page.click('#sh-auto'); await page.waitForTimeout(300);
-  { const t = await page.locator('#lb-preview svg').first().textContent(); check('El rótulo incluye el servicio, el registro sanitario INVIMA y la cantidad', /^UCI ADULTO/.test(t) && /Reg\. San\..*2019M-0012345/.test(t) && /Cant\.: 30 tabletas/.test(t) && /Unidades: 100/.test(t), (t.match(/Cant\.: [^L]*/) || [''])[0] + ' · ' + (t.match(/Reg\. San\.[^L]*/) || [''])[0]); }
+  { const t = await page.locator('#lb-preview svg').first().textContent(); check('El rótulo incluye el servicio, el registro sanitario INVIMA y la cantidad', /^UCI ADULTO/.test(t) && /Reg\. San\..*2019M-0012345/.test(t) && /Cajas: 30 tabletas/.test(t) && /Unidades: 100/.test(t), (t.match(/Cant\.: [^L]*/) || [''])[0] + ' · ' + (t.match(/Reg\. San\.[^L]*/) || [''])[0]); }
   { // Hoja completa: un rótulo que ocupa la hoja, vertical y horizontal
     const r = [];
     for (const o of ['v', 'h']) {

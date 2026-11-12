@@ -6,7 +6,7 @@ export const SIZES = [
 export const LABEL_FIELDS = [
   ['nombre', 'Nombre del producto'], ['servicio', 'Servicio'], ['principioActivo', 'Principio activo'], ['concentracion', 'Concentración'], ['presentacion', 'Presentación'],
   ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['laboratorio', 'Laboratorio'], ['registroSanitario', 'Registro sanitario (INVIMA)'], ['codigoBarras', 'Código de barras'],
-  ['condiciones', 'Condiciones de almacenamiento'], ['ubicacion', 'Ubicación'], ['cantidad', 'Cantidad'], ['unidades', 'Cantidad de unidades'],
+  ['condiciones', 'Condiciones de almacenamiento'], ['ubicacion', 'Ubicación'], ['cantidad', 'Cantidad de cajas'], ['unidades', 'Cantidad de unidades'],
 ];
 export const PAPERS = { A4: [210, 297], Carta: [215.9, 279.4], Legal: [215.9, 355.6] };
 const FONT = 'Arial, Helvetica, sans-serif';
@@ -84,8 +84,9 @@ export function layoutLabel(rec, o) {
   if (on('registroSanitario')) add('Registro sanitario', 'Reg. San. ' + on('registroSanitario'), 0.85);
   if (on('condiciones')) add('Almacenamiento', on('condiciones'), 0.85);
   if (on('ubicacion')) add('Ubicación', 'Ubic.: ' + on('ubicacion'), 0.85);
-  if (on('cantidad')) add('Cantidad', 'Cant.: ' + on('cantidad'), 0.95, true);
-  if (on('unidades')) add('Unidades', 'Unidades: ' + on('unidades'), 0.95, true);
+  // Cajas y unidades juntas en un renglón destacado (estantes y cajas de medicamentos).
+  if (on('cantidad')) add('Cajas', 'Cajas: ' + on('cantidad'), 1.1, true);
+  if (on('unidades')) add('Unidades', 'Unidades: ' + on('unidades'), 1.1, true);
 
   // Código de barras: conserva la proporción de módulos y sus zonas de silencio.
   let bar = null;

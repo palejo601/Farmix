@@ -228,3 +228,4 @@ body.no-scroll{overflow:hidden}
   .fields{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media (min-width:1600px){ html{font-size:18px} .fields{grid-template-columns:repeat(4,minmax(0,1fr))} }
+.field.qty label{color:var(--g800);font-weight:700}.field.qty input{border-color:var(--g700);background:#f3faf6}
