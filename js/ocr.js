@@ -74,8 +74,10 @@ export function mapNative(res) {
 }
 async function recognizeAny(canvas, progress = () => {}, sparse = false, extra = {}) {
   if (!canvas || canvas.width < 8 || canvas.height < 8) return { text: '', confidence: null, lines: [] };
-  // Lecturas con lista de caracteres permitidos o de un solo carácter: Tesseract (el lector nativo no las admite).
-  if (!extra.tessedit_char_whitelist && sparse !== '10' && await nativeOcrEngine()) {
+  // Con lector nativo, todo pasa por él (no se carga Tesseract en el teléfono): las lecturas con lista de caracteres
+  // permitidos se filtran después. Sin lector nativo (web), Tesseract.
+  const wl = extra.tessedit_char_whitelist;
+  if (await nativeOcrEngine()) {
     try {
       progress('Leyendo el texto…', null);
       // El lector nativo necesita renglones de al menos ~16 px: los recortes pequeños se amplían antes de enviarlos.
@@ -88,9 +90,18 @@ async function recognizeAny(canvas, progress = () => {}, sparse = false, extra =
       const k = src.width / canvas.width;
       const image = src.toDataURL('image/jpeg', 0.92).split(',')[1];
       if (src !== canvas) src.width = src.height = 0;
-      const res = await self.Capacitor.Plugins.NativeOcr.recognize({ image });
+      // Tiempo límite: si el lector nativo no responde, se usa Tesseract y la cola de lecturas no queda bloqueada.
+      let timer;
+      const res = await Promise.race([self.Capacitor.Plugins.NativeOcr.recognize({ image }),
+        new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('el lector nativo no respondió en 25 s')), 25000); })]).finally(() => clearTimeout(timer));
       if (k !== 1) for (const l of res.lines || []) for (const o of [l, ...(l.words || []), ...(l.words || []).flatMap(w => w.symbols || [])]) if (o.box) o.box = o.box.map(v => v / k);
-      return mapNative(res);
+      const out = mapNative(res);
+      if (wl) {                                                    // lista permitida: se dejan solo esos caracteres
+        const keep = t => [...(t || '')].filter(ch => wl.includes(ch) || ch === ' ').join('').trim();
+        for (const l of out.lines) l.text = keep(l.text);
+        out.lines = out.lines.filter(l => l.text); out.text = out.lines.map(l => l.text).join('\n');
+      }
+      return out;
     } catch (e) { console.warn('Lector nativo no disponible, se usa Tesseract:', e?.message || e); }
   }
   return recognizeNow(canvas, progress, sparse, extra);

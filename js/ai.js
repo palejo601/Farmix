@@ -76,10 +76,11 @@ const weak = o => ['lote', 'vencimiento'].some(f => !o?.[f]?.valor || o[f].certe
 // Lee lote y fechas. zone (opcional): zona del lote/fechas ya ubicada por el teléfono → se envía también ampliada.
 // Si no hay zona y la primera lectura queda incompleta o dudosa, la IA indica dónde está el bloque y se relee ampliado.
 // Devuelve { lote, fechaFabricacion, vencimiento, zona, zoom } (cada campo {valor, etiqueta, certeza, nota}).
+// zone puede ser una zona, una promesa de zona (la que ubique el teléfono mientras tanto) o null.
 export async function aiReadLotDates(blob, key, zone = null) {
-  const first = await aiCall(blob, key, padZone(zone));
-  if (zone || !weak(first)) return { ...first, zoom: !!zone };
-  const z = padZone(first.zona);
+  const first = await aiCall(blob, key, null);               // foto completa: arranca de inmediato, en paralelo con el teléfono
+  if (!weak(first)) return { ...first, zoom: false };
+  const z = padZone(await Promise.resolve(zone).catch(() => null)) || padZone(first.zona);
   if (!z) return { ...first, zoom: false };
   const second = await aiCall(blob, key, z).catch(() => null);
   if (!second) return { ...first, zoom: false };
