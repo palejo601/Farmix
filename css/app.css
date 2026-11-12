@@ -207,3 +207,5 @@ body.no-scroll{overflow:hidden}
 .live-actions{flex-wrap:wrap}
 .live-actions .btn{flex:1 1 40%}
 .live-guide{top:22%;height:40%}
+
+#autofill-note .warn-photo{color:#9a3412;font-weight:600}

@@ -1,7 +1,7 @@
 // Registro y edición de productos: formulario, fotografía, OCR con revisión humana.
 import { $, $$, h, toast, modal, confirmDlg, busy, fmtBytes, errMsg } from './ui.js';
 import * as db from './db.js';
-import { processFile, toStored, fromStored, blobToCanvas, freeCanvas, enhance } from './photos.js';
+import { processFile, toStored, fromStored, blobToCanvas, freeCanvas, enhance, photoQuality } from './photos.js';
 import { recognize, recognizeOnline, nativeOcrEngine, ENGINE_NAME } from './ocr.js';
 import { extractFields, extractZone, dateOK } from './extract.js';
 import { liveScan } from './live.js';
@@ -116,6 +116,7 @@ export async function setPhotoFromFile(file, after) {
     const p = await processFile(file, photoProgress);
     st.photo = { blob: p.blob, w: p.w, h: p.h }; st.thumb = p.thumb; st.photoState = 'new';
     st.src = p.hi;                                         // copia de lectura en memoria (no se reabre el archivo original)
+    st.quality = await photoQuality(p.blob).catch(() => null);
     showPhoto(); scheduleDraft();
     toast(`Fotografía lista (${fmtBytes(p.original)} → ${fmtBytes(p.blob.size)}).`, 'ok');
   } catch (e) {
@@ -155,7 +156,7 @@ async function analyze(source, extras = true, side = 2600) {
     }
     if (!res) res = await recognize(canvas, busy);
     if (!res.online) fixLotLines(canvas, res.lines);           // B u 8: se decide por la forma del carácter
-    const o = { ...extractFields(res.lines), res, onlineErr, baseW: canvas.width };
+    const o = { ...extractFields(res.lines), res, onlineErr, baseW: canvas.width, baseH: canvas.height };
     if (extras) await morePasses(canvas, o, busy, () => true, source);
     return o;
   } finally { freeCanvas(canvas); }
@@ -260,16 +261,18 @@ export async function autoFill(tStart) {
   const seq = ++readSeq;
   // Asistente IA: arranca en paralelo con el lector del teléfono (no suma su tiempo al de la lectura local).
   const aiOn = await aiReady();
-  const aiP = aiOn ? aiConfig().then(c => aiReadLotDates(st.src || st.photo.blob, c.key)).catch(e => ({ error: errMsg(e) })) : null;
+  let aiP = null;
   // Primera lectura sobre la copia de alta calidad (la guardada está comprimida y confunde dígitos); luego se verifican lote y fechas.
   try {
     const side = (await nativeOcrEngine()) ? 3200 : 2200;         // el lector nativo aprovecha más resolución
     r = await withPhoto(src => analyze(src, false, side)).catch(() => analyze(st.photo.blob, false, 1800));
+    // La IA recibe la foto completa y, si el teléfono ubicó el lote o las fechas, esa zona ampliada a resolución completa.
+    if (aiOn) { const zone = lotZone(r); aiP = aiConfig().then(c => aiReadLotDates(st.src || st.photo.blob, c.key, zone)).catch(e => ({ error: errMsg(e) })); }
     if (!r.res.online) await verifyFields(r.fields, st.src || st.photo.blob, r.baseW, t => busy(t));
     if (aiP) {
       busy('El Asistente IA está leyendo el lote y las fechas…');
       const ai = await aiP;
-      r.ai = ai?.error ? { error: ai.error } : { notes: mergeAI(r.fields, ai, monthToNumber, Object.fromEntries(FIELDS)) };
+      r.ai = ai?.error ? { error: ai.error } : { notes: [...(ai.zoom ? ['(la IA leyó también la zona ampliada del lote y las fechas)'] : []), ...mergeAI(r.fields, ai, monthToNumber, Object.fromEntries(FIELDS))] };
       for (const f of r.fields) if (f.aiAgree) f.conf = Math.max(f.conf ?? 0, 90);
     }
   }
@@ -279,7 +282,7 @@ export async function autoFill(tStart) {
     return;
   } finally { busy(false); }
   const { res, onlineErr } = r, fields = [...r.fields], secs = ((performance.now() - t0) / 1000).toFixed(1);
-  st.diag = { engine: res.online ? 'OCR.space (en línea)' : ENGINE_NAME[res.engine || ''], secs, text: res.text, fields: r.fields, ai: r.ai || null };
+  st.diag = { quality: st.quality, engine: res.online ? 'OCR.space (en línea)' : ENGINE_NAME[res.engine || ''], secs, text: res.text, fields: r.fields, ai: r.ai || null };
   let filled = 0; const doubts = [];
   for (const f of fields) {
     const cur = input(f.field).value.trim(), src = st.origen[f.field];
@@ -298,6 +301,7 @@ export async function autoFill(tStart) {
     ` (${res.online ? 'lectura en línea' : 'lectura en el teléfono con ' + ENGINE_NAME[res.engine || '']}, ${secs} s${onlineErr ? '; el servicio en línea no respondió' : ''}). Compruebe que coincidan con el empaque antes de guardar.`,
     doubts.length ? h('div', { style: 'margin-top:6px' }, `Para revisar: ${doubts.join(', ')} (vea la sugerencia bajo cada campo).`) : null,
     missing.length ? h('div', { class: 'miss', style: 'margin-top:6px' }, `No se encontró ${missing.join(' ni ')}: use «Marcar lote y fechas» o escríbalo.`) : null,
+    st.quality?.blurry || st.quality?.shiny ? h('div', { class: 'warn-photo', style: 'margin-top:6px' }, `⚠ La foto ${st.quality.blurry ? 'parece borrosa' : 'tiene reflejos'}: los datos pueden salir mal. Para mejores resultados, tome otra foto ${st.quality.blurry ? 'más cerca y enfocando el lote (toque la pantalla para enfocar)' : 'inclinando un poco la caja para quitar el brillo'}.`) : null,
     r.ai ? h('div', { style: 'margin-top:6px' }, r.ai.error ? `Asistente IA: ${r.ai.error}` : `Asistente IA: ${r.ai.notes.filter(n => /coinciden/.test(n) && !/no coinciden/.test(n)).length} de 3 datos confirmados por dos lecturas.`) : null,
     h('button', { type: 'button', class: 'btn small', style: 'margin-top:8px', onclick: showDiag }, 'Ver qué leyó la app')));
   toast(filled ? `Formulario llenado con ${filled} dato(s) de la foto.` : 'No se pudieron leer datos con seguridad en esta foto.', filled ? 'ok' : 'warn');
@@ -333,6 +337,19 @@ async function runLive() {
   toast(n ? `${n} dato(s) del escáner en vivo en el formulario.` : 'No se agregaron datos nuevos.', n ? 'ok' : 'warn');
 }
 
+// Zona del lote y las fechas según la lectura del teléfono (fracciones 0-1 de la foto), para enviarla ampliada a la IA.
+const LABEL_W = /^(?:L[O0]TE|LOT|BATCH|VENC\w*|VENCE|VTO|EXP\w*|CAD\w*|PREP\w*|FAB\w*|F\.?F\.?|F\.?V\.?|[LFV][.:])[.:;,]*/i;
+function lotZone(r) {
+  const W = r.baseW, H = r.baseH; if (!W || !H) return null;
+  const boxes = r.fields.filter(f => LD.includes(f.field) && f.box).map(f => f.box);
+  for (const l of r.res.lines || []) for (const w of l.words || []) if (w.bbox && LABEL_W.test((w.text || '').trim())) boxes.push(w.bbox);
+  if (!boxes.length) return null;
+  const x0 = Math.min(...boxes.map(b => b.x0)), y0 = Math.min(...boxes.map(b => b.y0)), x1 = Math.max(...boxes.map(b => b.x1)), y1 = Math.max(...boxes.map(b => b.y1));
+  const h = Math.max(...boxes.map(b => Math.min(b.y1 - b.y0, b.x1 - b.x0)));
+  // Los valores pueden estar a la derecha o debajo de las etiquetas: la zona se extiende en esas direcciones.
+  return { x0: x0 / W, y0: y0 / H, x1: Math.min(W, x1 + h * 10) / W, y1: Math.min(H, y1 + h * 3) / H };
+}
+
 // Diagnóstico: el texto exacto que vio el lector y lo que se decidió con el lote y las fechas (para revisar o enviar a soporte).
 async function showDiag() {
   const d = st.diag; if (!d) { toast('Aún no hay una lectura de foto.', 'warn'); return; }
@@ -342,7 +359,8 @@ async function showDiag() {
     return `${label[k]}: ${f ? `«${f.value}»${f.alt ? ` o «${f.alt}»` : ''} — ${f.doubt ? 'DUDOSO (sugerencia)' : 'seguro (llenado)'}${f.notes?.length ? '\n   · ' + f.notes.join('\n   · ') : ''}` : 'no encontrado'}`;
   });
   const aiTxt = d.ai ? '\n\n— Asistente IA —\n' + (d.ai.error || d.ai.notes.join('\n')) : '';
-  const txt = `FARMA-ETIQUETA ${(await import('./settings.js')).APP_VERSION} · lector: ${d.engine} · ${d.secs} s\n\n${rows.join('\n')}${aiTxt}\n\n— Texto leído —\n${(d.text || '').trim() || '(sin texto)'}`;
+  const q = d.quality ? ` · nitidez ${d.quality.sharp}${d.quality.blurry ? ' (borrosa)' : ''} · reflejo ${d.quality.glare} %` : '';
+  const txt = `FARMA-ETIQUETA ${(await import('./settings.js')).APP_VERSION} · lector: ${d.engine} · ${d.secs} s${q}\n\n${rows.join('\n')}${aiTxt}\n\n— Texto leído —\n${(d.text || '').trim() || '(sin texto)'}`;
   await modal('Qué leyó la app', h('div', {}, h('p', { class: 'muted small' }, 'Haga una captura de esta pantalla o cópiela para enviarla.'), h('pre', { class: 'raw', style: 'max-height:55vh' }, txt)),
     [{ label: 'Cerrar', value: null }, { label: 'Copiar', class: 'primary', keep: true, onclick: async () => { try { await navigator.clipboard.writeText(txt); toast('Copiado.', 'ok'); } catch { toast('No se pudo copiar: haga una captura de pantalla.', 'warn'); } } }]);
 }

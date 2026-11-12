@@ -16,6 +16,10 @@ Cómo se rotulan en los empaques:
 - Vencimiento: «F.V.», «Vence», «Venc.», «V.», «V:», «Vto», «Exp», «Cad», o una casilla con la letra V.
 Los valores pueden estar al lado de la etiqueta, debajo, en otra columna, girados 90°, impresos por puntos, en relieve o con tinta tenue. La fecha suele ser MM/AAAA, MM.AAAA, MMMAAAA (FEB2026), DD/MM/AAAA o con el mes en letras.
 
+Puede recibir dos imágenes: la foto completa y una AMPLIACIÓN de la zona donde están el lote y las fechas. Si hay ampliación, lea los caracteres en ella (tiene más detalle) y use la foto completa solo para ubicarse.
+
+En «zona» indique dónde está, EN LA FOTO COMPLETA, el bloque con el lote y las fechas, como fracciones de 0 a 1 del ancho y del alto (x0, y0 = esquina superior izquierda; x1, y1 = inferior derecha). Si no lo encuentra, null.
+
 Reglas:
 - Transcribe cada carácter exactamente como está impreso. Distingue con cuidado B/8, D/0, O/0, S/5, I/1, Z/2, G/6 mirando la forma real de cada carácter. No completes, no corrijas y no inventes.
 - La fabricación es anterior al vencimiento. No intercambies las fechas: asigna cada una según su etiqueta.
@@ -37,7 +41,8 @@ function schema(z) {
     certeza: z.enum(['alta', 'media', 'baja']),
     nota: z.string(),
   });
-  return z.object({ lote: campo, fechaFabricacion: campo, vencimiento: campo });
+  const zona = z.object({ x0: z.number(), y0: z.number(), x1: z.number(), y1: z.number() }).nullable();
+  return z.object({ lote: campo, fechaFabricacion: campo, vencimiento: campo, zona });
 }
 
 function client(Anthropic, key) {
@@ -45,35 +50,64 @@ function client(Anthropic, key) {
   return new Anthropic({ apiKey: key, dangerouslyAllowBrowser: true, maxRetries: 1, timeout: 60000 });
 }
 
-// Prepara la foto: JPEG, lado largo ≤ 1568 px.
-export async function photoForAI(blob) {
+// Prepara la foto (o una zona, en fracciones 0-1): JPEG, lado largo ≤ 1568 px. La zona se recorta de la foto a resolución completa.
+export async function photoForAI(blob, zone = null) {
   const bmp = await createImageBitmap(blob);
   try {
-    const k = Math.min(1, SIDE / Math.max(bmp.width, bmp.height)), c = document.createElement('canvas');
-    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
-    const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(bmp, 0, 0, c.width, c.height);
+    const sx = zone ? zone.x0 * bmp.width : 0, sy = zone ? zone.y0 * bmp.height : 0;
+    const sw = zone ? (zone.x1 - zone.x0) * bmp.width : bmp.width, sh = zone ? (zone.y1 - zone.y0) * bmp.height : bmp.height;
+    const k = Math.min(zone ? 3 : 1, SIDE / Math.max(sw, sh)), c = document.createElement('canvas');
+    c.width = Math.max(8, Math.round(sw * k)); c.height = Math.max(8, Math.round(sh * k));
+    const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(bmp, sx, sy, sw, sh, 0, 0, c.width, c.height);
     const b64 = c.toDataURL('image/jpeg', 0.88).split(',')[1]; c.width = c.height = 0;
     return b64;
   } finally { bmp.close?.(); }
 }
 
-// Devuelve { lote, fechaFabricacion, vencimiento } (cada uno {valor, etiqueta, certeza, nota}) o lanza un error comprensible.
-export async function aiReadLotDates(blob, key) {
+// Zona con margen y dentro de la foto (fracciones 0-1). null si no es válida.
+export function padZone(z, m = 0.35) {
+  if (!z || !(z.x1 > z.x0) || !(z.y1 > z.y0)) return null;
+  const w = z.x1 - z.x0, h = z.y1 - z.y0, px = Math.max(w * m, 0.03), py = Math.max(h * m, 0.03);
+  const r = { x0: Math.max(0, z.x0 - px), y0: Math.max(0, z.y0 - py), x1: Math.min(1, z.x1 + px), y1: Math.min(1, z.y1 + py) };
+  return r.x1 - r.x0 > 0.02 && r.y1 - r.y0 > 0.02 && (r.x1 - r.x0) * (r.y1 - r.y0) < 0.8 ? r : null;
+}
+const weak = o => ['lote', 'vencimiento'].some(f => !o?.[f]?.valor || o[f].certeza !== 'alta');
+
+// Lee lote y fechas. zone (opcional): zona del lote/fechas ya ubicada por el teléfono → se envía también ampliada.
+// Si no hay zona y la primera lectura queda incompleta o dudosa, la IA indica dónde está el bloque y se relee ampliado.
+// Devuelve { lote, fechaFabricacion, vencimiento, zona, zoom } (cada campo {valor, etiqueta, certeza, nota}).
+export async function aiReadLotDates(blob, key, zone = null) {
+  const first = await aiCall(blob, key, padZone(zone));
+  if (zone || !weak(first)) return { ...first, zoom: !!zone };
+  const z = padZone(first.zona);
+  if (!z) return { ...first, zoom: false };
+  const second = await aiCall(blob, key, z).catch(() => null);
+  if (!second) return { ...first, zoom: false };
+  // Se queda, campo por campo, con la lectura de mayor certeza (la ampliada gana si empatan).
+  const rank = { alta: 3, media: 2, baja: 1 }, out = { zona: first.zona, zoom: true };
+  for (const f of ['lote', 'fechaFabricacion', 'vencimiento']) {
+    const a = first[f], b = second[f];
+    out[f] = !b?.valor ? a : !a?.valor ? b : (rank[b.certeza] >= rank[a.certeza] ? b : a);
+  }
+  return out;
+}
+
+async function aiCall(blob, key, zone) {
   const { Anthropic, betaZodOutputFormat, z } = await sdk();
-  const data = await photoForAI(blob);
+  const data = await photoForAI(blob), zoom = zone ? await photoForAI(blob, zone) : null;
+  const content = [{ type: 'text', text: 'Foto completa del empaque:' }, { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data } }];
+  if (zoom) content.push({ type: 'text', text: 'Ampliación de la zona donde parecen estar el lote y las fechas:' }, { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: zoom } });
+  content.push({ type: 'text', text: 'Transcribe el lote, la fecha de fabricación y la fecha de vencimiento de este empaque.' });
   let res;
   try {
     res = await client(Anthropic, key).beta.messages.parse({
       model: AI_MODEL,
-      max_tokens: 2000,
+      max_tokens: 3000,
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',                       // si el modelo declina, la API reintenta con otro modelo en la misma llamada
       system: SYSTEM,
       output_config: { effort: 'medium', format: betaZodOutputFormat(schema(z)) },
-      messages: [{ role: 'user', content: [
-        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data } },
-        { type: 'text', text: 'Transcribe el lote, la fecha de fabricación y la fecha de vencimiento de este empaque.' },
-      ] }],
+      messages: [{ role: 'user', content }],
     });
   } catch (e) { throw new Error(aiError(e, Anthropic)); }
   if (res.stop_reason === 'refusal') throw new Error('La IA no respondió a esta foto.');
