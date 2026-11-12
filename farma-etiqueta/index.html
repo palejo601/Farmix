@@ -236,6 +236,18 @@
     <label class="check"><input type="checkbox" id="cf-autofill"> Llenar el formulario automáticamente al elegir una foto</label>
     <p class="muted small">Lo escrito a mano nunca se reemplaza. Las lecturas dudosas no se escriben: aparecen como sugerencia bajo el campo.</p>
   </div>
+  <div class="card" id="ai-card"><h3>Asistente IA para lote y fechas (opcional)</h3>
+    <p>Con internet, una inteligencia artificial (<b>Claude</b>, de Anthropic) mira la foto y lee el <b>lote, la fabricación y el vencimiento</b> al mismo tiempo que el lector del teléfono. Si los dos leen lo mismo, el dato se llena solo; si no coinciden, la app le muestra las dos opciones para que usted elija.</p>
+    <p class="muted small">Al activarlo, <b>cada foto se envía a Anthropic</b> para leerla. Necesita una clave de API propia: créela en <b>console.anthropic.com</b> (Settings › API Keys); el uso se cobra a esa cuenta, unos pocos centavos de dólar por foto. La clave se guarda solo en este dispositivo. Sin internet la app sigue funcionando con el lector del teléfono.</p>
+    <div class="fields">
+      <div class="field wide"><label for="ai-key">Clave de API de Anthropic</label><input id="ai-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="200" placeholder="sk-ant-…"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="ai-enabled"> Usar el Asistente IA cuando haya internet</label>
+    <div class="row">
+      <button type="button" class="btn primary" id="ai-save">Guardar</button>
+      <button type="button" class="btn" id="ai-test">Probar la clave</button>
+    </div>
+  </div>
   <div class="card"><h3>Reconocimiento en línea (opcional)</h3>
     <p>Con internet, la app puede leer las fotos con el servicio <b>OCR.space</b>, que acierta más que el OCR del teléfono (sobre todo en lote y fechas impresos por puntos). Sin internet, o si el servicio falla, se usa el OCR local como siempre.</p>
     <p class="muted small">Al activarlo, cada fotografía que lea con internet <b>se envía a ese servicio externo</b>. Necesita una clave gratuita: regístrese con su correo en <b>ocr.space/ocrapi/freekey</b>, la recibirá por correo, y péguela aquí. La clave se guarda solo en este dispositivo. Ningún servicio garantiza una lectura perfecta: revise siempre los datos.</p>
