@@ -104,10 +104,12 @@ export function monthToNumber(s) {
   const before = s.slice(0, s.indexOf(w)).match(/\d{1,2}/);
   return (before ? before[0].padStart(2, '0') + '/' : '') + String(n).padStart(2, '0') + '/' + year;
 }
-const fixMonth = t => MFIX.reduce((s, [re, m]) => s.replace(re, m), t);
+const YFIX = { Z: '2', O: '0', Q: '0', D: '0', S: '5', I: '1', l: '1', '|': '1', B: '8' };
+const fixMonth = t => MFIX.reduce((s, [re, m]) => s.replace(re, m), t)
+  .replace(new RegExp('((?:' + MES + ')[A-Z]{0,7}\\.?[\\/\\-. ]{0,2})([0-9ZOQDSIl|B]{4})(?![A-Za-z0-9])', 'gi'), (m, a, y) => /\d{2}/.test(y) ? a + y.replace(/[ZOQDSIl|B]/g, c => YFIX[c]) : m);
 const unspace = t => t.replace(/(^|[\s:])([0-9](?: [0-9A-Z\/\-.]){3,})(?=$|\s)/g, (m, a, b) => /\d.*\d/.test(b) ? a + b.replace(/ /g, '') : m);
 export function extractFields(lines) {
-  lines = boxLabels(lines.map(l => ({ text: fixMonth(unspace((l.text || '').replace(/\s+/g, ' ').trim())), conf: l.conf ?? null, height: l.height || 0, b8: l.b8 })))
+  lines = boxLabels(lines.map(l => ({ text: fixMonth(unspace((l.text || '').replace(/\s+/g, ' ').trim())), conf: l.conf ?? null, height: l.height || 0, b8: l.b8, words: l.words, bbox: l.bbox })))
     .map(l => ({ ...l, text: clean(l.text) })).filter(l => l.text.length > 1);
   // Rótulos en tabla: una fila de encabezados («LOTE  FAB  VENCE») y debajo la fila de valores. Se reordenan como «etiqueta: valor».
   for (let i = 0; i + 1 < lines.length; i++) {
@@ -139,7 +141,7 @@ export function extractFields(lines) {
     if (conf != null && conf < OK) notes.push('Confianza de lectura baja.');
     const doubt = forceDoubt || (conf != null && conf < OK);
     // Solo se premarcan los datos leídos con seguridad suficiente.
-    out.push({ field, label, value, conf, doubt, notes, checked: !forceDoubt && (conf == null || conf >= LOW) });
+    out.push({ field, label, value, conf, doubt, notes, checked: !forceDoubt && (conf == null || conf >= LOW), box: lines[i]?.bbox || null });
     used.add(i);
   };
 
@@ -285,6 +287,18 @@ export function extractFields(lines) {
     if (letters(v) >= 4 && !comp) { add('principioActivo', 'Principio activo', v, concI, ['Deducido por estar junto a la concentración: confírmelo.']); out.splice(Math.min(1, out.length - 1), 0, out.pop()); }
   }
   if (comp) { add('principioActivo', 'Principio activo', comp.pa, comp.i, ['Tomado de la composición («contiene…»): confírmelo.']); out.splice(Math.min(1, out.length - 1), 0, out.pop()); }
+  // Lectura por posición (etiqueta → valor al lado o debajo): completa lo que faltó y avisa si contradice lo leído por renglones.
+  const kv = kvExtract(lines.flatMap(l => l.words || []));
+  const nrm = v => (v || '').toUpperCase().replace(/[\s.\-\/]/g, '');
+  for (const [f, label] of [['lote', 'Número de lote'], ['fechaFabricacion', 'Fecha de fabricación'], ['vencimiento', 'Fecha de vencimiento']]) {
+    const k = kv[f]; if (!k) continue;
+    const i = out.findIndex(x => x.field === f), cur = out[i];
+    const mine = { field: f, label, value: k.value, conf: k.conf, doubt: k.conf < OK, checked: k.conf >= LOW, box: k.box, notes: ['Leído junto a su etiqueta (por posición en el empaque).'] };
+    if (!cur) { out.push(mine); if (f === 'vencimiento') warnings.length = 0; }
+    else if (nrm(cur.value) === nrm(k.value)) { if (cur.doubt && !mine.doubt && !cur.notes.some(n => /B u 8/.test(n))) Object.assign(cur, { doubt: false, checked: true }); }
+    else if (cur.notes.some(n => /sin (?:la )?etiqueta/i.test(n))) { out[i] = mine; }      // la etiquetada gana a una fecha suelta
+    else Object.assign(cur, { doubt: true, checked: false, alt: k.value, notes: [...cur.notes, `Junto a la etiqueta se leyó «${k.value}»: elija el que coincide con el empaque.`] });
+  }
   const fF = out.find(f => f.field === 'fechaFabricacion'), fV = out.find(f => f.field === 'vencimiento');
   if (fF && fV && ym(fF.value) != null && ym(fV.value) != null && ym(fF.value) >= ym(fV.value)) {
     for (const f of [fF, fV]) { f.doubt = true; f.checked = false; f.notes.push('La fabricación no es anterior al vencimiento: puede haber casillas confundidas o fechas mal leídas. No se intercambiaron; revíselas con el empaque.'); }
@@ -344,3 +358,45 @@ export function extractZone(lines) {
 }
 export const dateOK = s => ym(s) != null;
 export { ym, findDates, lotOK };
+
+// ---------- Lectura POR POSICIÓN: etiqueta → valor a su derecha o debajo ----------
+// En muchos empaques las etiquetas (Lote:, F.F.:, F.V.:, Prep.:, Venc.:) van en una columna y los valores al lado, y el OCR
+// mezcla cada renglón con el texto de la otra columna. Aquí se usan las coordenadas de cada palabra.
+// words: [{text, bbox:{x0,y0,x1,y1}, conf}] de toda la imagen. Devuelve {lote, fechaFabricacion, vencimiento}: {value, conf}.
+const KV = [
+  ['lote', /^(?:L[O0]TE|LOT|BATCH|L)[.:;,]*$/i],
+  ['fechaFabricacion', /^(?:F\.?F\.?|FAB\w*|F|MFG|MFD|ELAB\w*|PREP\w*)[.:;,]*$/i],
+  ['vencimiento', /^(?:F\.?V\.?|V|VENC\w*|VENCE|VTO|EXP\w*|CAD\w*)[.:;,]*$/i],
+];
+const SKIP = /^(?:N[°ºo]?\.?|NO\.?|#|:|\.)[.:;,]*$/i;            // «Lote N.:» → se salta «N.:»
+export function kvExtract(words) {
+  const ws = (words || []).filter(w => w?.bbox && w.text && w.text.trim()).map(w => ({ ...w, text: w.text.trim(), h: w.bbox.y1 - w.bbox.y0, cy: (w.bbox.y0 + w.bbox.y1) / 2 }));
+  const out = {};
+  for (const [field, re] of KV) {
+    for (const lab of ws) {
+      // «L.6B0985» o «Lote:25D04» pegados en una sola palabra
+      const glued = lab.text.match(/^(L[O0]TE|LOT|L|F\.?F|F\.?V|F|V|VENC\w*|PREP\w*)[.:;,]+(.+)$/i);
+      let cands;
+      if (glued && /\d/.test(glued[2]) && re.test(glued[1] + '.')) cands = [{ ...lab, text: glued[2] }];
+      else if (re.test(lab.text)) {
+        const h = Math.max(lab.h, 8);
+        const right = ws.filter(w => w !== lab && w.bbox.x0 >= lab.bbox.x1 - h * 0.2 && w.bbox.x0 - lab.bbox.x1 < h * 14 && Math.abs(w.cy - lab.cy) < h * 0.7 && !SKIP.test(w.text)).sort((a, b) => a.bbox.x0 - b.bbox.x0);
+        const below = ws.filter(w => w !== lab && w.bbox.y0 >= lab.bbox.y1 - h * 0.2 && w.bbox.y0 - lab.bbox.y1 < h * 1.2 && Math.abs(w.bbox.x0 - lab.bbox.x0) < h * 3).sort((a, b) => a.bbox.y0 - b.bbox.y0);
+        cands = right.length ? right : below;
+      } else continue;
+      // Valor: primera palabra (o 2–3 juntas para fechas con espacios) del tipo correcto.
+      for (let i = 0; i < cands.length && !out[field]; i++) {
+        if (KV.some(([, r]) => r.test(cands[i].text))) break;          // llegó a otra etiqueta
+        const join = [0, 1, 2].map(n => cands.slice(i, i + n + 1).map(w => w.text).join('')).map(t => t.replace(/^[^A-Z0-9]+|[^A-Z0-9]+$/gi, ''));
+        let v = null;
+        if (field === 'lote') v = lotOK(join[0]);
+        else for (const t of join) { const fx = fixMonth(unspace(t)); const d = new RegExp('^' + DATE_SRC + '$', 'i').test(fx) && ym(fx) != null ? fx : null; if (d) { v = monthToNumber(d); break; } }
+        const vb = cands[i].bbox, lb = lab.bbox;
+        if (v) out[field] = { value: v, conf: Math.min(lab.conf ?? 100, cands[i].conf ?? 100), box: { x0: Math.min(lb.x0, vb.x0), y0: Math.min(lb.y0, vb.y0), x1: Math.max(lb.x1, cands[Math.min(cands.length - 1, i + 2)].bbox.x1), y1: Math.max(lb.y1, vb.y1) } };
+        if (field === 'lote') break;
+      }
+      if (out[field]) break;
+    }
+  }
+  return out;
+}

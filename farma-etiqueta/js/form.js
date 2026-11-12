@@ -9,6 +9,7 @@ import { readBoxes, mergeBoxes } from './boxes.js';
 import { readRelief, voteRelief, readReliefAuto } from './relief.js';
 import { readTiles } from './tiles.js';
 import { fixLotLines } from './glyphs.js';
+import { verifyFields } from './verify.js';
 
 export const FIELDS = [
   ['nombre', 'Nombre del producto'], ['codigoBarras', 'Código de barras'], ['principioActivo', 'Principio activo'],
@@ -152,7 +153,7 @@ async function analyze(source, extras = true, side = 2600) {
     }
     if (!res) res = await recognize(canvas, busy);
     if (!res.online) fixLotLines(canvas, res.lines);           // B u 8: se decide por la forma del carácter
-    const o = { ...extractFields(res.lines), res, onlineErr };
+    const o = { ...extractFields(res.lines), res, onlineErr, baseW: canvas.width };
     if (extras) await morePasses(canvas, o, busy, () => true, source);
     return o;
   } finally { freeCanvas(canvas); }
@@ -191,6 +192,19 @@ async function morePasses(canvas, o, prog, alive = () => true, hiSrc = null) {
       }
       o.res.text += '\n— Lectura por partes —\n' + t.lines.map(l => l.text).join('\n');
     } catch { /* sin texto adicional */ }
+  }
+  // Texto GIRADO (solapas con lote y fechas en vertical): si se ve una etiqueta de lote o fecha sin su valor, se lee la foto girada.
+  if (need() && /\b(?:LOTE?|LOT|VENC\w*|VENCE|PREP\w*|F\.\s?V|F\.\s?F|EXP)\b/i.test(o.res.text)) {
+    for (const deg of [90, 270]) {
+      if (!need()) break;
+      prog(`Leyendo el texto girado (${deg}°)…`);
+      const k = Math.min(1, 2200 / Math.max(canvas.width, canvas.height)), rc = document.createElement('canvas');
+      rc.width = Math.round(canvas.height * k); rc.height = Math.round(canvas.width * k);
+      const x = rc.getContext('2d'); x.translate(rc.width / 2, rc.height / 2); x.rotate(deg * Math.PI / 180);
+      x.drawImage(canvas, -canvas.width * k / 2, -canvas.height * k / 2, canvas.width * k, canvas.height * k);
+      try { const rr = await recognize(rc, () => {}, '3'); fixLotLines(rc, rr.lines); merge(rr, `Leído en la foto girada ${deg}°: compárelo con el empaque.`, true, true); }
+      catch { /* sin texto girado */ } finally { freeCanvas(rc); }
+    }
   }
   // Lote y fechas EN RELIEVE (troquelados sin tinta): siempre quedan pendientes de revisión, nunca se dan por seguros.
   if (need()) {
@@ -239,8 +253,11 @@ export async function autoFill(tStart) {
   let r; const t0 = tStart || performance.now();
   busy('Leyendo la foto…');
   const seq = ++readSeq;
-  // Primera lectura sobre la foto guardada (1800 px): rápida; lote y fechas se buscan después a más resolución.
-  try { r = await analyze(st.photo.blob, false, 1800).catch(() => withPhoto(src => analyze(src, false, 1800))); }
+  // Primera lectura sobre la copia de alta calidad (la guardada está comprimida y confunde dígitos); luego se verifican lote y fechas.
+  try {
+    r = await withPhoto(src => analyze(src, false, 2200)).catch(() => analyze(st.photo.blob, false, 1800));
+    if (!r.res.online) await verifyFields(r.fields, st.src || st.photo.blob, r.baseW, t => busy(t));
+  }
   catch (e) {
     busy(false); note.hidden = false; note.className = 'banner danger';
     note.textContent = 'No se pudo leer la foto: ' + errMsg(e) + ' Puede volver a intentarlo o escribir los datos.';
@@ -307,11 +324,14 @@ async function background(r, seq, missing) {
   note.append(line);
   const prog = (t, f) => { if (alive()) line.textContent = t + (f != null ? ` ${Math.round(f * 100)} %` : '') + ' (puede seguir revisando el formulario)'; };
   const before = new Set(r.fields.filter(x => !x.doubt).map(x => x.field)), t0 = performance.now();
-  let canvas;
+  let canvas, canvasW = 2600;
   try {
-    canvas = await withPhoto(src => blobToCanvas(src, 2600));
+    canvas = await withPhoto(src => blobToCanvas(src, 2600)); canvasW = canvas.width;
     await morePasses(canvas, r, prog, alive, st.src || st.photo?.blob);
   } catch { /* se informa abajo como «no encontrado» */ } finally { freeCanvas(canvas); }
+  if (!alive()) return;
+  // Todo lo nuevo de las lecturas en segundo plano se verifica igual que la primera lectura; si no se confirma, queda dudoso.
+  try { await verifyFields(r.fields.filter(x => LD.includes(x.field) && !before.has(x.field) && !x.doubt), st.src || st.photo?.blob, canvasW, t => prog(t)); } catch { /* queda dudoso */ }
   if (!alive()) return;
   const found = [];
   for (const f of r.fields.filter(x => LD.includes(x.field) && !before.has(x.field))) {

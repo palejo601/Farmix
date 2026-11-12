@@ -25,7 +25,7 @@ export function classifyB8(src, bx, scoreOnly = false) {
   let ix0 = w, ix1 = -1, iy0 = h, iy1 = -1;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (ink(x, y)) { if (x < ix0) ix0 = x; if (x > ix1) ix1 = x; if (y < iy0) iy0 = y; if (y > iy1) iy1 = y; }
   const iw = ix1 - ix0 + 1, ih = iy1 - iy0 + 1;
-  if (iw < 4 || ih < 8) return null;
+  if (iw < 4 || ih < 24) return null;          // con menos de 24 px de alto la forma no es fiable: no se decide
   // Inicio de la tinta por la izquierda en cada renglón del carácter (0 = pegado al borde, 1 = borde derecho).
   const left = [];
   for (let y = iy0; y <= iy1; y++) { let x = ix0; while (x <= ix1 && !ink(x, y)) x++; left.push((x - ix0) / iw); }
@@ -46,27 +46,33 @@ export function classifyB8(src, bx, scoreOnly = false) {
 // Revisa un valor de lote leído: cada «8» o «B» se reclasifica por su forma usando las cajas de los caracteres del OCR.
 // symbols: [{text, bbox}] del renglón (en coordenadas de src). Devuelve { value, changed, unsure }.
 export function fixB8(src, value, symbols) {
-  if (!/[8B]/.test(value) || !symbols?.length) return { value, changed: false, unsure: false };
+  if (!/[8B0OD]/.test(value) || !symbols?.length) return { value, changed: false, unsure: false };
   const chars = symbols.filter(s => s.text && s.text.trim());
   const joined = chars.map(s => s.text).join('');
   const at = joined.lastIndexOf(value);
-  if (at < 0) return { value, changed: false, unsure: /[8B]/.test(value) && /[A-Z]/.test(value) };
+  if (at < 0) return { value, changed: false, unsure: /[8BD]/.test(value) && /[A-Z]/.test(value) };
   let changed = false, unsure = false;
-  const idx = [...value].map((ch, i) => (ch === '8' || ch === 'B') ? i : -1).filter(i => i >= 0);
+  // Familias por forma: lado izquierdo recto → B o D; redondo → 8 o 0 (la O se deja como O si era O).
+  const FAM = { '8': ['B', '8'], B: ['B', '8'], '0': ['D', '0'], D: ['D', '0'], O: ['D', 'O'] };
+  const map = (ch, k) => k == null ? null : FAM[ch][k === 'B' ? 0 : 1];
+  const idx = [...value].map((ch, i) => FAM[ch] ? i : -1).filter(i => i >= 0);
   const sc = Object.fromEntries(idx.map(i => [i, classifyB8(src, chars[at + i].bbox, true)]));
-  const cls = v => v == null ? null : decide(v.score, v.stem);
-  const known = idx.filter(i => cls(sc[i]));
-  const bS = known.filter(i => cls(sc[i]) === 'B').map(i => sc[i].score), eS = known.filter(i => cls(sc[i]) === '8').map(i => sc[i].score);
+  // Familia D/0: el 0 es un óvalo alto (su lado izquierdo parece recto), así que solo cuenta la redondez, con zona gris amplia.
+  const cls = (v, ch) => v == null ? null : /[0OD]/.test(ch) ? (v.score <= 0.25 ? 'B' : v.score >= 0.5 ? '8' : null) : decide(v.score, v.stem);
+  const known = idx.filter(i => cls(sc[i], value[i]));
+  const bS = known.filter(i => cls(sc[i], value[i]) === 'B' && FAM[value[i]] === FAM[value[i]]).map(i => sc[i].score), eS = known.filter(i => cls(sc[i], value[i]) === '8').map(i => sc[i].score);
+  // (en el código interno «B» = recto y «8» = redondo para cualquier familia)
   const out = [...value];
   for (const i of idx) {
-    let k = cls(sc[i]);
+    let k = cls(sc[i], value[i]);
     // En el mismo lote hay una B y un 8 seguros: un carácter dudoso se asigna al que más se parece, si la diferencia es clara.
-    if (!k && sc[i] != null && bS.length && eS.length) {
+    if (false) {   // (asignación por comparación desactivada: producía errores con letra pequeña)
       const dB = Math.abs(sc[i].score - Math.max(...bS)), d8 = Math.abs(sc[i].score - Math.min(...eS));
       if (Math.abs(dB - d8) >= 0.1) k = dB < d8 ? 'B' : '8';
     }
-    if (!k) { unsure = true; continue; }
-    if (k !== out[i]) { changed = true; out[i] = k; }
+    if (!k) { if (value[i] !== '0' && value[i] !== 'O') unsure = true; continue; }   // un 0 sin forma clara no vuelve dudoso el lote
+    const nk = map(value[i], k);
+    if (nk !== out[i]) { changed = true; out[i] = nk; }
   }
   return { value: out.join(''), changed, unsure };
 
@@ -77,9 +83,9 @@ export function fixB8(src, value, symbols) {
 const LOTV = /(?:^|[^A-Za-z0-9])(?:L[O0]TE?|LOT|BATCH|L)(?![A-Za-z])\s?[.:\-]?\s*(?:N[°ºo]\.?\s*)?([A-Z0-9][A-Z0-9\-\/]{2,19})/i;
 export function fixLotLines(src, lines) {
   for (const l of lines || []) {
-    const m = (l.text || '').match(LOTV); if (!m || !/[8B]/.test(m[1])) continue;
+    const m = (l.text || '').match(LOTV); if (!m || !/[8B0OD]/.test(m[1])) continue;
     const r = fixB8(src, m[1], l.symbols);
-    if (r.changed) { l.text = l.text.replace(m[1], r.value); l.b8 = 'fixed'; }
+    if (r.changed) { l.text = l.text.replace(m[1], r.value); l.b8 = 'fixed'; for (const w of l.words || []) if (w.text && w.text.includes(m[1])) w.text = w.text.replace(m[1], r.value); }
     if (r.unsure) l.b8 = 'unsure';
   }
   return lines;

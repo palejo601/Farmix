@@ -38,7 +38,8 @@ export async function readTiles(src, progress = () => {}, alive = () => true, hi
     const cv = crop(src, x, y, tw, th, K);
     try {
       const res = await recognize(cv, () => {}, '11');
-      for (const l of res.lines) all.push({ ...l, box: l.bbox && { x: x + l.bbox.x0 / K, y: y + l.bbox.y0 / K, x1: x + l.bbox.x1 / K, y1: y + l.bbox.y1 / K } });
+      const tr = b => b && { x0: x + b.x0 / K, y0: y + b.y0 / K, x1: x + b.x1 / K, y1: y + b.y1 / K };
+      for (const l of res.lines) all.push({ ...l, box: l.bbox && { x: x + l.bbox.x0 / K, y: y + l.bbox.y0 / K, x1: x + l.bbox.x1 / K, y1: y + l.bbox.y1 / K }, words: (l.words || []).map(w => ({ ...w, bbox: tr(w.bbox) })) });
     } finally { freeCanvas(cv); }
   }
   // Zona de lote y fechas: renglones con etiqueta (L. F. V. LOTE VENCE…) cercanos entre sí.
@@ -58,6 +59,10 @@ export async function readTiles(src, progress = () => {}, alive = () => true, hi
   try {
     const a = await recognize(zc, () => {}, '6'), b = await recognize(ec, () => {}, '6');
     fixLotLines(zc, a.lines); fixLotLines(zc, b.lines);
+    // Las palabras de la zona releída pasan a coordenadas de la foto completa; las de las partes se descartan para no duplicar.
+    const tz = w => w.bbox && { x0: rx + w.bbox.x0 / (k * s), y0: ry + w.bbox.y0 / (k * s), x1: rx + w.bbox.x1 / (k * s), y1: ry + w.bbox.y1 / (k * s) };
+    for (const L of [...a.lines, ...b.lines]) L.words = (L.words || []).map(w => ({ ...w, bbox: tz(w) }));
+    for (const L of all) L.words = [];
     return { lines: [...a.lines, ...all], alt: b.lines };
   } finally { freeCanvas(zc); freeCanvas(ec); }
 }
