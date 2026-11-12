@@ -1,0 +1,26 @@
+[
+    {
+        "merged": "com.farmaetiqueta.nativeocr.farma-native-ocr-release-3:/animator/fragment_fade_exit.xml",
+        "source": "com.farmaetiqueta.nativeocr.farma-native-ocr-fragment-1.8.4-20:/animator/fragment_fade_exit.xml"
+    },
+    {
+        "merged": "com.farmaetiqueta.nativeocr.farma-native-ocr-release-3:/animator/fragment_close_enter.xml",
+        "source": "com.farmaetiqueta.nativeocr.farma-native-ocr-fragment-1.8.4-20:/animator/fragment_close_enter.xml"
+    },
+    {
+        "merged": "com.farmaetiqueta.nativeocr.farma-native-ocr-release-3:/animator/fragment_open_enter.xml",
+        "source": "com.farmaetiqueta.nativeocr.farma-native-ocr-fragment-1.8.4-20:/animator/fragment_open_enter.xml"
+    },
+    {
+        "merged": "com.farmaetiqueta.nativeocr.farma-native-ocr-release-3:/animator/fragment_open_exit.xml",
+        "source": "com.farmaetiqueta.nativeocr.farma-native-ocr-fragment-1.8.4-20:/animator/fragment_open_exit.xml"
+    },
+    {
+        "merged": "com.farmaetiqueta.nativeocr.farma-native-ocr-release-3:/animator/fragment_close_exit.xml",
+        "source": "com.farmaetiqueta.nativeocr.farma-native-ocr-fragment-1.8.4-20:/animator/fragment_close_exit.xml"
+    },
+    {
+        "merged": "com.farmaetiqueta.nativeocr.farma-native-ocr-release-3:/animator/fragment_fade_enter.xml",
+        "source": "com.farmaetiqueta.nativeocr.farma-native-ocr-fragment-1.8.4-20:/animator/fragment_fade_enter.xml"
+    }
+]

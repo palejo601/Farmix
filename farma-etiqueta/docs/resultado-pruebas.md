@@ -1,0 +1,109 @@
+# Resultado de las pruebas automáticas
+
+Ejecución: 2026-11-12 14:07 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
+
+| Estado | Comprobación | Detalle |
+|---|---|---|
+| OK | El botón «Elegir de la galería» abre el selector de archivos del sistema |  |
+| OK | Es un <input type=file> real, acepta JPEG/PNG/WEBP y no fuerza la cámara | image/jpeg,image/png,image/webp |
+| OK | Aparece la vista previa de la fotografía | 1400 px |
+| OK | La fotografía se puede cambiar (selector «archivos») |  |
+| OK | La fotografía se puede eliminar (con confirmación) |  |
+| OK | Archivo dañado: mensaje comprensible y sin bloqueo | La fotografía está dañada o no se puede abrir. Elija otra imagen. |
+| OK | Archivo que no es imagen: rechazado por contenido, no por extensión |  |
+| OK | La cámara solo se usa en el escáner en vivo (js/live.js), al pulsar su botón |  |
+| OK | La pantalla principal tiene únicamente: Escanear fotografía, Crear rótulo, Historial | Escanear fotografía · Crear rótulo · Historial |
+| OK | Códigos de barras solo con el lector del teléfono (sin bibliotecas externas como ZXing) |  |
+| OK | «Crear rótulo» abre el generador |  |
+| OK | «Historial» abre el historial |  |
+| OK | OCR extrae el nombre | CALMADOL |
+| OK | OCR extrae la concentración | 500 mg |
+| OK | OCR extrae el lote sin alterarlo | AB12345 |
+| OK | OCR extrae el vencimiento sin alterarlo | 05/2027 |
+| OK | OCR extrae registro sanitario, laboratorio, forma y presentación | INVIMA 2019M-0012345 \| Laboratorios Andinos S.A \| Tabletas recubiertas \| Caja por 20 tabletas |
+| OK | La revisión muestra nivel de confianza y advierte que no es información verificada |  |
+| OK | Nada se escribe en el formulario antes de confirmar |  |
+| OK | Corrección manual en la revisión y aplicación al formulario |  |
+| OK | «Marcar lote y fechas»: lee la zona ampliada y muestra los tres campos para confirmar | [["Número de lote","AB12345","Leído"],["Fecha de fabricación","","Sin leer"],["Fecha de vencimiento","05/2027","Leído"]] |
+| OK | La zona de otra foto no reemplaza la foto guardada y nada se aplica sin confirmar |  |
+| OK | Al confirmar se aplican lote, fabricación (escrita a mano) y vencimiento |  |
+| OK | Empaque sin lote ni fecha: no inventa esos campos y advierte que falta el vencimiento |  |
+| OK | Antes de guardar se exige confirmar lote/fechas leídos por la foto | Confirme los datos leídos de la foto Compare con el empaque: Fecha de vencimiento: 05/2027. ¿Confirma que los revisó? Cancelar Sí, revisé y guardar |
+| OK | Registro confirmado y guardado |  |
+| OK | Tras cerrar y reabrir, el registro sigue disponible |  |
+| OK | La miniatura de la fotografía sigue disponible |  |
+| OK | La fotografía completa se recupera de IndexedDB | 1400 × 1000 px |
+| OK | El detalle distingue datos leídos (OCR / código) de datos manuales |  |
+| OK | La foto está guardada como bytes en IndexedDB (no como URL temporal) | [{"bytes":96794,"isBuf":true}] |
+| OK | Cierre inesperado: el formulario sin guardar se recupera |  |
+| OK | Al guardar sin lote ni vencimiento se advierte y se pide confirmación |  |
+| OK | Control de duplicados: avisa antes de guardar un registro repetido |  |
+| OK | Indicador: recursos OCR disponibles sin conexión (tras el primer uso) |  |
+| OK | Sin internet: la aplicación abre y muestra el historial |  |
+| OK | Sin internet: el indicador de conexión lo informa |  |
+| OK | Sin internet: OCR completo (motor, WASM e idiomas locales) | AB12345 |
+| OK | Sin internet: registrar un producto |  |
+| OK | Sin internet: editar un registro y buscarlo por nombre + lote |  |
+| OK | Búsqueda por código de barras |  |
+| OK | Búsqueda por laboratorio |  |
+| OK | Búsqueda por principio activo (sin tildes) |  |
+| OK | Filtro «vencidos» (ninguno en los datos de prueba) |  |
+| OK | Sin internet: se generan rótulos con vista previa |  |
+| OK | 30 rótulos con 10 por hoja → 3 páginas | 70 × 50 mm · 10 rótulo(s) por hoja (2 × 5) · 30 rótulo(s) en total · 3 página(s) de 210 × 297 mm |
+| OK | Lista de tamaños según la especificación | Grande — 100 × 70 mm · Mediano — 70 × 50 mm · Pequeño — 50 × 30 mm · Blíster — 40 × 20 mm · Ampolla o vial — 30 × 15 mm · Tableta o cápsula — 20 × 10 mm · Personalizado |
+| OK | Los 6 tamaños predefinidos (100×70, 70×50, 50×30, 40×20, 30×15, 20×10): texto dentro del rótulo, sin cortes ni superposición | 100×70: 5 líneas+barras · 70×50: 5 líneas+barras · 50×30: 5 líneas+barras · 40×20: 4 líneas+barras · 30×15: 4 líneas+barras · 20×10: 4 líneas (aviso) |
+| OK | Rótulo 20 × 10 mm: el código de barras se omite con aviso en vez de imprimirse ilegible |  |
+| OK | Tamaño personalizado 60 × 35 mm | 60 × 35 mm · 21 rótulo(s) por hoja (3 × 7) · 30 rótulo(s) en total · 2 página(s) de 210 × 297 mm |
+| OK | Distribución imposible: error claro e impresión deshabilitada |  |
+| OK | Impresión: hoja Carta en mm reales, márgenes y separaciones configurados | {"n":4,"w":"215.9mm","h":"279.4mm","page":"@page{size:215.9mm 279.4mm;margin:0}","cells":["translate(15 12)","translate(89 12)","translate(15 67)"],"per":8} |
+| OK | Impresión: 30 rótulos a 8 por hoja → 4 páginas, sin rótulos adicionales |  |
+| OK | Motor de impresión (PDF del navegador): 4 páginas tamaño Carta, sin página en blanco extra | 4 páginas, 612 × 792 pt |
+| OK | Exportar PDF: 4 páginas de 215,9 × 279,4 mm (medida real) | 4 pág., 215.9 × 279.4 mm |
+| OK | Exportar Word: DOCX con tablas y texto editable (no una imagen pegada) | 4 tablas, 78 celdas |
+| OK | Exportar Word: medidas configuradas (celda 70 mm = 3969 twips, fila 50 mm exacta) y código de barras incluido |  |
+| OK | Botones separados: Ver PDF, Ver Word, Compartir PDF, Compartir Word | Imprimir · Ver PDF · Ver Word · Compartir PDF · Compartir Word |
+| OK | «Ver» en Android (navegador) descarga el archivo y explica cómo abrirlo |  |
+| OK | Compartir PDF y Compartir Word entregan archivos reales (sin menú Compartir en este navegador: se descargan) |  |
+| OK | Respaldo exportado con registros y fotografías | 2 registros, 2 fotos, 263 KB |
+| OK | Eliminar pide confirmación |  |
+| OK | Registro de prueba eliminado |  |
+| OK | Respaldo truncado: detectado como dañado, sin modificar datos |  |
+| OK | Respaldo alterado: no supera la verificación de integridad |  |
+| OK | Restauración: advierte sobre registros que ya existen |  |
+| OK | Tras restaurar: el registro y su fotografía se recuperan |  |
+| OK | Sobrescribir exige una confirmación adicional |  |
+| OK | Solo con elegir la foto se llenan nombre, concentración, lote, vencimiento, registro y laboratorio | 0.9 s · {"nombre":"CALMADOL","concentracion":"500 mg","lote":"AB12345","vencimiento":"05/2027","registroSanitario":"INVIMA 2019M-0012345","laboratorio":"Laboratorios Andinos S.A"} |
+| OK | Sin ventanas que confirmar: aviso en el formulario para revisar antes de guardar |  |
+| OK | Tiempo de lectura medido y mostrado (objetivo ≤ 10 s) | 0.6 s medidos por la app |
+| OK | Lo escrito a mano no se reemplaza: lo leído queda como sugerencia |  |
+| OK | Tocar la sugerencia la aplica |  |
+| OK | Lote y fechas faltantes se buscan en segundo plano sin bloquear la pantalla | Leyendo la foto por partes (1 de 6)… (puede seguir revisando el formulario) |
+| OK | Al terminar informa lo que no encontró y no inventa lote ni vencimiento |  |
+| OK | Casillas [L] [F] [V]: cada valor va a su campo (lleno o propuesto), sin intercambiarse | {"lote":"4B0123","fechaFabricacion":"05/2024","vencimiento":"05/2027"} |
+| OK | B y 8 por la forma: nunca se confunden (si la forma no es clara, queda para revisión) | {"ok":16,"wrong":0,"none":8} |
+| OK | Otra cara de la caja: completa lote y vencimiento que faltaban, sin cambiar lo escrito ni la foto del registro | {"lote":"AB12345","venc":"05/2027","nombre":"Nombre escrito a mano","info":"1400 × 1000 px · 68 KB guardados en el dispositivo"} |
+| OK | En vivo: nombre, lote y vencimiento se confirman leyéndolos varias veces | 0.2 s · ✓ Nombre: CALMADOL \| ✓ Concentración: 500 mg \| ✓ Lote: AB12345 \| ✓ Vencimiento: 05/2027 |
+| OK | «Usar datos» pasa los datos al formulario al instante (menos de 1 s) | 46 ms |
+| OK | «Usar datos» llena el formulario, guarda una foto del escaneo y apaga la cámara |  |
+| OK | Escanear lote y fechas: confirma lote y vencimiento y se cierra solo, sin tocar la foto del registro | 1.4 s · {"lote":"6B0985","venc":"08/2027","photo":false} |
+| OK | Escáner en vivo: escribe también el código de barras (con dígito de control válido) | 7702057712938 |
+| OK | Código GS1 (DataMatrix): lote, vencimiento y código de barras exactos y al instante | {"ms":875,"lote":"41005B","venc":"08/2027","cb":"7702057712938"} |
+| OK | Nativo: texto vertical de solapa (Lote N.: / Prep.: / Venc.:) → cada valor con su etiqueta | {"fechaFabricacion":"02.2024","vencimiento":"02.2027","lote":"41005B"} / {"fechaFabricacion":"02.2024","vencimiento":"02.2027","lote":"41005B"} |
+| OK | Nativo: etiquetas y valores en columnas separadas (Lote: / F.F.: / F.V.:) | {"fechaFabricacion":"09/2024","vencimiento":"09/2026","lote":"5280924"} |
+| OK | Nativo: «L: S16057 · F: 11/2024 · V: 11/2026» | {"fechaFabricacion":"11/2024","vencimiento":"11/2026","lote":"S16057"} |
+| OK | Nativo (simulado): la app usa el lector del teléfono, verifica y llena lote y fechas | {"nombre":"CALMADOL","lote":"5280924","fechaFabricacion":"09/2024","vencimiento":"09/2026"} · 4 lecturas · Se llenaron 4 campo(s) desde la foto |
+| OK | «Ver qué leyó la app»: muestra el lector usado, el texto leído y la decisión sobre el lote | FARMA-ETIQUETA 1.19.1 · lector: Google ML Kit · 0.1 s · nitidez 5427 · reflejo 90.1 % \|  \| Número de lote: «5280924» — seguro (llenado) |
+| OK | Asistente IA: se llama a Claude con la foto, el modelo por defecto y salida estructurada | claude-opus-5-5 · imagen 102 KB |
+| OK | Asistente IA: lote y fabricación coinciden con el teléfono → se llenan; el vencimiento difiere → quedan las dos opciones | {"lote":"5280924","fechaFabricacion":"09/2024","vencimiento":""} · Usar «09/2026» \| Usar «09/2027» |
+| OK | Asistente IA: completa también datos del producto que el teléfono no leyó (principio activo) | Acetaminofén |
+| OK | Asistente IA: no bloquea la pantalla mientras lee (el formulario se llena antes con el teléfono) |  |
+| OK | Asistente IA: recibe la foto completa y la zona del lote ampliada | 2 imágenes |
+| OK | Calidad de la foto: detecta una foto borrosa y no marca una nítida | nítida 10904 · borrosa 6 |
+| OK | Asistente IA con clave inválida: mensaje claro y la lectura del teléfono sigue funcionando | Asistente IA: La clave de la IA no es válida. Revísela en Configuración. |
+| OK | Asistente IA: si no ve bien el lote, ubica la zona y la relee ampliada (2 llamadas) | 2 llamadas · {"lote":"S16057","fab":"11/2024","venc":"11/2026","zoom":true} |
+| OK | Rendimiento: modo para teléfonos antiguos configurable y explicado en Configuración | Este teléfono: 16 GB de memoria · 4 núcleos → se detecta como actual. Ahora se usa el modo completo. |
+| OK | Ninguna pantalla se desborda horizontalmente en teléfono (412 px) |  |
+| OK | Botones con altura táctil ≥ 40 px | 0 pequeños |
+| OK | Sin errores de JavaScript durante toda la sesión |  |
+
+**101 de 101 correctas.**

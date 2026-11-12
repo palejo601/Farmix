@@ -1,0 +1,10 @@
+{
+  "name": "farma-native-ocr",
+  "version": "1.0.0",
+  "description": "Lector de texto nativo para FARMA-ETIQUETA: Google ML Kit (Android) y Apple Vision (iOS). Todo en el dispositivo.",
+  "license": "MIT",
+  "author": "FARMA-ETIQUETA",
+  "main": "index.js",
+  "files": ["android/src/main/", "android/build.gradle", "ios/Plugin/", "FarmaNativeOcr.podspec", "index.js"],
+  "capacitor": { "android": { "src": "android" }, "ios": { "src": "ios" } }
+}

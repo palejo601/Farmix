@@ -1,0 +1,36 @@
+{
+  "name": "farma-etiqueta",
+  "productName": "FARMA-ETIQUETA",
+  "version": "1.24.1",
+  "description": "Rotulado farmacéutico: lectura de lote y fechas, rótulos en milímetros, PDF y Word.",
+  "author": "FARMA-ETIQUETA",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "copiar": "rm -rf www && mkdir www && cp -r ../farma-etiqueta/index.html ../farma-etiqueta/manifest.webmanifest ../farma-etiqueta/sw.js ../farma-etiqueta/css ../farma-etiqueta/js ../farma-etiqueta/icons ../farma-etiqueta/vendor www/",
+    "start": "npm run copiar && electron .",
+    "exe": "npm run copiar && electron-builder --win portable --x64"
+  },
+  "build": {
+    "appId": "co.farmaetiqueta.app",
+    "files": [
+      "main.js",
+      "preload.js",
+      "www/**/*"
+    ],
+    "directories": {
+      "output": "salida"
+    },
+    "win": {
+      "icon": "icon.png",
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "FARMA-ETIQUETA-${version}-portable.exe"
+    }
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  }
+}

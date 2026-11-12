@@ -1,0 +1,6 @@
+{
+  "appId": "co.farmaetiqueta.app",
+  "appName": "FARMA-ETIQUETA",
+  "webDir": "../farma-etiqueta",
+  "android": { "backgroundColor": "#0b4d3a" }
+}

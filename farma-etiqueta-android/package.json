@@ -1,0 +1,22 @@
+{
+  "name": "farma-etiqueta-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Empaquetado Android (Capacitor) de FARMA-ETIQUETA",
+  "scripts": {
+    "sync": "cap sync android",
+    "apk": "cap sync android && cd android && ./gradlew assembleRelease"
+  },
+  "dependencies": {
+    "@capacitor-community/file-opener": "^7.0.1",
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/filesystem": "^7.0.0",
+    "@capacitor/ios": "^7.6.10",
+    "@capacitor/share": "^7.0.0",
+    "farma-native-ocr": "file:native-ocr"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
+  }
+}

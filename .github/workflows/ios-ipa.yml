@@ -1,0 +1,66 @@
+# Compila el .ipa (sin firmar) de FARMA-ETIQUETA en un servidor macOS.
+# El archivo se instala desde un computador con Sideloadly o AltStore, que lo firman con el Apple ID del usuario.
+name: iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ccr-1f8ea93c-13v4kq]
+    paths:
+      - 'farma-etiqueta/**'
+      - 'farma-etiqueta-android/ios/**'
+      - 'farma-etiqueta-android/package*.json'
+      - 'farma-etiqueta-android/capacitor.config.json'
+      - '.github/workflows/ios-ipa.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Dependencias y copia de la app web
+        working-directory: farma-etiqueta-android
+        run: |
+          npm ci
+          npx cap sync ios
+      - name: Compilar sin firma
+        working-directory: farma-etiqueta-android/ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build | tail -n 40
+      - name: Empaquetar .ipa
+        working-directory: farma-etiqueta-android
+        run: |
+          VERSION=$(sed -n "s/.*APP_VERSION = '\([^']*\)'.*/\1/p" ../farma-etiqueta/js/settings.js)
+          APP=ios/App/build/Build/Products/Release-iphoneos/App.app
+          test -f "$APP/public/index.html"
+          test -f "$APP/public/vendor/tesseract/lang/spa.traineddata.gz"
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          mkdir -p dist && rm -f dist/*.ipa
+          zip -qry "dist/FARMA-ETIQUETA-$VERSION.ipa" Payload
+          ls -la dist
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FARMA-ETIQUETA-ipa
+          path: farma-etiqueta-android/dist/*.ipa
+      - name: Guardar el .ipa en la rama
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A farma-etiqueta-android/dist
+          git commit -m "Agrega el .ipa de iOS $VERSION [skip ci]" || exit 0
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
