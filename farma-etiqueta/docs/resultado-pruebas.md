@@ -1,6 +1,6 @@
 # Resultado de las pruebas automáticas
 
-Ejecución: 2026-11-12 00:18 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
+Ejecución: 2026-11-12 01:19 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
 
 | Estado | Comprobación | Detalle |
 |---|---|---|
@@ -77,7 +77,7 @@ Ejecución: 2026-11-12 00:18 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Tiempo de lectura medido y mostrado (objetivo ≤ 10 s) | 0.4 s medidos por la app |
 | OK | Lo escrito a mano no se reemplaza: lo leído queda como sugerencia |  |
 | OK | Tocar la sugerencia la aplica |  |
-| OK | Lote y fechas faltantes se buscan en segundo plano sin bloquear la pantalla | Buscando texto en relieve… (puede seguir revisando el formulario) |
+| OK | Lote y fechas faltantes se buscan en segundo plano sin bloquear la pantalla | Leyendo la foto por partes (1 de 6)… (puede seguir revisando el formulario) |
 | OK | Al terminar informa lo que no encontró y no inventa lote ni vencimiento |  |
 | OK | Casillas [L] [F] [V]: cada valor va a su campo, sin intercambiarse | {"lote":"4B0123","fechaFabricacion":"05/2024","vencimiento":"05/2027"} |
 | OK | En vivo: nombre, lote y vencimiento se confirman leyéndolos varias veces | 0.2 s · ✓ Nombre: CALMADOL \| ✓ Concentración: 500 mg \| ✓ Lote: AB12345 \| ✓ Vencimiento: 05/2027 |

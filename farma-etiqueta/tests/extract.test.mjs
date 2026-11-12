@@ -30,5 +30,10 @@ t('«V» y «F» de palabras no son casillas', ['Vía oral. Venta libre', 'F arm
 t('Casilla sin valor válido: no se da por buena (queda para revisión)', ['[V] 85/2027', '[L] ABC'], { 'vencimiento?': '85/2027', lote: null });
 t('Fabricación posterior al vencimiento: ambas quedan para revisión, sin intercambiar', ['[F] 05/2027 [V] 05/2024'], { 'fechaFabricacion?': '05/2027', 'vencimiento?': '05/2024' });
 t('Troquelado con caracteres espaciados: L 1 5 7 5 1 0 1 / V 0 9 / 2 0 2 7', ['L 1 5 7 5 1 0 1', 'V 0 9 / 2 0 2 7'], { lote: '1575101', vencimiento: '09/2027' });
+t('Etiquetas L. F. V. con mes abreviado (AG0 leído con cero)', ['L.6B0985', 'F.FEB2026', 'V.AG02027'], { lote: '6B0985', fechaFabricacion: '02/2026', vencimiento: '08/2027' });
+t('El nombre no se toma de un párrafo legal', ['la en hipersensibilidad a cualquiera de los ingredientes del', 'L.6B0985'], { nombre: null });
+t('Meses en letras se convierten a número', ['Vence: ENERO 2027', 'Fab: 15 MAR 2025', 'Lote AB771'], { vencimiento: '01/2027', fechaFabricacion: '15/03/2025', lote: 'AB771' });
+t('Meses en números se dejan como están', ['Vence: 08/2027', 'Fab: 2025-03'], { vencimiento: '08/2027', fechaFabricacion: '2025-03' });
+t('Inglés: EXP AUG 2027 → 08/2027', ['EXP AUG 2027', 'MFG DEC 2024'], { vencimiento: '08/2027', fechaFabricacion: '12/2024' });
 console.log(bad ? `\n${bad} fallo(s)` : '\nTodas las reglas correctas');
 process.exit(bad ? 1 : 0);

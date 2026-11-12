@@ -7,6 +7,7 @@ import { extractFields, extractZone, dateOK } from './extract.js';
 import { liveScan } from './live.js';
 import { readBoxes, mergeBoxes } from './boxes.js';
 import { readRelief, voteRelief, readReliefAuto } from './relief.js';
+import { readTiles } from './tiles.js';
 
 export const FIELDS = [
   ['nombre', 'Nombre del producto'], ['codigoBarras', 'Código de barras'], ['principioActivo', 'Principio activo'],
@@ -150,7 +151,7 @@ async function analyze(source, extras = true, side = 2600) {
     }
     if (!res) res = await recognize(canvas, busy);
     const o = { ...extractFields(res.lines), res, onlineErr };
-    if (extras) await morePasses(canvas, o, busy);
+    if (extras) await morePasses(canvas, o, busy, () => true, source);
     return o;
   } finally { freeCanvas(canvas); }
 }
@@ -158,7 +159,7 @@ async function analyze(source, extras = true, side = 2600) {
 // Lecturas adicionales solo si faltan lote o vencimiento: suelen estar impresos aparte, por puntos o con poco contraste.
 // alive() permite cancelarlas entre una lectura y otra (por ejemplo, si el usuario cambió de foto).
 const LD = ['lote', 'vencimiento', 'fechaFabricacion'];
-async function morePasses(canvas, o, prog, alive = () => true) {
+async function morePasses(canvas, o, prog, alive = () => true, hiSrc = null) {
   const miss = f => !o.fields.some(x => x.field === f && !x.doubt);
   const need = () => alive() && (miss('lote') || miss('vencimiento'));
   const merge = (r, note, doubt, anyHit = false) => {
@@ -172,6 +173,23 @@ async function morePasses(canvas, o, prog, alive = () => true) {
   // Primero las casillas impresas (L, F, V): recortes pequeños, rápidos de leer.
   if (alive()) { try { mergeBoxes(o.fields, await readBoxes(canvas, t => prog(t))); } catch { /* sin casillas legibles */ } if (!miss('vencimiento')) o.warnings = []; }
   if (need()) merge(await recognize(canvas, (t, f) => prog('Segunda lectura (lote y fechas)…', f), true), 'Detectado en una segunda lectura de la imagen.', false);
+  // Texto pequeño o aislado que la lectura de la página completa no detectó: lectura por partes ampliadas.
+  if (need()) {
+    try {
+      const t = await readTiles(canvas, x => prog(x), alive, hiSrc);
+      const e1 = extractFields(t.lines).fields, e2 = t.alt ? extractFields(t.alt).fields : [];
+      for (const f of LD) {
+        const a = e1.find(x => x.field === f), b = e2.find(x => x.field === f);
+        if (!miss(f) || !a) continue;
+        const differ = b && b.value.replace(/\s/g, '') !== a.value.replace(/\s/g, '');
+        const hit = { ...a, doubt: a.doubt || differ, checked: !(a.doubt || differ), alt: differ ? b.value : null,
+          notes: [...a.notes, 'Leído en una zona ampliada de la foto.', ...(differ ? [`Otra lectura de la misma zona dio «${b.value}»: confusión probable entre letras y números (B/8, O/0, G/6). Elija la que coincide con el empaque.`] : [])] };
+        o.fields = o.fields.filter(x => x.field !== f).concat(hit);
+        if (f === 'vencimiento') o.warnings = [];
+      }
+      o.res.text += '\n— Lectura por partes —\n' + t.lines.map(l => l.text).join('\n');
+    } catch { /* sin texto adicional */ }
+  }
   // Lote y fechas EN RELIEVE (troquelados sin tinta): siempre quedan pendientes de revisión, nunca se dan por seguros.
   if (need()) {
     try {
@@ -206,11 +224,11 @@ async function runOCR(extra = null) {
 
 // ---- Llenado automático: al elegir la foto el formulario se completa solo ----
 function clearSuggestions() { $$('#product-form .sugg').forEach(e => e.remove()); }
-function suggest(field, value, note) {
+function suggest(field, value, note, alt = null) {
   const box = input(field)?.parentElement; if (!box) return;
   box.querySelector('.sugg')?.remove();
-  box.append(h('div', { class: 'sugg' }, h('span', {}, note + ' '),
-    h('button', { type: 'button', class: 'btn small', onclick: e => { setField(field, value, 'ocr'); chips(); scheduleDraft(); e.target.closest('.sugg').remove(); } }, `Usar «${value}»`)));
+  const use = v => h('button', { type: 'button', class: 'btn small', onclick: e => { setField(field, v, 'ocr'); chips(); scheduleDraft(); e.target.closest('.sugg').remove(); } }, `Usar «${v}»`);
+  box.append(h('div', { class: 'sugg' }, h('span', {}, note + ' '), use(value), alt && alt !== value ? use(alt) : null));
 }
 export async function autoFill(tStart) {
   if (!st.photo) { toast('Primero seleccione una fotografía.', 'warn'); return; }
@@ -290,13 +308,13 @@ async function background(r, seq, missing) {
   let canvas;
   try {
     canvas = await withPhoto(src => blobToCanvas(src, 2600));
-    await morePasses(canvas, r, prog, alive);
+    await morePasses(canvas, r, prog, alive, st.src || st.photo?.blob);
   } catch { /* se informa abajo como «no encontrado» */ } finally { freeCanvas(canvas); }
   if (!alive()) return;
   const found = [];
   for (const f of r.fields.filter(x => LD.includes(x.field) && !before.has(x.field))) {
     if (input(f.field).value.trim()) continue;                       // nunca pisa lo que ya escribió o aceptó el usuario
-    if (f.doubt) suggest(f.field, f.value, 'Lectura dudosa, verifíquela:'); else { setField(f.field, f.value, 'ocr'); found.push(label[f.field]); }
+    if (f.doubt) suggest(f.field, f.value, f.alt ? 'Dos lecturas posibles, elija la que coincide con el empaque:' : 'Lectura dudosa, verifíquela:', f.alt); else { setField(f.field, f.value, 'ocr'); found.push(label[f.field]); }
   }
   chips(); scheduleDraft();
   const hasSugg = k => !!input(k).parentElement.querySelector('.sugg');

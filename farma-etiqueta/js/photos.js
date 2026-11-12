@@ -2,7 +2,7 @@
 const MAX_BYTES = 30 * 1024 * 1024;
 const MAX_SIDE = 1800;   // lado mayor de la fotografía guardada
 const QUALITY = 0.82;
-const READ_SIDE = 2600;  // copia en memoria para leer texto y códigos (no se guarda)
+const READ_SIDE = 4000;  // copia en memoria para leer texto pequeño a resolución completa (no se guarda)
 
 async function sniff(file) {
   const b = new Uint8Array(await file.slice(0, 12).arrayBuffer());
