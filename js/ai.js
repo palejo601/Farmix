@@ -8,7 +8,7 @@ import * as db from './db.js';
 export const AI_MODEL = 'claude-opus-5-5';
 const SIDE = 1568;                    // lado largo recomendado para imágenes: más no mejora la lectura y cuesta más
 
-const SYSTEM = `Eres un lector experto de empaques de medicamentos. Tu única tarea es transcribir, desde la fotografía, el número de lote, la fecha de fabricación y la fecha de vencimiento impresos en el empaque.
+const SYSTEM = `Eres un lector experto de empaques de medicamentos. Tu tarea principal es transcribir, desde la fotografía, el número de lote, la fecha de fabricación y la fecha de vencimiento impresos en el empaque. Además, lee los datos del producto que se vean en la foto (en «producto»).
 
 Cómo se rotulan en los empaques:
 - Lote: «Lote», «Lot», «L.», «L:», «Batch», «Lote N.:», o una casilla con la letra L.
@@ -26,7 +26,17 @@ Reglas:
 - Si un dato no aparece en la foto o no se puede leer con seguridad, devuelve null en «valor» y explica el motivo en «nota».
 - «certeza»: «alta» solo si cada carácter es claramente legible; «media» si algún carácter es dudoso; «baja» si es casi ilegible.
 - En «etiqueta» copia la etiqueta que acompaña al valor tal como aparece (por ejemplo «F.V.:»), o null si no hay.
-- No escribas la fecha en otro formato: cópiala tal como se ve.`;
+- No escribas la fecha en otro formato: cópiala tal como se ve.
+
+Datos del producto («producto»), solo si se ven en la foto; si no, null:
+- nombre: el nombre comercial tal como está impreso (por ejemplo «Colestir 10/40», «Protofin»), sin el laboratorio.
+- principioActivo: el o los principios activos (por ejemplo «Nitazoxanida», «Ezetimiba / Atorvastatina»).
+- concentracion: la cantidad por unidad (por ejemplo «500 mg», «10 mg / 40 mg»).
+- formaFarmaceutica: tableta, tableta recubierta, cápsula, jarabe, suspensión, solución inyectable, crema…
+- presentacion: el contenido del empaque (por ejemplo «Caja x 30 tabletas»).
+- laboratorio: el titular o fabricante (por ejemplo «Megalabs Colombia S.A.S.»).
+- registroSanitario: el registro tal como está (por ejemplo «INVIMA 2021M-0010136-R1»).
+Copia el texto tal como está impreso y no completes nada que no se vea.`;
 
 let lib = null;
 async function sdk() { if (!lib) { await loadScript('vendor/lib/anthropic.iife.min.js'); lib = self.AnthropicAI; } return lib; }
@@ -42,7 +52,9 @@ function schema(z) {
     nota: z.string(),
   });
   const zona = z.object({ x0: z.number(), y0: z.number(), x1: z.number(), y1: z.number() }).nullable();
-  return z.object({ lote: campo, fechaFabricacion: campo, vencimiento: campo, zona });
+  const dato = z.object({ valor: z.string().nullable(), certeza: z.enum(['alta', 'media', 'baja']) });
+  const producto = z.object({ nombre: dato, principioActivo: dato, concentracion: dato, formaFarmaceutica: dato, presentacion: dato, laboratorio: dato, registroSanitario: dato });
+  return z.object({ lote: campo, fechaFabricacion: campo, vencimiento: campo, zona, producto });
 }
 
 function client(Anthropic, key) {
@@ -85,7 +97,7 @@ export async function aiReadLotDates(blob, key, zone = null) {
   const second = await aiCall(blob, key, z).catch(() => null);
   if (!second) return { ...first, zoom: false };
   // Se queda, campo por campo, con la lectura de mayor certeza (la ampliada gana si empatan).
-  const rank = { alta: 3, media: 2, baja: 1 }, out = { zona: first.zona, zoom: true };
+  const rank = { alta: 3, media: 2, baja: 1 }, out = { zona: first.zona, zoom: true, producto: first.producto };
   for (const f of ['lote', 'fechaFabricacion', 'vencimiento']) {
     const a = first[f], b = second[f];
     out[f] = !b?.valor ? a : !a?.valor ? b : (rank[b.certeza] >= rank[a.certeza] ? b : a);
@@ -98,7 +110,7 @@ async function aiCall(blob, key, zone) {
   const data = await photoForAI(blob), zoom = zone ? await photoForAI(blob, zone) : null;
   const content = [{ type: 'text', text: 'Foto completa del empaque:' }, { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data } }];
   if (zoom) content.push({ type: 'text', text: 'Ampliación de la zona donde parecen estar el lote y las fechas:' }, { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: zoom } });
-  content.push({ type: 'text', text: 'Transcribe el lote, la fecha de fabricación y la fecha de vencimiento de este empaque.' });
+  content.push({ type: 'text', text: 'Transcribe el lote, la fecha de fabricación y la fecha de vencimiento de este empaque, y los datos del producto que se vean.' });
   let res;
   try {
     res = await client(Anthropic, key).beta.messages.parse({

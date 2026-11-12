@@ -1,6 +1,6 @@
 # Resultado de las pruebas automáticas
 
-Ejecución: 2026-11-12 04:44 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
+Ejecución: 2026-11-12 05:03 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
 
 | Estado | Comprobación | Detalle |
 |---|---|---|
@@ -74,22 +74,24 @@ Ejecución: 2026-11-12 04:44 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Sobrescribir exige una confirmación adicional |  |
 | OK | Solo con elegir la foto se llenan nombre, concentración, lote, vencimiento, registro y laboratorio | 0.9 s · {"nombre":"CALMADOL","concentracion":"500 mg","lote":"AB12345","vencimiento":"05/2027","registroSanitario":"INVIMA 2019M-0012345","laboratorio":"Laboratorios Andinos S.A"} |
 | OK | Sin ventanas que confirmar: aviso en el formulario para revisar antes de guardar |  |
-| OK | Tiempo de lectura medido y mostrado (objetivo ≤ 10 s) | 0.8 s medidos por la app |
+| OK | Tiempo de lectura medido y mostrado (objetivo ≤ 10 s) | 0.7 s medidos por la app |
 | OK | Lo escrito a mano no se reemplaza: lo leído queda como sugerencia |  |
 | OK | Tocar la sugerencia la aplica |  |
-| OK | Lote y fechas faltantes se buscan en segundo plano sin bloquear la pantalla | Segunda lectura (lote y fechas)… 36 % (puede seguir revisando el formulario) |
+| OK | Lote y fechas faltantes se buscan en segundo plano sin bloquear la pantalla | Segunda lectura (lote y fechas)… 23 % (puede seguir revisando el formulario) |
 | OK | Al terminar informa lo que no encontró y no inventa lote ni vencimiento |  |
 | OK | Casillas [L] [F] [V]: cada valor va a su campo (lleno o propuesto), sin intercambiarse | {"lote":"4B0123","fechaFabricacion":"05/2024","vencimiento":"05/2027"} |
 | OK | B y 8 por la forma: nunca se confunden (si la forma no es clara, queda para revisión) | {"ok":16,"wrong":0,"none":8} |
+| OK | Otra cara de la caja: completa lote y vencimiento que faltaban, sin cambiar lo escrito ni la foto del registro | {"lote":"AB12345","venc":"05/2027","nombre":"Nombre escrito a mano","info":"1400 × 1000 px · 68 KB guardados en el dispositivo"} |
 | OK | En vivo: nombre, lote y vencimiento se confirman leyéndolos varias veces | 0.2 s · ✓ Nombre: CALMADOL \| ✓ Concentración: 500 mg \| ✓ Lote: AB12345 \| ✓ Vencimiento: 05/2027 |
 | OK | «Usar datos» llena el formulario, guarda una foto del escaneo y apaga la cámara |  |
 | OK | Nativo: texto vertical de solapa (Lote N.: / Prep.: / Venc.:) → cada valor con su etiqueta | {"fechaFabricacion":"02.2024","vencimiento":"02.2027","lote":"41005B"} / {"fechaFabricacion":"02.2024","vencimiento":"02.2027","lote":"41005B"} |
 | OK | Nativo: etiquetas y valores en columnas separadas (Lote: / F.F.: / F.V.:) | {"fechaFabricacion":"09/2024","vencimiento":"09/2026","lote":"5280924"} |
 | OK | Nativo: «L: S16057 · F: 11/2024 · V: 11/2026» | {"fechaFabricacion":"11/2024","vencimiento":"11/2026","lote":"S16057"} |
 | OK | Nativo (simulado): la app usa el lector del teléfono, verifica y llena lote y fechas | {"nombre":"CALMADOL","lote":"5280924","fechaFabricacion":"09/2024","vencimiento":"09/2026"} · 4 lecturas · Se llenaron 4 campo(s) desde la foto |
-| OK | «Ver qué leyó la app»: muestra el lector usado, el texto leído y la decisión sobre el lote | FARMA-ETIQUETA 1.16.0 · lector: Google ML Kit · 0.1 s · nitidez 5531 · reflejo 89 % \|  \| Número de lote: «5280924» — seguro (llenado) |
+| OK | «Ver qué leyó la app»: muestra el lector usado, el texto leído y la decisión sobre el lote | FARMA-ETIQUETA 1.16.1 · lector: Google ML Kit · 0.1 s · nitidez 5531 · reflejo 89 % \|  \| Número de lote: «5280924» — seguro (llenado) |
 | OK | Asistente IA: se llama a Claude con la foto, el modelo por defecto y salida estructurada | claude-opus-5-5 · imagen 102 KB |
 | OK | Asistente IA: lote y fabricación coinciden con el teléfono → se llenan; el vencimiento difiere → quedan las dos opciones | {"lote":"5280924","fechaFabricacion":"09/2024","vencimiento":""} · Usar «09/2026» \| Usar «09/2027» |
+| OK | Asistente IA: completa también datos del producto que el teléfono no leyó (principio activo) | Acetaminofén |
 | OK | Asistente IA: no bloquea la pantalla mientras lee (el formulario se llena antes con el teléfono) |  |
 | OK | Asistente IA: recibe la foto completa y la zona del lote ampliada | 2 imágenes |
 | OK | Calidad de la foto: detecta una foto borrosa y no marca una nítida | nítida 10904 · borrosa 6 |
@@ -99,4 +101,4 @@ Ejecución: 2026-11-12 04:44 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Botones con altura táctil ≥ 40 px | 0 pequeños |
 | OK | Sin errores de JavaScript durante toda la sesión |  |
 
-**94 de 94 correctas.**
+**96 de 96 correctas.**
