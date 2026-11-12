@@ -4,8 +4,9 @@ const appName = () => nativePlatform() === 'ios' ? 'App iPhone / iPad' : 'App An
 import * as db from './db.js';
 import { initOCR, recognizeOnline, OCR_BASE, OCR_CORES, nativeOcrEngine, ENGINE_NAME } from './ocr.js';
 import { aiConfig, aiTest, AI_MODEL } from './ai.js';
+import { LOW, DETECTED_LOW, perfMode, setPerfMode, deviceInfo } from './perf.js';
 
-export const APP_VERSION = '1.18.0';
+export const APP_VERSION = '1.19.0';
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const secure = () => self.isSecureContext && 'serviceWorker' in navigator && 'caches' in self;
 let installEvt = null, swReg = null;
@@ -112,6 +113,9 @@ export function initSettings() {
   $('#cf-ocr').addEventListener('click', prepareOCR);
   // Llenado automático (activo por defecto)
   db.kvGet('autoFill').then(v => { $('#cf-autofill').checked = v !== false; }).catch(() => { $('#cf-autofill').checked = true; });
+  $('#cf-perf').value = perfMode();
+  $('#cf-perf-info').textContent = `Este teléfono: ${deviceInfo()} → ${DETECTED_LOW ? 'se detecta como antiguo' : 'se detecta como actual'}. Ahora se usa el modo ${LOW ? 'rápido' : 'completo'}.`;
+  $('#cf-perf').addEventListener('change', e => { setPerfMode(e.target.value); toast('Guardado. Se aplica al volver a abrir la app.', 'ok', 5000); });
   $('#cf-autofill').addEventListener('change', async e => { await db.kvSet('autoFill', e.target.checked).catch(() => {}); toast(e.target.checked ? 'Al elegir una foto, el formulario se llenará solo.' : 'Llenado automático desactivado.', 'ok'); });
   // Reconocimiento en línea
   db.kvGet('onlineOcr').then(o => { $('#on-key').value = o?.key || ''; $('#on-enabled').checked = !!o?.enabled; }).catch(() => {});

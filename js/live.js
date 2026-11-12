@@ -8,6 +8,7 @@ import { readBoxes } from './boxes.js';
 import { aiReady, aiConfig, aiReadLotDates } from './ai.js';
 import { monthToNumber } from './extract.js';
 import { fixLotLines } from './glyphs.js';
+import { LOW } from './perf.js';
 
 const NEED = 2;   // lecturas iguales necesarias para dar un dato por seguro (lote y fechas: 3, y sin otra lectura que compita)
 const need = f => ['lote', 'fechaFabricacion', 'vencimiento'].includes(f) ? 3 : NEED;
@@ -30,7 +31,7 @@ function cameraError(e) {
 export async function liveScan({ lotMode = false } = {}) {
   if (!navigator.mediaDevices?.getUserMedia) { toast(isSecureContext ? 'Este navegador no permite usar la cámara en vivo. Use «Elegir de la galería».' : 'La cámara en vivo requiere abrir la app por HTTPS o instalarla.', 'err', 7000); return null; }
   let stream;
-  const res = lotMode ? { width: { ideal: 2560 }, height: { ideal: 1440 } } : { width: { ideal: 1920 }, height: { ideal: 1080 } };
+  const res = lotMode && !LOW ? { width: { ideal: 2560 }, height: { ideal: 1440 } } : { width: { ideal: 1920 }, height: { ideal: 1080 } };
   try { stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, ...res, advanced: [{ focusMode: 'continuous' }] } }); }
   catch (e) { toast(cameraError(e), 'err', 8000); return null; }
   const track = stream.getVideoTracks()[0];
@@ -86,7 +87,7 @@ export async function liveScan({ lotMode = false } = {}) {
     const s = Math.max(vb.width / vw, vb.height / vh), ox = (vb.width - vw * s) / 2, oy = (vb.height - vh * s) / 2;
     const sx = Math.max(0, (gb.left - vb.left - ox) / s), sy = Math.max(0, (gb.top - vb.top - oy) / s);
     const sw = Math.min(vw - sx, gb.width / s), sh = Math.min(vh - sy, gb.height / s);
-    const k = forAI ? 1 : Math.min(2.5, 1400 / sw), c = document.createElement('canvas');
+    const k = forAI ? 1 : Math.min(2.5, (LOW ? 1000 : 1400) / sw), c = document.createElement('canvas');
     c.width = Math.round(sw * k); c.height = Math.round(sh * k);
     const x = c.getContext('2d', { willReadFrequently: true }); if (!forAI) x.filter = 'grayscale(1) contrast(1.25)';
     x.drawImage(video, sx, sy, sw, sh, 0, 0, c.width, c.height);
