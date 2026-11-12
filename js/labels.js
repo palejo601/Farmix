@@ -4,7 +4,7 @@ export const SIZES = [
   ['Grande', 100, 70], ['Mediano', 70, 50], ['Pequeño', 50, 30], ['Blíster', 40, 20], ['Ampolla o vial', 30, 15], ['Tableta o cápsula', 20, 10], ['Estantería', 100, 50], ['Extra grande', 150, 100],
 ];
 export const LABEL_FIELDS = [
-  ['nombre', 'Nombre del producto'], ['principioActivo', 'Principio activo'], ['concentracion', 'Concentración'], ['presentacion', 'Presentación'],
+  ['nombre', 'Nombre del producto'], ['servicio', 'Servicio'], ['principioActivo', 'Principio activo'], ['concentracion', 'Concentración'], ['presentacion', 'Presentación'],
   ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['laboratorio', 'Laboratorio'], ['registroSanitario', 'Registro sanitario (INVIMA)'], ['codigoBarras', 'Código de barras'],
   ['condiciones', 'Condiciones de almacenamiento'], ['ubicacion', 'Ubicación'], ['cantidad', 'Cantidad'],
 ];
@@ -73,6 +73,7 @@ export function layoutLabel(rec, o) {
   const K = Math.max(1, Math.min(w, h) / 70);   // rótulos grandes (hasta la hoja completa): letra y código crecen en proporción
   let blocks = [];
   const add = (key, text, scale, bold = false) => blocks.push({ key, text, scale, bold });
+  if (on('servicio')) add('Servicio', on('servicio').toUpperCase(), 1.0, true);
   if (on('nombre')) add('Nombre', on('nombre'), 1.45, true);
   const pa = [on('principioActivo'), on('concentracion')].filter(Boolean).join(' ');
   if (pa) add('Principio activo / concentración', pa, 1.1);

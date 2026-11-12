@@ -150,7 +150,7 @@ const EAN = '7701234567897';
   await btn('Cancelar').click();
   await choose('#photo-box label[for=pick-gallery]', F.pack); await page.waitForTimeout(700);
   await page.fill('#f-codigoBarras', EAN);
-  await page.fill('#f-ubicacion', 'Estante B-3'); await page.fill('#f-cantidad', '30 tabletas');
+  await page.fill('#f-ubicacion', 'Estante B-3'); await page.fill('#f-cantidad', '30 tabletas'); await page.selectOption('#f-servicio', 'UCI Adulto');
   await saveForm(); await page.waitForSelector('#v-historial:not([hidden]) .rec');
   check('Antes de guardar se exige confirmar lote/fechas leídos por la foto', /Compare con el empaque/.test(saved.confirm || '') && /Fecha de vencimiento: 05\/2027/.test(saved.confirm || ''), (saved.confirm || '').replace(/\s+/g, ' ').slice(0, 160));
   check('Registro confirmado y guardado', /CALMADOL/.test(await page.locator('.rec').first().innerText()));
@@ -238,7 +238,7 @@ const EAN = '7701234567897';
     detail.push(`${r.w}×${r.h}: ${r.n} líneas${r.bars ? '+barras' : ''}${r.warn ? ' (aviso)' : ''}`);
   }
   await page.selectOption('#lb-size', '0'); await page.click('#sh-auto'); await page.waitForTimeout(300);
-  { const t = await page.locator('#lb-preview svg').first().textContent(); check('El rótulo incluye el registro sanitario INVIMA y la cantidad', /Reg\. San\..*2019M-0012345/.test(t) && /Cant\.: 30 tabletas/.test(t), (t.match(/Cant\.: [^L]*/) || [''])[0] + ' · ' + (t.match(/Reg\. San\.[^L]*/) || [''])[0]); }
+  { const t = await page.locator('#lb-preview svg').first().textContent(); check('El rótulo incluye el servicio, el registro sanitario INVIMA y la cantidad', /^UCI ADULTO/.test(t) && /Reg\. San\..*2019M-0012345/.test(t) && /Cant\.: 30 tabletas/.test(t), (t.match(/Cant\.: [^L]*/) || [''])[0] + ' · ' + (t.match(/Reg\. San\.[^L]*/) || [''])[0]); }
   { // Hoja completa: un rótulo que ocupa la hoja, vertical y horizontal
     const r = [];
     for (const o of ['v', 'h']) {
@@ -252,6 +252,8 @@ const EAN = '7701234567897';
     check('Tamaño «Hoja completa»: ocupa la hoja A4 en vertical (190 × 277) y horizontal (277 × 190), texto grande y dentro', r[0].w === 190 && r[0].h === 277 && r[1].w === 277 && r[1].h === 190 && !r[0].out && !r[1].out && !r[0].err && !r[1].err && r[0].big >= 15, JSON.stringify(r.map(x => ({ w: x.w, h: x.h, letra_mm: x.big, fuera: x.out }))));
     await page.selectOption('#sh-orient', 'v');
   }
+  { const sv = await page.$$eval('#f-servicio option', o => o.map(x => x.value).filter(Boolean));
+    check('Servicios: Hospitalización 1-4, Urgencias (consulta, observación, procedimiento), UCI Adulto, UCI Neonatal, Ginecología', sv.length === 10 && sv.includes('Urgencias – Observación') && sv.includes('UCI Neonatal') && sv.includes('Ginecología'), sv.join(' · ')); }
   check('Lista de tamaños según la especificación', JSON.stringify(sizes.filter(s => +s[0] >= 0).map(s => s[1].match(/\d+ × \d+/)[0])) === JSON.stringify(['100 × 70', '70 × 50', '50 × 30', '40 × 20', '30 × 15', '20 × 10', '100 × 50', '150 × 100']) && sizes.some(s => s[0] === '-1') && sizes.some(s => s[0] === '-2'), sizes.map(s => s[1]).join(' · '));
   check('Los 6 tamaños predefinidos (100×70, 70×50, 50×30, 40×20, 30×15, 20×10): texto dentro del rótulo, sin cortes ni superposición', allFit, detail.join(' · '));
   await page.selectOption('#lb-size', '5'); await page.waitForTimeout(60);

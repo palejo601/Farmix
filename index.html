@@ -104,6 +104,13 @@
       <legend>Información general</legend>
       <div class="fields">
         <div class="field wide"><label for="f-nombre">Nombre del producto *</label><input id="f-nombre" name="nombre" required maxlength="160"></div>
+        <div class="field wide"><label for="f-servicio">Servicio</label><select id="f-servicio" name="servicio">
+          <option value="">— Sin servicio —</option>
+          <optgroup label="Hospitalización"><option>Hospitalización 1</option><option>Hospitalización 2</option><option>Hospitalización 3</option><option>Hospitalización 4</option></optgroup>
+          <optgroup label="Urgencias"><option>Urgencias – Consulta</option><option>Urgencias – Observación</option><option>Urgencias – Procedimiento</option></optgroup>
+          <optgroup label="Unidades de cuidado intensivo"><option>UCI Adulto</option><option>UCI Neonatal</option></optgroup>
+          <optgroup label="Otros servicios"><option>Ginecología</option></optgroup>
+        </select></div>
         <div class="field"><label for="f-codigoBarras">Código de barras</label><input id="f-codigoBarras" name="codigoBarras" inputmode="text" maxlength="80"></div>
         <div class="field"><label for="f-principioActivo">Principio activo</label><input id="f-principioActivo" name="principioActivo" maxlength="160"></div>
         <div class="field"><label for="f-concentracion">Concentración</label><input id="f-concentracion" name="concentracion" maxlength="80"></div>
