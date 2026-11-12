@@ -3,7 +3,7 @@
 // - Guarda los recursos OCR la primera vez que se usan (caché separada que NO se borra al actualizar).
 // - Nunca toca IndexedDB: actualizar la aplicación no elimina registros ni fotografías.
 // Para publicar una versión nueva, cambie VERSION.
-const VERSION = '1.15.0';
+const VERSION = '1.16.0';
 const SHELL = 'fe-shell-' + VERSION;
 const OCR = 'fe-ocr-v2';
 const FILES = [

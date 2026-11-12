@@ -115,3 +115,31 @@ export function enhance(src, maxSide = 2400) {
   ctx.putImageData(img, 0, 0);
   return c;
 }
+
+// Calidad de la foto: nitidez = varianza del laplaciano en la zona más nítida (percentil 90 de bloques de 100 px,
+// para medir el texto y no los fondos lisos); reflejo = % de píxeles saturados. Calibrado con fotos reales de cajas:
+// las nítidas dan ≥ 250 y las desenfocadas ≤ 100.
+export const SHARP_MIN = 150, GLARE_MAX = 3;
+export async function photoQuality(blob) {
+  const bmp = await createImageBitmap(blob);
+  try {
+    const k = Math.min(1, 1000 / Math.max(bmp.width, bmp.height)), c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(bmp, 0, 0, c.width, c.height);
+    const W = c.width, H = c.height, d = x.getImageData(0, 0, W, H).data, g = new Float32Array(W * H);
+    c.width = c.height = 0;
+    let sat = 0;
+    for (let i = 0; i < W * H; i++) { g[i] = 0.3 * d[i * 4] + 0.59 * d[i * 4 + 1] + 0.11 * d[i * 4 + 2]; if (g[i] > 250) sat++; }
+    const B = 100, vals = [];
+    for (let by = 0; by + B <= H; by += B) for (let bx = 0; bx + B <= W; bx += B) {
+      let s = 0, s2 = 0, n = 0;
+      for (let y = by + 1; y < by + B - 1; y++) for (let xx = bx + 1; xx < bx + B - 1; xx++) {
+        const i = y * W + xx, l = 4 * g[i] - g[i - 1] - g[i + 1] - g[i - W] - g[i + W]; s += l; s2 += l * l; n++;
+      }
+      vals.push(s2 / n - (s / n) ** 2);
+    }
+    vals.sort((a, b) => a - b);
+    const sharp = Math.round(vals[Math.floor(vals.length * 0.9)] || 0), glare = +(sat / (W * H) * 100).toFixed(1);
+    return { sharp, glare, blurry: sharp < SHARP_MIN, shiny: glare > GLARE_MAX };
+  } finally { bmp.close?.(); }
+}
