@@ -5,6 +5,7 @@ import { h, toast, errMsg } from './ui.js';
 import { recognize } from './ocr.js';
 import { extractFields, extractZone } from './extract.js';
 import { readBoxes } from './boxes.js';
+import { fixLotLines } from './glyphs.js';
 
 const NEED = 2;   // lecturas iguales necesarias para dar un dato por seguro (lote y fechas: 3, y sin otra lectura que compita)
 const need = f => ['lote', 'fechaFabricacion', 'vencimiento'].includes(f) ? 3 : NEED;
@@ -96,6 +97,7 @@ export async function liveScan() {
       try {
         const r = await recognize(c, () => {}, n++ % 2 ? '11' : '6');   // alterna bloque y texto disperso
         if (!open) break;
+        fixLotLines(c, r.lines);
         // Lectura muy clara (confianza ≥ 85 %) cuenta doble; con etiqueta (LOTE, VENCE…) cuenta 1; sin etiqueta, media.
         for (const f of extractFields(r.lines).fields) if (!f.doubt && (f.conf == null || f.conf >= 55)) vote(f.field, f.value, f.conf >= 85 ? 2 : 1);
         const z = extractZone(r.lines);

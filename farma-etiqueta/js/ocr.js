@@ -52,7 +52,8 @@ async function recognizeNow(canvas, progress = () => {}, sparse = false, extra =
     const { data } = await w.recognize(canvas, {}, { text: true, blocks: true });
     const lines = [];
     for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || [])
-      lines.push({ text: l.text, conf: l.confidence, height: l.bbox ? l.bbox.y1 - l.bbox.y0 : 0, bbox: l.bbox || null });
+      lines.push({ text: l.text, conf: l.confidence, height: l.bbox ? l.bbox.y1 - l.bbox.y0 : 0, bbox: l.bbox || null,
+        symbols: (l.words || []).flatMap(w => (w.symbols || []).map(s => ({ text: s.text, bbox: s.bbox }))) });
     if (!lines.length && data.text) data.text.split('\n').forEach(t => lines.push({ text: t, conf: data.confidence ?? null, height: 0 }));
     return { text: data.text || '', confidence: data.confidence ?? null, lines };
   } catch (e) {

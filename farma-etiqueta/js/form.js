@@ -8,6 +8,7 @@ import { liveScan } from './live.js';
 import { readBoxes, mergeBoxes } from './boxes.js';
 import { readRelief, voteRelief, readReliefAuto } from './relief.js';
 import { readTiles } from './tiles.js';
+import { fixLotLines } from './glyphs.js';
 
 export const FIELDS = [
   ['nombre', 'Nombre del producto'], ['codigoBarras', 'Código de barras'], ['principioActivo', 'Principio activo'],
@@ -150,6 +151,7 @@ async function analyze(source, extras = true, side = 2600) {
       catch (e) { onlineErr = errMsg(e); }
     }
     if (!res) res = await recognize(canvas, busy);
+    if (!res.online) fixLotLines(canvas, res.lines);           // B u 8: se decide por la forma del carácter
     const o = { ...extractFields(res.lines), res, onlineErr };
     if (extras) await morePasses(canvas, o, busy, () => true, source);
     return o;
@@ -425,7 +427,7 @@ async function runZone(file = null) {
       const [name, make, psm] = variants[i];
       busy(`Leyendo la zona (${i + 1} de ${variants.length})…`, (i + 1) / (variants.length + 1));
       const c = make();
-      try { const r = await recognize(c, () => {}, psm); passes.push({ name, weight: 1, found: extractZone(r.lines), text: r.text }); }
+      try { const r = await recognize(c, () => {}, psm); fixLotLines(c, r.lines); passes.push({ name, weight: 1, found: extractZone(r.lines), text: r.text }); }
       catch { /* una lectura fallida no impide las demás */ }
       finally { if (c !== crop) freeCanvas(c); }
     }
