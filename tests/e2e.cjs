@@ -336,7 +336,7 @@ const EAN = '7701234567897';
   await page.click('#btn-form-clear'); if (await btn('Descartar').count()) await btn('Descartar').click();
   await choose('#photo-empty label[for=pick-gallery]', F.boxes);
   await page.waitForSelector('#autofill-note:not([hidden])', { timeout: 180000 }); await waitIdle();
-  await page.waitForFunction(() => { const b = document.querySelector('#autofill-note .bg-read'); return !b || /No se encontró|Encontrado|Compare/.test(b.textContent); }, null, { timeout: 180000 });
+  await page.waitForFunction(() => { const b = document.querySelector('#autofill-note .bg-read'); return !b || /No se encontró|Encontrado|Compare|Lectura dudosa/.test(b.textContent); }, null, { timeout: 180000 });
   const bxv = {}; for (const k of ['lote', 'fechaFabricacion', 'vencimiento']) bxv[k] = await page.inputValue('#f-' + k);
   check('Casillas [L] [F] [V]: cada valor va a su campo, sin intercambiarse', bxv.lote === '4B0123' && bxv.fechaFabricacion === '05/2024' && bxv.vencimiento === '05/2027', JSON.stringify(bxv));
   await page.click('#btn-form-clear'); await btn('Descartar').click();

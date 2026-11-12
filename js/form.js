@@ -6,6 +6,7 @@ import { recognize, recognizeOnline } from './ocr.js';
 import { extractFields, extractZone, dateOK } from './extract.js';
 import { liveScan } from './live.js';
 import { readBoxes, mergeBoxes } from './boxes.js';
+import { readRelief, voteRelief, readReliefAuto } from './relief.js';
 
 export const FIELDS = [
   ['nombre', 'Nombre del producto'], ['codigoBarras', 'Código de barras'], ['principioActivo', 'Principio activo'],
@@ -160,10 +161,10 @@ const LD = ['lote', 'vencimiento', 'fechaFabricacion'];
 async function morePasses(canvas, o, prog, alive = () => true) {
   const miss = f => !o.fields.some(x => x.field === f && !x.doubt);
   const need = () => alive() && (miss('lote') || miss('vencimiento'));
-  const merge = (r, note, doubt) => {
+  const merge = (r, note, doubt, anyHit = false) => {
     const e2 = extractFields(r.lines);
     for (const f of LD) {
-      const hit = e2.fields.find(x => x.field === f && !x.doubt);
+      const hit = e2.fields.find(x => x.field === f && (anyHit || !x.doubt));
       if (miss(f) && hit) { o.fields = o.fields.filter(x => x.field !== f).concat({ ...hit, doubt, checked: hit.checked && !doubt, notes: [...hit.notes, note] }); if (f === 'vencimiento') o.warnings = []; }
     }
     o.res.text += '\n— Lectura adicional —\n' + r.text;
@@ -171,6 +172,13 @@ async function morePasses(canvas, o, prog, alive = () => true) {
   // Primero las casillas impresas (L, F, V): recortes pequeños, rápidos de leer.
   if (alive()) { try { mergeBoxes(o.fields, await readBoxes(canvas, t => prog(t))); } catch { /* sin casillas legibles */ } if (!miss('vencimiento')) o.warnings = []; }
   if (need()) merge(await recognize(canvas, (t, f) => prog('Segunda lectura (lote y fechas)…', f), true), 'Detectado en una segunda lectura de la imagen.', false);
+  // Lote y fechas EN RELIEVE (troquelados sin tinta): siempre quedan pendientes de revisión, nunca se dan por seguros.
+  if (need()) {
+    try {
+      const rl = await readReliefAuto(canvas, t => prog(t));
+      if (rl.length) merge({ lines: rl, text: rl.map(l => l.text).join('\n') }, 'Leído en RELIEVE (marcado sin tinta): esta lectura confunde dígitos con frecuencia. Compárelo carácter por carácter con el empaque.', true, true);
+    } catch { /* sin texto en relieve */ }
+  }
   if (need()) {
     prog('Realzando la imagen…');
     const ec = enhance(canvas);
@@ -291,9 +299,12 @@ async function background(r, seq, missing) {
     if (f.doubt) suggest(f.field, f.value, 'Lectura dudosa, verifíquela:'); else { setField(f.field, f.value, 'ocr'); found.push(label[f.field]); }
   }
   chips(); scheduleDraft();
-  const still = ['lote', 'vencimiento'].filter(k => !input(k).value.trim()).map(k => label[k].toLowerCase());
+  const hasSugg = k => !!input(k).parentElement.querySelector('.sugg');
+  const sugg = LD.filter(k => !input(k).value.trim() && hasSugg(k)).map(k => label[k].toLowerCase());
+  const still = ['lote', 'vencimiento'].filter(k => !input(k).value.trim() && !hasSugg(k)).map(k => label[k].toLowerCase());
   line.textContent = (found.length ? `Encontrado en segundo plano: ${found.join(', ')} (${((performance.now() - t0) / 1000).toFixed(1)} s más). ` : '')
-    + (still.length ? `No se encontró ${still.join(' ni ')}: use «Marcar lote y fechas» o escríbalo.` : 'Compare el lote y las fechas con el empaque.');
+    + (sugg.length ? `Lectura dudosa de ${sugg.join(', ')} (por ejemplo, impresión en relieve): compárela con el empaque y toque «Usar» si coincide, o corríjala. ` : '')
+    + (still.length ? `No se encontró ${still.join(' ni ')}: use «Marcar lote y fechas» o escríbalo.` : sugg.length ? '' : 'Compare el lote y las fechas con el empaque.');
   if (found.length) toast(`Se agregó ${found.join(', ').toLowerCase()} desde la foto.`, 'ok');
 }
 
@@ -400,6 +411,12 @@ async function runZone(file = null) {
       catch { /* una lectura fallida no impide las demás */ }
       finally { if (c !== crop) freeCanvas(c); }
     }
+    // Texto en relieve (troquelado sin tinta) dentro de la zona: varias escalas y umbrales, votación por carácter.
+    busy('Buscando texto en relieve…');
+    try {
+      const rl = voteRelief(await readRelief(crop));
+      if (rl.length) passes.push({ name: 'relieve', weight: 1, found: extractZone(rl), text: rl.map(l => l.text).join('\n') });
+    } catch { /* sin relieve */ }
     // Casillas impresas dentro de la zona (L, F, V): cada letra se lee aparte y se une al valor de al lado o de abajo.
     busy('Buscando casillas L, F y V…');
     try {

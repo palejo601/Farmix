@@ -4,7 +4,7 @@ const appName = () => nativePlatform() === 'ios' ? 'App iPhone / iPad' : 'App An
 import * as db from './db.js';
 import { initOCR, recognizeOnline, OCR_BASE, OCR_CORES } from './ocr.js';
 
-export const APP_VERSION = '1.9.0';
+export const APP_VERSION = '1.10.0';
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const secure = () => self.isSecureContext && 'serviceWorker' in navigator && 'caches' in self;
 let installEvt = null, swReg = null;
