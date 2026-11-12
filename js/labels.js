@@ -70,6 +70,7 @@ export function encodeBarcode(code, fmtLabel) {
 export function layoutLabel(rec, o) {
   const { w, h } = o, on = f => o.fields[f] && (rec[f] || '').toString().trim();
   const P = clamp(Math.min(w, h) * 0.07, 0.7, 3), W = w - 2 * P, H = h - 2 * P, warnings = [];
+  const K = Math.max(1, Math.min(w, h) / 70);   // rótulos grandes (hasta la hoja completa): letra y código crecen en proporción
   let blocks = [];
   const add = (key, text, scale, bold = false) => blocks.push({ key, text, scale, bold });
   if (on('nombre')) add('Nombre', on('nombre'), 1.45, true);
@@ -89,9 +90,9 @@ export function layoutLabel(rec, o) {
     const enc = encodeBarcode(on('codigoBarras'), rec.formatoCodigo);
     if (!enc) warnings.push('El código de barras no se puede representar (caracteres no admitidos).');
     else {
-      const n = enc.bits.length + 20, mw = Math.min(0.4, W / n);
+      const n = enc.bits.length + 20, mw = Math.min(0.4 * K, W / n);
       if (mw < MIN_MODULE) warnings.push(`El código de barras no cabe con barras legibles en ${w} × ${h} mm; se omitió. Use un rótulo más ancho.`);
-      else bar = { bits: enc.bits, mw, text: on('codigoBarras'), bh: clamp(H * 0.26, 3, 14), ts: clamp(H * 0.06, 1.3, 2.6) };
+      else bar = { bits: enc.bits, mw, text: on('codigoBarras'), bh: clamp(H * 0.26, 3, 14 * K), ts: clamp(H * 0.06, 1.3, 2.6 * K) };
     }
   }
   const barH = b => b ? b.bh + b.ts * 1.15 + 0.6 : 0;
@@ -108,7 +109,7 @@ export function layoutLabel(rec, o) {
   });
   const height = ls => ls.reduce((a, b) => a + b.lines.length * b.size * 1.2 + b.size * 0.12, 0);
   const fit = (avail, bl = blocks) => {
-    let lo = MIN_FONT, hi = clamp(H * 0.42, MIN_FONT, 8.5);
+    let lo = MIN_FONT, hi = clamp(H * 0.42, MIN_FONT, 8.5 * K);
     if (height(lines(lo, bl)) > avail) return null;
     for (let i = 0; i < 18; i++) { const m = (lo + hi) / 2; if (height(lines(m, bl)) <= avail) lo = m; else hi = m; }
     return lines(lo, bl);
