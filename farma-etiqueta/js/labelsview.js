@@ -8,7 +8,7 @@ const FULL = -2;          // tamaño «Hoja completa»
 let items = [];           // [{rec, qty}]
 let cfg = {
   size: 1, w: 70, h: 50, border: true,
-  fields: { nombre: true, principioActivo: true, concentracion: true, presentacion: false, lote: true, vencimiento: true, laboratorio: false, registroSanitario: true, codigoBarras: true, condiciones: false, ubicacion: false, cantidad: true },
+  fields: { servicio: true, nombre: true, principioActivo: true, concentracion: true, presentacion: false, lote: true, vencimiento: true, laboratorio: false, registroSanitario: true, codigoBarras: true, condiciones: false, ubicacion: false, cantidad: true },
   paper: 'A4', orient: 'v', cpw: 210, cph: 297, cols: 2, rows: 5, mt: 10, ml: 10, mb: 10, mr: 10, gh: 3, gv: 3,
 };
 let job = null;           // resultado del último cálculo: {sh, pages:[[layout…]], total, error}

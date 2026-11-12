@@ -15,7 +15,7 @@ import { aiReady, aiConfig, aiReadLotDates } from './ai.js';
 import { monthToNumber } from './extract.js';
 
 export const FIELDS = [
-  ['nombre', 'Nombre del producto'], ['codigoBarras', 'Código de barras'], ['principioActivo', 'Principio activo'],
+  ['nombre', 'Nombre del producto'], ['servicio', 'Servicio'], ['codigoBarras', 'Código de barras'], ['principioActivo', 'Principio activo'],
   ['concentracion', 'Concentración'], ['formaFarmaceutica', 'Forma farmacéutica'], ['presentacion', 'Presentación'],
   ['laboratorio', 'Laboratorio o fabricante'], ['registroSanitario', 'Registro sanitario'], ['lote', 'Número de lote'],
   ['fechaFabricacion', 'Fecha de fabricación'], ['vencimiento', 'Fecha de vencimiento'], ['ubicacion', 'Ubicación'], ['cantidad', 'Cantidad'], ['condiciones', 'Condiciones de almacenamiento'], ['observaciones', 'Observaciones'],
