@@ -150,7 +150,7 @@ const EAN = '7701234567897';
   await btn('Cancelar').click();
   await choose('#photo-box label[for=pick-gallery]', F.pack); await page.waitForTimeout(700);
   await page.fill('#f-codigoBarras', EAN);
-  await page.fill('#f-ubicacion', 'Estante B-3'); await page.fill('#f-cantidad', '30 tabletas'); await page.selectOption('#f-servicio', 'UCI Adulto');
+  await page.fill('#f-ubicacion', 'Estante B-3'); await page.fill('#f-cantidad', '30 tabletas'); await page.fill('#f-unidades', '100'); await page.selectOption('#f-servicio', 'UCI Adulto');
   await saveForm(); await page.waitForSelector('#v-historial:not([hidden]) .rec');
   check('Antes de guardar se exige confirmar lote/fechas leídos por la foto', /Compare con el empaque/.test(saved.confirm || '') && /Fecha de vencimiento: 05\/2027/.test(saved.confirm || ''), (saved.confirm || '').replace(/\s+/g, ' ').slice(0, 160));
   check('Registro confirmado y guardado', /CALMADOL/.test(await page.locator('.rec').first().innerText()));
@@ -238,7 +238,7 @@ const EAN = '7701234567897';
     detail.push(`${r.w}×${r.h}: ${r.n} líneas${r.bars ? '+barras' : ''}${r.warn ? ' (aviso)' : ''}`);
   }
   await page.selectOption('#lb-size', '0'); await page.click('#sh-auto'); await page.waitForTimeout(300);
-  { const t = await page.locator('#lb-preview svg').first().textContent(); check('El rótulo incluye el servicio, el registro sanitario INVIMA y la cantidad', /^UCI ADULTO/.test(t) && /Reg\. San\..*2019M-0012345/.test(t) && /Cant\.: 30 tabletas/.test(t), (t.match(/Cant\.: [^L]*/) || [''])[0] + ' · ' + (t.match(/Reg\. San\.[^L]*/) || [''])[0]); }
+  { const t = await page.locator('#lb-preview svg').first().textContent(); check('El rótulo incluye el servicio, el registro sanitario INVIMA y la cantidad', /^UCI ADULTO/.test(t) && /Reg\. San\..*2019M-0012345/.test(t) && /Cant\.: 30 tabletas/.test(t) && /Unidades: 100/.test(t), (t.match(/Cant\.: [^L]*/) || [''])[0] + ' · ' + (t.match(/Reg\. San\.[^L]*/) || [''])[0]); }
   { // Hoja completa: un rótulo que ocupa la hoja, vertical y horizontal
     const r = [];
     for (const o of ['v', 'h']) {
