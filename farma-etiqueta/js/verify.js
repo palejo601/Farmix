@@ -31,7 +31,7 @@ export async function verifyFields(fields, hi, baseW, progress = () => {}) {
       else e = enhance(c);
       const reads = [];
       try {
-        for (const [img, psm] of [[c, '6'], [e, '6']]) {
+        for (const [img, psm] of native ? [[c, '6']] : [[c, '6'], [e, '6']]) {
           const r = await recognize(img, () => {}, psm);
           fixLotLines(img, r.lines);
           const hit = extractFields(r.lines).fields.find(x => x.field === f.field);

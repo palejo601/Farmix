@@ -10,7 +10,7 @@ import { readRelief, voteRelief, readReliefAuto } from './relief.js';
 import { readTiles } from './tiles.js';
 import { fixLotLines } from './glyphs.js';
 import { verifyFields } from './verify.js';
-import { aiReady, aiConfig, aiReadLotDates, mergeAI } from './ai.js';
+import { aiReady, aiConfig, aiReadLotDates } from './ai.js';
 import { monthToNumber } from './extract.js';
 
 export const FIELDS = [
@@ -177,12 +177,12 @@ async function morePasses(canvas, o, prog, alive = () => true, hiSrc = null) {
     o.res.text += '\n— Lectura adicional —\n' + r.text;
   };
   // Primero las casillas impresas (L, F, V): recortes pequeños, rápidos de leer.
-  if (alive()) { try { mergeBoxes(o.fields, await readBoxes(canvas, t => prog(t))); } catch { /* sin casillas legibles */ } if (!miss('vencimiento')) o.warnings = []; }
   const native = await nativeOcrEngine();
+  if (!native && alive()) { try { mergeBoxes(o.fields, await readBoxes(canvas, t => prog(t))); } catch { /* sin casillas legibles */ } if (!miss('vencimiento')) o.warnings = []; }
   // (con el lector nativo la «segunda lectura dispersa» daría lo mismo que la primera: se omite)
   if (!native && need()) merge(await recognize(canvas, (t, f) => prog('Segunda lectura (lote y fechas)…', f), true), 'Detectado en una segunda lectura de la imagen.', false);
-  // Texto pequeño o aislado que la lectura de la página completa no detectó: lectura por partes ampliadas.
-  if (need()) {
+  // Texto pequeño o aislado que la lectura de la página completa no detectó: lectura por partes ampliadas (solo Tesseract).
+  if (!native && need()) {
     try {
       const t = await readTiles(canvas, x => prog(x), alive, hiSrc);
       const e1 = extractFields(t.lines).fields, e2 = t.alt ? extractFields(t.alt).fields : [];
@@ -259,30 +259,27 @@ export async function autoFill(tStart) {
   let r; const t0 = tStart || performance.now();
   busy('Leyendo la foto…');
   const seq = ++readSeq;
-  // Asistente IA: arranca en paralelo con el lector del teléfono (no suma su tiempo al de la lectura local).
+  // Asistente IA: arranca YA con la foto completa, en paralelo con el lector del teléfono, y no bloquea la pantalla.
+  // Si necesita releer ampliado, usa la zona que el teléfono ubique (llega como promesa).
   const aiOn = await aiReady();
-  let aiP = null;
+  let zoneOk; const zoneP = new Promise(res => { zoneOk = res; });
+  const aiP = aiOn ? aiConfig().then(c => aiReadLotDates(st.src || st.photo.blob, c.key, zoneP)).catch(e => ({ error: errMsg(e) })) : null;
   // Primera lectura sobre la copia de alta calidad (la guardada está comprimida y confunde dígitos); luego se verifican lote y fechas.
   try {
     const side = (await nativeOcrEngine()) ? 3200 : 2200;         // el lector nativo aprovecha más resolución
     r = await withPhoto(src => analyze(src, false, side)).catch(() => analyze(st.photo.blob, false, 1800));
-    // La IA recibe la foto completa y, si el teléfono ubicó el lote o las fechas, esa zona ampliada a resolución completa.
-    if (aiOn) { const zone = lotZone(r); aiP = aiConfig().then(c => aiReadLotDates(st.src || st.photo.blob, c.key, zone)).catch(e => ({ error: errMsg(e) })); }
+    zoneOk(lotZone(r));
     if (!r.res.online) await verifyFields(r.fields, st.src || st.photo.blob, r.baseW, t => busy(t));
-    if (aiP) {
-      busy('El Asistente IA está leyendo el lote y las fechas…');
-      const ai = await aiP;
-      r.ai = ai?.error ? { error: ai.error } : { notes: [...(ai.zoom ? ['(la IA leyó también la zona ampliada del lote y las fechas)'] : []), ...mergeAI(r.fields, ai, monthToNumber, Object.fromEntries(FIELDS))] };
-      for (const f of r.fields) if (f.aiAgree) f.conf = Math.max(f.conf ?? 0, 90);
-    }
   }
   catch (e) {
+    zoneOk(null);
+    if (aiP) { aiFollowUp(r || { fields: [] }, seq, aiP); }
     busy(false); note.hidden = false; note.className = 'banner danger';
     note.textContent = 'No se pudo leer la foto: ' + errMsg(e) + ' Puede volver a intentarlo o escribir los datos.';
     return;
   } finally { busy(false); }
   const { res, onlineErr } = r, fields = [...r.fields], secs = ((performance.now() - t0) / 1000).toFixed(1);
-  st.diag = { quality: st.quality, engine: res.online ? 'OCR.space (en línea)' : ENGINE_NAME[res.engine || ''], secs, text: res.text, fields: r.fields, ai: r.ai || null };
+  st.diag = { quality: st.quality, engine: res.online ? 'OCR.space (en línea)' : ENGINE_NAME[res.engine || ''], secs, text: res.text, fields: r.fields, ai: aiP ? { notes: ['Leyendo…'] } : null };
   let filled = 0; const doubts = [];
   for (const f of fields) {
     const cur = input(f.field).value.trim(), src = st.origen[f.field];
@@ -302,10 +299,54 @@ export async function autoFill(tStart) {
     doubts.length ? h('div', { style: 'margin-top:6px' }, `Para revisar: ${doubts.join(', ')} (vea la sugerencia bajo cada campo).`) : null,
     missing.length ? h('div', { class: 'miss', style: 'margin-top:6px' }, `No se encontró ${missing.join(' ni ')}: use «Marcar lote y fechas» o escríbalo.`) : null,
     st.quality?.blurry || st.quality?.shiny ? h('div', { class: 'warn-photo', style: 'margin-top:6px' }, `⚠ La foto ${st.quality.blurry ? 'parece borrosa' : 'tiene reflejos'}: los datos pueden salir mal. Para mejores resultados, tome otra foto ${st.quality.blurry ? 'más cerca y enfocando el lote (toque la pantalla para enfocar)' : 'inclinando un poco la caja para quitar el brillo'}.`) : null,
-    r.ai ? h('div', { style: 'margin-top:6px' }, r.ai.error ? `Asistente IA: ${r.ai.error}` : `Asistente IA: ${r.ai.notes.filter(n => /coinciden/.test(n) && !/no coinciden/.test(n)).length} de 3 datos confirmados por dos lecturas.`) : null,
+    aiP ? h('div', { class: 'ai-line', style: 'margin-top:6px' }, 'Asistente IA: leyendo el lote y las fechas… (puede seguir revisando el formulario)') : null,
     h('button', { type: 'button', class: 'btn small', style: 'margin-top:8px', onclick: showDiag }, 'Ver qué leyó la app')));
   toast(filled ? `Formulario llenado con ${filled} dato(s) de la foto.` : 'No se pudieron leer datos con seguridad en esta foto.', filled ? 'ok' : 'warn');
-  if (missing.length || doubts.some(d => /lote|vencim|fabric/i.test(d))) background(r, seq, missing);
+  // Primero las lecturas extra del teléfono (si faltan datos) y después se compara con la IA, en ese orden, sin bloquear.
+  (async () => {
+    if (missing.length || doubts.some(d => /lote|vencim|fabric/i.test(d))) await background(r, seq, missing);
+    if (aiP) await aiFollowUp(r, seq, aiP);
+  })();
+}
+
+// Compara la lectura de la IA con lo que hay en el formulario en ese momento (sin pisar lo que el usuario cambió):
+//  - el teléfono llenó el dato y la IA coincide → queda confirmado por dos lecturas independientes;
+//  - el teléfono lo llenó y la IA difiere → el dato se quita y quedan las dos opciones para elegir;
+//  - el dato estaba como sugerencia y la IA coincide con una opción → se llena; si no, se ofrece también lo de la IA;
+//  - el dato no estaba → se propone lo que leyó la IA.
+async function aiFollowUp(r, seq, aiP) {
+  const ai = await aiP;
+  if (seq !== readSeq || !st.photo) return;
+  const label = Object.fromEntries(FIELDS), line = $('#autofill-note .ai-line'), notes = [];
+  if (ai?.error) { notes.push(ai.error); if (line) line.textContent = 'Asistente IA: ' + ai.error; st.diag && (st.diag.ai = { error: ai.error }); return; }
+  if (ai.zoom) notes.push('(la IA leyó también la zona ampliada del lote y las fechas)');
+  const nrm = v => (v || '').toUpperCase().replace(/[\s.\-\/]/g, '');
+  let ok = 0, diff = 0, add = 0;
+  for (const f of ['lote', 'fechaFabricacion', 'vencimiento']) {
+    const a = ai[f];
+    if (!a?.valor) { notes.push(`${label[f]}: la IA no lo encontró${a?.nota ? ' (' + a.nota + ')' : ''}.`); continue; }
+    const val = f === 'lote' ? a.valor.trim() : monthToNumber(a.valor.trim());
+    const cur = input(f).value.trim(), byPhone = cur && st.origen[f] === 'ocr';
+    const sugg = [...(input(f).parentElement.querySelectorAll('.sugg button') || [])].map(b => b.textContent.replace(/^Usar «|»$/g, ''));
+    if (cur && nrm(cur) === nrm(val)) { ok++; notes.push(`${label[f]}: «${val}» — teléfono e IA coinciden.`); continue; }
+    if (byPhone) {
+      setField(f, '', 'ocr'); suggest(f, cur, 'El teléfono y la IA no coinciden: elija el que está en el empaque:', val); diff++;
+      notes.push(`${label[f]}: teléfono «${cur}» / IA «${val}» (certeza ${a.certeza}) — no coinciden, quedan las dos opciones.`);
+    } else if (cur) {
+      suggest(f, val, 'La IA leyó otro valor:'); diff++;
+      notes.push(`${label[f]}: escrito a mano «${cur}» / IA «${val}» — se respeta lo escrito; la IA queda como sugerencia.`);
+    } else if (sugg.some(s => nrm(s) === nrm(val))) {
+      setField(f, sugg.find(s => nrm(s) === nrm(val)), 'ocr'); input(f).parentElement.querySelector('.sugg')?.remove(); ok++;
+      notes.push(`${label[f]}: «${val}» — la IA coincide con una de las lecturas del teléfono: se llenó.`);
+    } else {
+      suggest(f, val, `Leído por la IA (certeza ${a.certeza}), compárelo con el empaque:`, sugg[0] || null); add++;
+      notes.push(`${label[f]}: «${val}» — solo lo leyó la IA (certeza ${a.certeza}).`);
+    }
+  }
+  chips(); scheduleDraft();
+  if (st.diag) st.diag.ai = { notes };
+  if (line) line.textContent = `Asistente IA: ${ok} dato(s) confirmados por dos lecturas` + (diff ? `, ${diff} no coinciden (elija la opción correcta)` : '') + (add ? `, ${add} propuesto(s) solo por la IA` : '') + '.';
+  if (diff || add) toast('El Asistente IA terminó: revise las opciones bajo el lote y las fechas.', 'warn', 5000);
 }
 
 // ---- Escáner en vivo: los datos leídos varias veces iguales se llevan al formulario ----
@@ -374,14 +415,11 @@ async function background(r, seq, missing) {
   note.append(line);
   const prog = (t, f) => { if (alive()) line.textContent = t + (f != null ? ` ${Math.round(f * 100)} %` : '') + ' (puede seguir revisando el formulario)'; };
   const before = new Set(r.fields.filter(x => !x.doubt).map(x => x.field)), t0 = performance.now();
-  // Datos en los que el Asistente IA y el teléfono no coinciden: quedan con sus dos opciones; las lecturas extra no los deciden.
-  const locked = r.fields.filter(x => x.alt && x.notes.some(n => /Asistente IA/.test(n)));
   let canvas, canvasW = 2600;
   try {
     canvas = await withPhoto(src => blobToCanvas(src, 2600)); canvasW = canvas.width;
     await morePasses(canvas, r, prog, alive, st.src || st.photo?.blob);
   } catch { /* se informa abajo como «no encontrado» */ } finally { freeCanvas(canvas); }
-  for (const f of locked) { r.fields = r.fields.filter(x => x.field !== f.field).concat(f); before.add(f.field); }
   if (!alive()) return;
   // Todo lo nuevo de las lecturas en segundo plano se verifica igual que la primera lectura; si no se confirma, queda dudoso.
   try { await verifyFields(r.fields.filter(x => LD.includes(x.field) && !before.has(x.field) && !x.doubt), st.src || st.photo?.blob, canvasW, t => prog(t)); } catch { /* queda dudoso */ }

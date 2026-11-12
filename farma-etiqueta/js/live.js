@@ -2,7 +2,7 @@
 // da por seguro cuando se lee igual en varias imágenes seguidas. Todo se procesa en el teléfono; nada sale del dispositivo.
 // La cámara solo se enciende cuando el usuario pulsa «Escanear en vivo» y se apaga al cerrar.
 import { h, toast, errMsg } from './ui.js';
-import { recognize } from './ocr.js';
+import { recognize, nativeOcrEngine } from './ocr.js';
 import { extractFields, extractZone } from './extract.js';
 import { readBoxes } from './boxes.js';
 import { fixLotLines } from './glyphs.js';
@@ -103,7 +103,7 @@ export async function liveScan() {
         const z = extractZone(r.lines);
         for (const f of ['lote', 'fechaFabricacion', 'vencimiento']) if (z[f] && (z[f].labelled || f !== 'lote')) vote(f, z[f].value, z[f].labelled ? 1 : 0.5);   // un lote sin etiqueta no se adivina
         // Cada 3 imágenes se buscan casillas L / F / V dentro del recuadro.
-        if (n % 3 === 0) for (const f of await readBoxes(c).catch(() => [])) if (!f.doubt) vote(f.field, f.value);
+        if (n % 3 === 0 && !(await nativeOcrEngine())) for (const f of await readBoxes(c).catch(() => [])) if (!f.doubt) vote(f.field, f.value);
         const txt = r.text.replace(/\s+/g, ' ').trim();
         raw.textContent = txt.length > 2 ? 'Texto visto: ' + txt.slice(0, 140) : 'No se ve texto en el recuadro: acerque la caja (a unos 10–15 cm), espere a que enfoque y evite reflejos.';
         render();
