@@ -252,9 +252,11 @@ function suggest(field, value, note, alt = null) {
   const use = v => h('button', { type: 'button', class: 'btn small', onclick: e => { setField(field, v, 'ocr'); chips(); scheduleDraft(); e.target.closest('.sugg').remove(); } }, `Usar «${v}»`);
   box.append(h('div', { class: 'sugg' }, h('span', {}, note + ' '), use(value), alt && alt !== value ? use(alt) : null));
 }
-export async function autoFill(tStart) {
+// srcBlob: otra cara de la misma caja (no reemplaza la foto del registro); en ese caso solo se completa lo que está vacío.
+export async function autoFill(tStart, srcBlob = null) {
   if (!st.photo) { toast('Primero seleccione una fotografía.', 'warn'); return; }
-  clearSuggestions();
+  const face = !!srcBlob, SRC = () => srcBlob || st.src || st.photo.blob;
+  if (!face) clearSuggestions();
   const note = $('#autofill-note'), label = Object.fromEntries(FIELDS);
   let r; const t0 = tStart || performance.now();
   busy('Leyendo la foto…');
@@ -263,38 +265,38 @@ export async function autoFill(tStart) {
   // Si necesita releer ampliado, usa la zona que el teléfono ubique (llega como promesa).
   const aiOn = await aiReady();
   let zoneOk; const zoneP = new Promise(res => { zoneOk = res; });
-  const aiP = aiOn ? aiConfig().then(c => aiReadLotDates(st.src || st.photo.blob, c.key, zoneP)).catch(e => ({ error: errMsg(e) })) : null;
+  const aiP = aiOn ? aiConfig().then(c => aiReadLotDates(SRC(), c.key, zoneP)).catch(e => ({ error: errMsg(e) })) : null;
   // Primera lectura sobre la copia de alta calidad (la guardada está comprimida y confunde dígitos); luego se verifican lote y fechas.
   try {
     const side = (await nativeOcrEngine()) ? 3200 : 2200;         // el lector nativo aprovecha más resolución
-    r = await withPhoto(src => analyze(src, false, side)).catch(() => analyze(st.photo.blob, false, 1800));
+    r = face ? await analyze(srcBlob, false, side) : await withPhoto(src => analyze(src, false, side)).catch(() => analyze(st.photo.blob, false, 1800));
     zoneOk(lotZone(r));
-    if (!r.res.online) await verifyFields(r.fields, st.src || st.photo.blob, r.baseW, t => busy(t));
+    if (!r.res.online) await verifyFields(r.fields, SRC(), r.baseW, t => busy(t));
   }
   catch (e) {
     zoneOk(null);
-    if (aiP) { aiFollowUp(r || { fields: [] }, seq, aiP); }
+    if (aiP) { aiFollowUp(r || { fields: [] }, seq, aiP, new Set()); }
     busy(false); note.hidden = false; note.className = 'banner danger';
     note.textContent = 'No se pudo leer la foto: ' + errMsg(e) + ' Puede volver a intentarlo o escribir los datos.';
     return;
   } finally { busy(false); }
   const { res, onlineErr } = r, fields = [...r.fields], secs = ((performance.now() - t0) / 1000).toFixed(1);
   st.diag = { quality: st.quality, engine: res.online ? 'OCR.space (en línea)' : ENGINE_NAME[res.engine || ''], secs, text: res.text, fields: r.fields, ai: aiP ? { notes: ['Leyendo…'] } : null };
-  let filled = 0; const doubts = [];
+  let filled = 0; const doubts = [], filledNow = new Set();
   for (const f of fields) {
     const cur = input(f.field).value.trim(), src = st.origen[f.field];
-    const mine = cur && src !== 'ocr';          // lo escrito por el usuario nunca se reemplaza
+    const mine = cur && (face || src !== 'ocr');   // lo escrito por el usuario nunca se reemplaza; con otra cara, nada ya lleno
     if (cur === f.value) continue;
     const weak = f.doubt || (f.conf != null && f.conf < 60);
     if (weak || mine) { suggest(f.field, f.value, f.alt ? 'Dos lecturas posibles, elija la que coincide con el empaque:' : weak ? 'Lectura dudosa, verifíquela:' : 'En la foto se leyó otro valor:', f.alt); doubts.push(label[f.field]); continue; }
-    setField(f.field, f.value, 'ocr');
+    setField(f.field, f.value, 'ocr'); filledNow.add(f.field);
     filled++;
   }
   chips(); scheduleDraft();
   const missing = ['lote', 'vencimiento'].filter(k => !input(k).value.trim() && !fields.some(x => x.field === k)).map(k => label[k].toLowerCase());
   note.hidden = false; note.className = 'banner' + (filled ? '' : ' danger');
   note.replaceChildren(h('div', {},
-    h('b', {}, filled ? `Se llenaron ${filled} campo(s) desde la foto` : 'No se pudo llenar ningún campo con seguridad'),
+    h('b', {}, face ? (filled ? `Otra cara de la caja: se completaron ${filled} campo(s)` : 'Otra cara de la caja: no se agregaron datos nuevos con seguridad') : filled ? `Se llenaron ${filled} campo(s) desde la foto` : 'No se pudo llenar ningún campo con seguridad'),
     ` (${res.online ? 'lectura en línea' : 'lectura en el teléfono con ' + ENGINE_NAME[res.engine || '']}, ${secs} s${onlineErr ? '; el servicio en línea no respondió' : ''}). Compruebe que coincidan con el empaque antes de guardar.`,
     doubts.length ? h('div', { style: 'margin-top:6px' }, `Para revisar: ${doubts.join(', ')} (vea la sugerencia bajo cada campo).`) : null,
     missing.length ? h('div', { class: 'miss', style: 'margin-top:6px' }, `No se encontró ${missing.join(' ni ')}: use «Marcar lote y fechas» o escríbalo.`) : null,
@@ -304,8 +306,8 @@ export async function autoFill(tStart) {
   toast(filled ? `Formulario llenado con ${filled} dato(s) de la foto.` : 'No se pudieron leer datos con seguridad en esta foto.', filled ? 'ok' : 'warn');
   // Primero las lecturas extra del teléfono (si faltan datos) y después se compara con la IA, en ese orden, sin bloquear.
   (async () => {
-    if (missing.length || doubts.some(d => /lote|vencim|fabric/i.test(d))) await background(r, seq, missing);
-    if (aiP) await aiFollowUp(r, seq, aiP);
+    if (missing.length || doubts.some(d => /lote|vencim|fabric/i.test(d))) await background(r, seq, missing, srcBlob, filledNow);
+    if (aiP) await aiFollowUp(r, seq, aiP, filledNow);
   })();
 }
 
@@ -314,7 +316,7 @@ export async function autoFill(tStart) {
 //  - el teléfono lo llenó y la IA difiere → el dato se quita y quedan las dos opciones para elegir;
 //  - el dato estaba como sugerencia y la IA coincide con una opción → se llena; si no, se ofrece también lo de la IA;
 //  - el dato no estaba → se propone lo que leyó la IA.
-async function aiFollowUp(r, seq, aiP) {
+async function aiFollowUp(r, seq, aiP, filledNow = new Set()) {
   const ai = await aiP;
   if (seq !== readSeq || !st.photo) return;
   const label = Object.fromEntries(FIELDS), line = $('#autofill-note .ai-line'), notes = [];
@@ -326,7 +328,7 @@ async function aiFollowUp(r, seq, aiP) {
     const a = ai[f];
     if (!a?.valor) { notes.push(`${label[f]}: la IA no lo encontró${a?.nota ? ' (' + a.nota + ')' : ''}.`); continue; }
     const val = f === 'lote' ? a.valor.trim() : monthToNumber(a.valor.trim());
-    const cur = input(f).value.trim(), byPhone = cur && st.origen[f] === 'ocr';
+    const cur = input(f).value.trim(), byPhone = cur && filledNow.has(f) && st.origen[f] === 'ocr';
     const sugg = [...(input(f).parentElement.querySelectorAll('.sugg button') || [])].map(b => b.textContent.replace(/^Usar «|»$/g, ''));
     if (cur && nrm(cur) === nrm(val)) { ok++; notes.push(`${label[f]}: «${val}» — teléfono e IA coinciden.`); continue; }
     if (byPhone) {
@@ -343,10 +345,30 @@ async function aiFollowUp(r, seq, aiP) {
       notes.push(`${label[f]}: «${val}» — solo lo leyó la IA (certeza ${a.certeza}).`);
     }
   }
+  // Datos del producto (nombre, principio activo, concentración…): letra grande, menos riesgo. Si el campo está vacío y la IA
+  // lo lee con certeza alta, se llena; si no, queda como sugerencia. Lo que ya tiene valor nunca se cambia.
+  let prod = 0;
+  for (const [f, d] of Object.entries(ai.producto || {})) {
+    const el = input(f); if (!el || !d?.valor) continue;
+    const val = d.valor.trim(), cur = el.value.trim();
+    if (cur && nrm(cur) === nrm(val)) continue;
+    if (cur) { if (!el.parentElement.querySelector('.sugg')) suggest(f, val, 'La IA leyó:'); continue; }
+    if (d.certeza === 'alta') { setField(f, val, 'ocr'); prod++; notes.push(`${label[f]}: «${val}» — leído por la IA.`); }
+    else if (!el.parentElement.querySelector('.sugg')) suggest(f, val, `Leído por la IA (certeza ${d.certeza}):`);
+  }
   chips(); scheduleDraft();
   if (st.diag) st.diag.ai = { notes };
-  if (line) line.textContent = `Asistente IA: ${ok} dato(s) confirmados por dos lecturas` + (diff ? `, ${diff} no coinciden (elija la opción correcta)` : '') + (add ? `, ${add} propuesto(s) solo por la IA` : '') + '.';
+  if (line) line.textContent = `Asistente IA: ${ok} dato(s) de lote y fechas confirmados por dos lecturas` + (prod ? `, ${prod} dato(s) del producto completados` : '') + (diff ? `, ${diff} no coinciden (elija la opción correcta)` : '') + (add ? `, ${add} propuesto(s) solo por la IA` : '') + '.';
   if (diff || add) toast('El Asistente IA terminó: revise las opciones bajo el lote y las fechas.', 'warn', 5000);
+}
+
+// ---- Otra cara de la misma caja: se lee completa (teléfono + IA) y solo completa lo que falta ----
+async function addFace(file) {
+  let p;
+  try { busy('Preparando la otra cara de la caja…'); p = await processFile(file, () => {}); }
+  catch (e) { toast(errMsg(e), 'err', 6500); return; }
+  finally { busy(false); }
+  await autoFill(performance.now(), p.hi || p.blob);
 }
 
 // ---- Escáner en vivo: los datos leídos varias veces iguales se llevan al formulario ----
@@ -408,7 +430,7 @@ async function showDiag() {
 
 // Busca lote y fechas sin bloquear la pantalla: el usuario puede revisar y escribir mientras tanto.
 let readSeq = 0;
-async function background(r, seq, missing) {
+async function background(r, seq, missing, srcBlob = null, filledNow = new Set()) {
   const note = $('#autofill-note'), label = Object.fromEntries(FIELDS), alive = () => seq === readSeq && !!st.photo;
   const miss = note.querySelector('.miss'); if (miss) miss.hidden = true;
   const line = h('div', { class: 'bg-read', style: 'margin-top:6px' }, 'Buscando lote y fechas con lecturas adicionales… Puede seguir revisando el formulario.');
@@ -417,17 +439,17 @@ async function background(r, seq, missing) {
   const before = new Set(r.fields.filter(x => !x.doubt).map(x => x.field)), t0 = performance.now();
   let canvas, canvasW = 2600;
   try {
-    canvas = await withPhoto(src => blobToCanvas(src, 2600)); canvasW = canvas.width;
-    await morePasses(canvas, r, prog, alive, st.src || st.photo?.blob);
+    canvas = srcBlob ? await blobToCanvas(srcBlob, 2600) : await withPhoto(src => blobToCanvas(src, 2600)); canvasW = canvas.width;
+    await morePasses(canvas, r, prog, alive, srcBlob || st.src || st.photo?.blob);
   } catch { /* se informa abajo como «no encontrado» */ } finally { freeCanvas(canvas); }
   if (!alive()) return;
   // Todo lo nuevo de las lecturas en segundo plano se verifica igual que la primera lectura; si no se confirma, queda dudoso.
-  try { await verifyFields(r.fields.filter(x => LD.includes(x.field) && !before.has(x.field) && !x.doubt), st.src || st.photo?.blob, canvasW, t => prog(t)); } catch { /* queda dudoso */ }
+  try { await verifyFields(r.fields.filter(x => LD.includes(x.field) && !before.has(x.field) && !x.doubt), srcBlob || st.src || st.photo?.blob, canvasW, t => prog(t)); } catch { /* queda dudoso */ }
   if (!alive()) return;
   const found = [];
   for (const f of r.fields.filter(x => LD.includes(x.field) && !before.has(x.field))) {
     if (input(f.field).value.trim()) continue;                       // nunca pisa lo que ya escribió o aceptó el usuario
-    if (f.doubt) suggest(f.field, f.value, f.alt ? 'Dos lecturas posibles, elija la que coincide con el empaque:' : 'Lectura dudosa, verifíquela:', f.alt); else { setField(f.field, f.value, 'ocr'); found.push(label[f.field]); }
+    if (f.doubt) suggest(f.field, f.value, f.alt ? 'Dos lecturas posibles, elija la que coincide con el empaque:' : 'Lectura dudosa, verifíquela:', f.alt); else { setField(f.field, f.value, 'ocr'); filledNow.add(f.field); found.push(label[f.field]); }
   }
   chips(); scheduleDraft();
   const hasSugg = k => !!input(k).parentElement.querySelector('.sugg');
@@ -661,7 +683,7 @@ export function initForm() {
       e.target.value = '';                                   // permite volver a elegir el mismo archivo
       const a = after; after = null;
       if (!file) return;
-      if (a === 'extra') { if (st.photo) await runZone(file); return; }
+      if (a === 'extra') { if (st.photo) await addFace(file); else await setPhotoFromFile(file, null); return; }
       if (a && st.dirty && !(await confirmDlg('Formulario con datos', 'El formulario tiene datos sin guardar. ¿Usar esta fotografía en ese mismo registro?', 'Usar aquí'))) return;
       await setPhotoFromFile(file, a);
     });

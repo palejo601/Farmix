@@ -129,7 +129,7 @@ const EAN = '7701234567897';
   // Zona marcada en otra fotografía: se amplía, se lee varias veces y se confirma viendo la imagen
   const infoBefore = await page.locator('#photo-info').innerText();
   const dragZone = async (x0, y0, x1, y1) => { const b = await page.locator('.zone-wrap').boundingBox(); await page.mouse.move(b.x + b.width * x0, b.y + b.height * y0); await page.mouse.down(); await page.mouse.move(b.x + b.width * x1, b.y + b.height * y1, { steps: 6 }); await page.mouse.up(); };
-  await choose('#photo-box label[data-after=extra]', F.pack); await page.waitForSelector('.zone-wrap img');
+  await page.click('#btn-zone'); await page.waitForSelector('.zone-wrap img');
   await page.waitForFunction(() => document.querySelector('.zone-wrap img').naturalWidth > 0);
   await dragZone(0.03, 0.70, 0.61, 0.92); await btn('Leer zona marcada').click();
   await page.waitForSelector('.zone-shot', { timeout: 180000 }); await waitIdle();
@@ -350,6 +350,18 @@ const EAN = '7701234567897';
     return { ok, wrong, none };
   });
   check('B y 8 por la forma: nunca se confunden (si la forma no es clara, queda para revisión)', b8.wrong === 0 && b8.ok >= b8.none * 2, JSON.stringify(b8));
+  console.log('\nOtra cara de la caja');
+  await page.click('#btn-form-clear'); if (await btn('Descartar').count()) await btn('Descartar').click();
+  await choose('#photo-empty label[for=pick-gallery]', F.pack2);
+  await page.waitForSelector('#autofill-note:not([hidden])', { timeout: 180000 }); await waitIdle();
+  await page.waitForFunction(() => { const b = document.querySelector('#autofill-note .bg-read'); return !b || /No se encontró|Encontrado|Compare|Lectura dudosa/.test(b.textContent); }, null, { timeout: 180000 });
+  await page.fill('#f-nombre', 'Nombre escrito a mano');
+  const info1 = await page.locator('#photo-info').innerText();
+  await choose('#photo-box label[data-after=extra]', F.pack);
+  await page.waitForFunction(() => /Otra cara de la caja/.test(document.querySelector('#autofill-note')?.textContent || ''), null, { timeout: 180000 }); await waitIdle();
+  const face = { lote: await page.inputValue('#f-lote'), venc: await page.inputValue('#f-vencimiento'), nombre: await page.inputValue('#f-nombre'), info: await page.locator('#photo-info').innerText() };
+  check('Otra cara de la caja: completa lote y vencimiento que faltaban, sin cambiar lo escrito ni la foto del registro', face.lote === 'AB12345' && face.venc === '05/2027' && face.nombre === 'Nombre escrito a mano' && face.info === info1, JSON.stringify(face));
+  await page.click('#btn-form-clear'); await btn('Descartar').click();
   console.log('\nEscáner en vivo (cámara simulada)');
   await page.evaluate(() => {
     const c = document.createElement('canvas'); c.width = 720; c.height = 1280; const x = c.getContext('2d');
@@ -413,7 +425,7 @@ const EAN = '7701234567897';
   let aiReq = null;
   await page.route('https://api.anthropic.com/**', async route => {
     aiReq = { headers: await route.request().allHeaders(), body: JSON.parse(route.request().postData() || '{}') };
-    const out = { lote: { valor: '5280924', etiqueta: 'Lote:', certeza: 'alta', nota: '' }, fechaFabricacion: { valor: 'SEP/2024', etiqueta: 'F.F.:', certeza: 'alta', nota: '' }, vencimiento: { valor: 'SEP/2027', etiqueta: 'F.V.:', certeza: 'media', nota: '' }, zona: { x0: 0.5, y0: 0.2, x1: 0.8, y1: 0.4 } };
+    const out = { lote: { valor: '5280924', etiqueta: 'Lote:', certeza: 'alta', nota: '' }, fechaFabricacion: { valor: 'SEP/2024', etiqueta: 'F.F.:', certeza: 'alta', nota: '' }, vencimiento: { valor: 'SEP/2027', etiqueta: 'F.V.:', certeza: 'media', nota: '' }, zona: { x0: 0.5, y0: 0.2, x1: 0.8, y1: 0.4 }, producto: { nombre: { valor: 'CALMADOL', certeza: 'alta' }, principioActivo: { valor: 'Acetaminofén', certeza: 'alta' }, concentracion: { valor: '500 mg', certeza: 'alta' }, formaFarmaceutica: { valor: null, certeza: 'baja' }, presentacion: { valor: null, certeza: 'baja' }, laboratorio: { valor: 'Laboratorios Andinos S.A.', certeza: 'alta' }, registroSanitario: { valor: null, certeza: 'baja' } } };
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'msg_test', type: 'message', role: 'assistant', model: 'claude-opus-5-5', content: [{ type: 'text', text: JSON.stringify(out) }], stop_reason: 'end_turn', stop_details: null, usage: { input_tokens: 1500, output_tokens: 120 } }) });
   });
   await page.evaluate(() => new Promise(r => { const q = indexedDB.open('farma-etiqueta'); q.onsuccess = () => { const t = q.result.transaction('kv', 'readwrite'); t.objectStore('kv').put({ key: 'sk-ant-prueba', enabled: true }, 'aiAssist'); t.oncomplete = () => { q.result.close(); r(); }; }; }));
@@ -428,6 +440,7 @@ const EAN = '7701234567897';
   check('Asistente IA: se llama a Claude con la foto, el modelo por defecto y salida estructurada', aiReq && aiReq.body.model === 'claude-opus-5-5' && aiImg?.source?.media_type === 'image/jpeg' && !!aiReq.body.output_config?.format && /sk-ant-prueba/.test(aiReq.headers['authorization'] || aiReq.headers['x-api-key'] || ''), aiReq ? `${aiReq.body.model} · imagen ${Math.round((aiImg?.source?.data?.length || 0) * 0.75 / 1024)} KB` : 'sin llamada');
   check('Asistente IA: lote y fabricación coinciden con el teléfono → se llenan; el vencimiento difiere → quedan las dos opciones', ai.lote === '5280924' && ai.fechaFabricacion === '09/2024' && ai.vencimiento === '' && aiSug.some(t => /09\/2026/.test(t)) && aiSug.some(t => /09\/2027/.test(t)), JSON.stringify(ai) + ' · ' + aiSug.join(' | '));
   const nImg = (aiReq?.body?.messages?.[0]?.content || []).filter(c => c.type === 'image').length;
+  check('Asistente IA: completa también datos del producto que el teléfono no leyó (principio activo)', await page.inputValue('#f-principioActivo') === 'Acetaminofén', await page.inputValue('#f-principioActivo'));
   check('Asistente IA: no bloquea la pantalla mientras lee (el formulario se llena antes con el teléfono)', busyFree);
   check('Asistente IA: recibe la foto completa y la zona del lote ampliada', nImg === 2, nImg + ' imágenes');
   const q = await page.evaluate(async () => {
@@ -450,8 +463,8 @@ const EAN = '7701234567897';
   await page.route('https://api.anthropic.com/**', async route => {
     calls++; const body = JSON.parse(route.request().postData() || '{}'), imgs = body.messages[0].content.filter(c => c.type === 'image').length;
     const C = (valor, certeza) => ({ valor, etiqueta: null, certeza, nota: valor ? '' : 'muy pequeño' });
-    const out = imgs === 1 ? { lote: C(null, 'baja'), fechaFabricacion: C(null, 'baja'), vencimiento: C('11/2026', 'media'), zona: { x0: 0.52, y0: 0.4, x1: 0.66, y1: 0.47 } }
-                           : { lote: C('S16057', 'alta'), fechaFabricacion: C('11/2024', 'alta'), vencimiento: C('11/2026', 'alta'), zona: null };
+    const out = imgs === 1 ? { lote: C(null, 'baja'), fechaFabricacion: C(null, 'baja'), vencimiento: C('11/2026', 'media'), zona: { x0: 0.52, y0: 0.4, x1: 0.66, y1: 0.47 }, producto: { nombre: { valor: 'CALMADOL', certeza: 'alta' }, principioActivo: { valor: 'Acetaminofén', certeza: 'alta' }, concentracion: { valor: '500 mg', certeza: 'alta' }, formaFarmaceutica: { valor: null, certeza: 'baja' }, presentacion: { valor: null, certeza: 'baja' }, laboratorio: { valor: 'Laboratorios Andinos S.A.', certeza: 'alta' }, registroSanitario: { valor: null, certeza: 'baja' } } }
+                           : { lote: C('S16057', 'alta'), fechaFabricacion: C('11/2024', 'alta'), vencimiento: C('11/2026', 'alta'), zona: null, producto: { nombre: { valor: 'CALMADOL', certeza: 'alta' }, principioActivo: { valor: 'Acetaminofén', certeza: 'alta' }, concentracion: { valor: '500 mg', certeza: 'alta' }, formaFarmaceutica: { valor: null, certeza: 'baja' }, presentacion: { valor: null, certeza: 'baja' }, laboratorio: { valor: 'Laboratorios Andinos S.A.', certeza: 'alta' }, registroSanitario: { valor: null, certeza: 'baja' } } };
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'msg_' + calls, type: 'message', role: 'assistant', model: 'claude-opus-5-5', content: [{ type: 'text', text: JSON.stringify(out) }], stop_reason: 'end_turn', stop_details: null, usage: { input_tokens: 2000, output_tokens: 150 } }) });
   });
   const loc = await page.evaluate(async () => {
