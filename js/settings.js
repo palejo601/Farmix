@@ -3,8 +3,9 @@ import { $, h, toast, confirmDlg, fmtBytes, errMsg, isNative, nativePlatform } f
 const appName = () => nativePlatform() === 'ios' ? 'App iPhone / iPad' : 'App Android';
 import * as db from './db.js';
 import { initOCR, recognizeOnline, OCR_BASE, OCR_CORES, nativeOcrEngine, ENGINE_NAME } from './ocr.js';
+import { aiConfig, aiTest, AI_MODEL } from './ai.js';
 
-export const APP_VERSION = '1.14.1';
+export const APP_VERSION = '1.15.0';
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const secure = () => self.isSecureContext && 'serviceWorker' in navigator && 'caches' in self;
 let installEvt = null, swReg = null;
@@ -38,12 +39,13 @@ export async function refreshStatus() {
   const on = await db.kvGet('onlineOcr').catch(() => null), onOK = !!(on?.enabled && on.key);
   const [ocr, n, est, persisted] = await Promise.all([ocrOffline(), db.countRecords().catch(() => null),
     navigator.storage?.estimate?.().catch(() => null), navigator.storage?.persisted?.().catch(() => false)]);
-  const eng = await nativeOcrEngine();
+  const eng = await nativeOcrEngine(), ai = await aiConfig();
   const sw = isNative() ? 'Activo' : secure() ? (navigator.serviceWorker.controller ? 'Activo' : 'Instalándose…') : 'No disponible';
   const rows = [
     ['Conexión', navigator.onLine ? 'En línea' : 'Sin conexión', navigator.onLine ? '' : 'warn'],
     ['Modo de uso', mode(), secure() || isNative() ? '' : 'bad'],
     ['Aplicación sin conexión', sw, sw === 'Activo' ? '' : 'warn'],
+    ['Asistente IA', ai.enabled && ai.key ? (navigator.onLine ? 'Activo (Claude, ' + AI_MODEL + ')' : 'Configurado; sin conexión no se usa') : 'Desactivado', ai.enabled && ai.key ? '' : 'warn'],
     ['Lector de texto', eng ? ENGINE_NAME[eng] + ' (nativo del teléfono, sin internet)' : 'Tesseract (versión web)', ''],
     ['Recursos OCR', ocr ? 'Disponibles sin conexión' : 'Pendientes (requieren internet la primera vez)', ocr ? '' : 'warn'],
     ['Reconocimiento en línea', onOK ? (navigator.onLine ? 'Activo (OCR.space)' : 'Configurado; sin conexión se usa el OCR local') : 'No configurado (solo OCR local)', onOK ? '' : 'warn'],
@@ -132,6 +134,23 @@ export function initSettings() {
       if (/2468/.test(r.text)) { $('#on-enabled').checked = true; await saveOnline(); toast('La clave funciona. Servicio en línea activado.', 'ok', 5000); }
       else toast('El servicio respondió, pero no leyó la imagen de prueba. Intente de nuevo.', 'warn', 6000);
     } catch (err) { toast('No se pudo usar la clave: ' + errMsg(err) + '.', 'err', 7000); }
+    finally { e.target.disabled = false; }
+  });
+  // Asistente IA
+  aiConfig().then(c => { $('#ai-key').value = c.key || ''; $('#ai-enabled').checked = !!c.enabled; });
+  const saveAI = async () => {
+    const key = $('#ai-key').value.trim(), enabled = $('#ai-enabled').checked;
+    if (enabled && !key) { toast('Pegue primero la clave de Anthropic para activar el Asistente IA.', 'warn'); $('#ai-enabled').checked = false; return false; }
+    await db.kvSet('aiAssist', { key, enabled }); refreshStatus(); return true;
+  };
+  $('#ai-save').addEventListener('click', async () => { if (await saveAI()) toast($('#ai-enabled').checked ? 'Asistente IA activado: con internet leerá el lote y las fechas junto al lector del teléfono.' : 'Guardado. El Asistente IA está desactivado.', 'ok', 5000); });
+  $('#ai-test').addEventListener('click', async e => {
+    const key = $('#ai-key').value.trim();
+    if (!key) { toast('Pegue primero la clave.', 'warn'); return; }
+    if (!navigator.onLine) { toast('Sin conexión: no se puede probar la clave ahora.', 'warn'); return; }
+    e.target.disabled = true;
+    try { await aiTest(key); $('#ai-enabled').checked = true; await saveAI(); toast('La clave funciona. Asistente IA activado.', 'ok', 5000); }
+    catch (err) { toast(errMsg(err), 'err', 8000); }
     finally { e.target.disabled = false; }
   });
   $('#cf-persist').addEventListener('click', async () => {

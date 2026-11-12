@@ -1,6 +1,6 @@
 # Resultado de las pruebas automáticas
 
-Ejecución: 2026-11-12 03:37 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
+Ejecución: 2026-11-12 03:56 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
 
 | Estado | Comprobación | Detalle |
 |---|---|---|
@@ -87,9 +87,11 @@ Ejecución: 2026-11-12 03:37 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Nativo: etiquetas y valores en columnas separadas (Lote: / F.F.: / F.V.:) | {"fechaFabricacion":"09/2024","vencimiento":"09/2026","lote":"5280924"} |
 | OK | Nativo: «L: S16057 · F: 11/2024 · V: 11/2026» | {"fechaFabricacion":"11/2024","vencimiento":"11/2026","lote":"S16057"} |
 | OK | Nativo (simulado): la app usa el lector del teléfono, verifica y llena lote y fechas | {"nombre":"CALMADOL","lote":"5280924","fechaFabricacion":"09/2024","vencimiento":"09/2026"} · 7 lecturas · Se llenaron 4 campo(s) desde la foto |
-| OK | «Ver qué leyó la app»: muestra el lector usado, el texto leído y la decisión sobre el lote | FARMA-ETIQUETA 1.14.0 · lector: Google ML Kit · 0.1 s \|  \| Número de lote: «5280924» — seguro (llenado) |
+| OK | «Ver qué leyó la app»: muestra el lector usado, el texto leído y la decisión sobre el lote | FARMA-ETIQUETA 1.14.1 · lector: Google ML Kit · 0.1 s \|  \| Número de lote: «5280924» — seguro (llenado) |
+| OK | Asistente IA: se llama a Claude con la foto, el modelo por defecto y salida estructurada | claude-opus-5-5 · imagen 102 KB |
+| OK | Asistente IA: lote y fabricación coinciden con el teléfono → se llenan; el vencimiento difiere → quedan las dos opciones | {"lote":"5280924","fechaFabricacion":"09/2024","vencimiento":""} · Usar «09/2026» \| Usar «09/2027» |
 | OK | Ninguna pantalla se desborda horizontalmente en teléfono (412 px) |  |
 | OK | Botones con altura táctil ≥ 40 px | 0 pequeños |
 | OK | Sin errores de JavaScript durante toda la sesión |  |
 
-**87 de 87 correctas.**
+**89 de 89 correctas.**

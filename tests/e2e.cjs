@@ -408,6 +408,25 @@ const EAN = '7701234567897';
   const diag = await page.locator('.modal pre.raw').innerText();
   check('«Ver qué leyó la app»: muestra el lector usado, el texto leído y la decisión sobre el lote', /lector: Google ML Kit/.test(diag) && /Número de lote: «5280924»/.test(diag) && /Texto leído/.test(diag), diag.split('\n').slice(0, 3).join(' | '));
   await btn('Cerrar').click();
+  await btn('Cerrar').count() && await btn('Cerrar').click();
+  // Asistente IA (Claude) con la API simulada: aquí no se hace ninguna llamada real.
+  let aiReq = null;
+  await page.route('https://api.anthropic.com/**', async route => {
+    aiReq = { headers: await route.request().allHeaders(), body: JSON.parse(route.request().postData() || '{}') };
+    const out = { lote: { valor: '5280924', etiqueta: 'Lote:', certeza: 'alta', nota: '' }, fechaFabricacion: { valor: 'SEP/2024', etiqueta: 'F.F.:', certeza: 'alta', nota: '' }, vencimiento: { valor: 'SEP/2027', etiqueta: 'F.V.:', certeza: 'media', nota: '' } };
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'msg_test', type: 'message', role: 'assistant', model: 'claude-opus-5-5', content: [{ type: 'text', text: JSON.stringify(out) }], stop_reason: 'end_turn', stop_details: null, usage: { input_tokens: 1500, output_tokens: 120 } }) });
+  });
+  await page.evaluate(() => new Promise(r => { const q = indexedDB.open('farma-etiqueta'); q.onsuccess = () => { const t = q.result.transaction('kv', 'readwrite'); t.objectStore('kv').put({ key: 'sk-ant-prueba', enabled: true }, 'aiAssist'); t.oncomplete = () => { q.result.close(); r(); }; }; }));
+  await page.click('#btn-form-clear'); if (await btn('Descartar').count()) await btn('Descartar').click();
+  await choose('#photo-empty label[for=pick-gallery]', F.pack);
+  await page.waitForSelector('#autofill-note:not([hidden])', { timeout: 60000 }); await waitIdle();
+  const ai = {}; for (const k of ['lote', 'fechaFabricacion', 'vencimiento']) ai[k] = await page.inputValue('#f-' + k);
+  const aiSug = await page.locator('#f-vencimiento').locator('xpath=..').locator('.sugg button').allInnerTexts();
+  const aiImg = aiReq?.body?.messages?.[0]?.content?.find(c => c.type === 'image');
+  check('Asistente IA: se llama a Claude con la foto, el modelo por defecto y salida estructurada', aiReq && aiReq.body.model === 'claude-opus-5-5' && aiImg?.source?.media_type === 'image/jpeg' && !!aiReq.body.output_config?.format && /sk-ant-prueba/.test(aiReq.headers['authorization'] || aiReq.headers['x-api-key'] || ''), aiReq ? `${aiReq.body.model} · imagen ${Math.round((aiImg?.source?.data?.length || 0) * 0.75 / 1024)} KB` : 'sin llamada');
+  check('Asistente IA: lote y fabricación coinciden con el teléfono → se llenan; el vencimiento difiere → quedan las dos opciones', ai.lote === '5280924' && ai.fechaFabricacion === '09/2024' && ai.vencimiento === '' && aiSug.some(t => /09\/2026/.test(t)) && aiSug.some(t => /09\/2027/.test(t)), JSON.stringify(ai) + ' · ' + aiSug.join(' | '));
+  await page.unroute('https://api.anthropic.com/**');
+  await page.evaluate(() => new Promise(r => { const q = indexedDB.open('farma-etiqueta'); q.onsuccess = () => { const t = q.result.transaction('kv', 'readwrite'); t.objectStore('kv').delete('aiAssist'); t.oncomplete = () => { q.result.close(); r(); }; }; }));
   await page.click('#btn-form-clear'); if (await btn('Descartar').count()) await btn('Descartar').click();
   await page.evaluate(() => sessionStorage.removeItem('mockOcr')); await page.reload(); await page.waitForTimeout(500);
   await setAuto(false);
