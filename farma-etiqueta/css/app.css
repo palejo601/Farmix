@@ -212,3 +212,9 @@ body.no-scroll{overflow:hidden}
 
 /* Modo «escanear lote»: recuadro bajo y ancho, para el bloque de lote y fechas */
 .live-guide.lot{left:8%;right:8%;top:36%;height:20%}
+
+/* Rótulos por servicio */
+.grid.actions.home3 .tile.wide{grid-column:1/-1}
+.sv-group h3{margin:10px 0 6px;font-size:1rem}
+.sv-buttons{display:flex;flex-wrap:wrap;gap:8px}
+.seg{display:flex;gap:6px;margin-top:6px}

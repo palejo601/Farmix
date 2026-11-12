@@ -9,7 +9,7 @@ let items = [];           // [{rec, qty}]
 let cfg = {
   size: 1, w: 70, h: 50, border: true,
   fields: { servicio: true, nombre: true, principioActivo: true, concentracion: true, presentacion: false, lote: true, vencimiento: true, laboratorio: false, registroSanitario: true, codigoBarras: true, condiciones: false, ubicacion: false, cantidad: true },
-  paper: 'A4', orient: 'v', cpw: 210, cph: 297, cols: 2, rows: 5, mt: 10, ml: 10, mb: 10, mr: 10, gh: 3, gv: 3,
+  lorient: 'h', paper: 'A4', orient: 'v', cpw: 210, cph: 297, cols: 2, rows: 5, mt: 10, ml: 10, mb: 10, mr: 10, gh: 3, gv: 3,
 };
 let job = null;           // resultado del último cálculo: {sh, pages:[[layout…]], total, error}
 const num = (id, def, min = 0) => { const v = parseFloat($('#' + id).value.replace(',', '.')); return Number.isFinite(v) && v >= min ? v : def; };
@@ -38,6 +38,10 @@ function readCfg() {
     cfg.w = Math.max(10, +(s.pw - cfg.ml - cfg.mr).toFixed(1)); cfg.h = Math.max(8, +(s.ph - cfg.mt - cfg.mb).toFixed(1));
     $('#lb-w').value = cfg.w; $('#lb-h').value = cfg.h; $('#sh-cols').value = $('#sh-rows').value = 1;
   }
+  // Orientación del rótulo: horizontal = más ancho que alto; vertical = más alto que ancho (en hoja completa, gira la hoja).
+  if (cfg.size >= 0 && (cfg.lorient === 'v') !== (cfg.h > cfg.w)) { [cfg.w, cfg.h] = [cfg.h, cfg.w]; $('#lb-w').value = cfg.w; $('#lb-h').value = cfg.h; }
+  const vert = cfg.size === FULL ? cfg.orient === 'h' ? false : true : cfg.h > cfg.w;
+  $('#lb-or-h').classList.toggle('primary', !vert); $('#lb-or-v').classList.toggle('primary', vert);
   $('#lb-w').disabled = $('#lb-h').disabled = cfg.size !== -1;
   $('#lb-full-hint').hidden = cfg.size !== FULL;
 }
@@ -50,7 +54,7 @@ function writeCfg() {
 
 function renderItems() {
   $('#lb-items').replaceChildren(...(items.length ? items.map((it, i) => h('div', { class: 'item' },
-    h('div', {}, h('b', {}, it.rec.nombre), it.rec.lote ? h('div', { class: 'muted small' }, 'Lote ' + it.rec.lote) : null),
+    h('div', {}, h('b', {}, it.rec.nombre || 'Rótulo del servicio: ' + it.rec.servicio), it.rec.lote ? h('div', { class: 'muted small' }, 'Lote ' + it.rec.lote) : null),
     h('input', { type: 'number', min: 1, max: MAX_LABELS, step: 1, value: it.qty, inputMode: 'numeric', 'aria-label': 'Cantidad de rótulos de ' + it.rec.nombre,
       oninput: e => { it.qty = Math.max(1, Math.min(MAX_LABELS, Math.round(+e.target.value) || 1)); update(); } }),
     h('button', { class: 'btn small danger-outline', 'aria-label': 'Quitar ' + it.rec.nombre, onclick: () => { items.splice(i, 1); renderItems(); update(); } }, 'Quitar')))
@@ -104,6 +108,9 @@ async function pick() {
   renderItems(); update();
 }
 
+// Desde «Rótulos por servicio»: reemplaza la lista por los productos de ese servicio (o el rótulo con su nombre).
+export async function setLabelItems(list) { await libs(); items = list; location.hash = '#rotulos'; }
+
 export async function addLabelFor(id) {
   const rec = await db.getRecord(id); if (!rec) return;
   await libs();
@@ -118,7 +125,7 @@ export async function showLabels() {
   await libs();
   // refrescar datos por si se editaron o eliminaron registros
   const all = new Map((await db.allRecords()).map(r => [r.id, r]));
-  items = items.filter(it => all.has(it.rec.id)).map(it => ({ ...it, rec: all.get(it.rec.id) }));
+  items = items.filter(it => it.rec.servicioSolo || all.has(it.rec.id)).map(it => it.rec.servicioSolo ? it : { ...it, rec: all.get(it.rec.id) });
   renderItems(); update();
 }
 
@@ -274,6 +281,13 @@ export async function initLabels() {
   $('#v-rotulos').addEventListener('input', e => { if (!e.target.closest('#lb-items')) update(); });
   $('#lb-add').addEventListener('click', pick);
   $('#sh-auto').addEventListener('click', () => { readCfg(); const m = maxFit(sheet(), cfg.w, cfg.h); $('#sh-cols').value = m.cols; $('#sh-rows').value = m.rows; update(); });
+  const orientTo = o => {
+    const sz = +$('#lb-size').value;
+    if (sz === FULL) $('#sh-orient').value = o;
+    else { cfg.lorient = o; if (sz === -1) { const w = +$('#lb-w').value, hh = +$('#lb-h').value; if ((o === 'v') !== (hh > w)) { $('#lb-w').value = hh; $('#lb-h').value = w; } } }
+    readCfg(); const m = maxFit(sheet(), cfg.w, cfg.h); $('#sh-cols').value = m.cols; $('#sh-rows').value = m.rows; update();
+  };
+  $('#lb-or-h').addEventListener('click', () => orientTo('h')); $('#lb-or-v').addEventListener('click', () => orientTo('v'));
   $('#lb-print').addEventListener('click', print);
   $('#lb-pdf').addEventListener('click', () => exportPDF('view'));
   $('#lb-docx').addEventListener('click', () => exportDOCX('view'));

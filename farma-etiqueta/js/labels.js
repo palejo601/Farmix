@@ -68,7 +68,7 @@ export function encodeBarcode(code, fmtLabel) {
 
 // Calcula el rótulo. o = {w, h, fields:{campo:bool}}. Devuelve {items, blocks, bar, warnings, pad}.
 export function layoutLabel(rec, o) {
-  const { w, h } = o, on = f => o.fields[f] && (rec[f] || '').toString().trim();
+  const { w, h } = o, on = f => (o.fields[f] || (rec.servicioSolo && f === 'servicio')) && (rec[f] || '').toString().trim();
   const P = clamp(Math.min(w, h) * 0.07, 0.7, 3), W = w - 2 * P, H = h - 2 * P, warnings = [];
   const K = Math.max(1, Math.min(w, h) / 70);   // rótulos grandes (hasta la hoja completa): letra y código crecen en proporción
   let blocks = [];

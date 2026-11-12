@@ -1,7 +1,7 @@
 {
   "name": "farma-etiqueta",
   "productName": "FARMA-ETIQUETA",
-  "version": "1.22.0",
+  "version": "1.23.0",
   "description": "Rotulado farmacéutico: lectura de lote y fechas, rótulos en milímetros, PDF y Word.",
   "author": "FARMA-ETIQUETA",
   "main": "main.js",

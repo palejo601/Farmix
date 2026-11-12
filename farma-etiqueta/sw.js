@@ -3,12 +3,12 @@
 // - Guarda los recursos OCR la primera vez que se usan (caché separada que NO se borra al actualizar).
 // - Nunca toca IndexedDB: actualizar la aplicación no elimina registros ni fotografías.
 // Para publicar una versión nueva, cambie VERSION.
-const VERSION = '1.22.0';
+const VERSION = '1.23.0';
 const SHELL = 'fe-shell-' + VERSION;
 const OCR = 'fe-ocr-v2';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
-  'js/app.js', 'js/ui.js', 'js/db.js', 'js/photos.js', 'js/ocr.js', 'js/extract.js', 'js/form.js', 'js/live.js', 'js/boxes.js', 'js/relief.js', 'js/tiles.js', 'js/glyphs.js', 'js/verify.js', 'js/ai.js', 'js/perf.js', 'js/barcode.js',
+  'js/app.js', 'js/ui.js', 'js/db.js', 'js/photos.js', 'js/ocr.js', 'js/extract.js', 'js/form.js', 'js/live.js', 'js/boxes.js', 'js/relief.js', 'js/tiles.js', 'js/glyphs.js', 'js/verify.js', 'js/ai.js', 'js/perf.js', 'js/services.js', 'js/barcode.js',
   'js/history.js', 'js/labels.js', 'js/labelsview.js', 'js/backup.js', 'js/settings.js',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
   'vendor/lib/JsBarcode.all.min.js', 'vendor/lib/jspdf.umd.min.js', 'vendor/lib/docx.iife.min.js',

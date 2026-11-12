@@ -101,7 +101,7 @@ const EAN = '7701234567897';
   console.log('\nPrueba 2 — Pantalla principal y sin lector de códigos de barras');
   await page.goto(URL0 + '#inicio'); await page.waitForSelector('#v-inicio:not([hidden])');
   const tiles = await page.$$eval('#v-inicio .tile b', t => t.map(x => x.textContent));
-  check('La pantalla principal tiene únicamente: Escanear fotografía, Crear rótulo, Historial', JSON.stringify(tiles) === JSON.stringify(['Escanear fotografía', 'Crear rótulo', 'Historial']), tiles.join(' · '));
+  check('La pantalla principal: Escanear fotografía, Crear rótulo, Historial y Rótulos por servicio', JSON.stringify(tiles) === JSON.stringify(['Escanear fotografía', 'Crear rótulo', 'Historial', 'Rótulos por servicio']), tiles.join(' · '));
   const sw = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8'), allJs = fs.readdirSync(path.join(ROOT, 'js')).map(f => fs.readFileSync(path.join(ROOT, 'js', f), 'utf8')).join('');
   check('Códigos de barras solo con el lector del teléfono (sin bibliotecas externas como ZXing)', !fs.existsSync(path.join(ROOT, 'vendor', 'zxing')) && !/zxing/i.test(sw + allJs) && await page.locator('#btn-barcode').count() === 0);
   await page.click('#v-inicio .tile:has-text("Crear rótulo")'); check('«Crear rótulo» abre el generador', !!await page.waitForSelector('#v-rotulos:not([hidden])', { timeout: 5000 }).catch(() => null));
@@ -293,6 +293,32 @@ const EAN = '7701234567897';
   const [s1] = await Promise.all([page.waitForEvent('download'), page.click('#lb-pdf-share')]);
   const [s2] = await Promise.all([page.waitForEvent('download'), page.click('#lb-docx-share')]);
   check('Compartir PDF y Compartir Word entregan archivos reales (sin menú Compartir en este navegador: se descargan)', /\.pdf$/.test(s1.suggestedFilename()) && /\.docx$/.test(s2.suggestedFilename()) && fs.statSync(await s1.path()).size > 1000 && fs.statSync(await s2.path()).size > 1000);
+
+  { // Apartado aparte: Rótulos por servicio
+    await page.goto(URL0 + '#servicios'); await page.click('.sv-btn[data-sv="UCI Adulto"]'); await page.waitForTimeout(300);
+    const n = await page.locator('#sv-list .item').count(), other = await page.locator('#sv-list').innerText();
+    await page.click('#sv-products'); await page.waitForSelector('#v-rotulos:not([hidden]) #lb-preview svg');
+    const it1 = await page.locator('#lb-items').innerText();
+    await page.goto(URL0 + '#servicios'); await page.click('.sv-btn[data-sv="UCI Neonatal"]'); await page.waitForTimeout(300);
+    const none = await page.locator('#sv-count').innerText();
+    await page.fill('#sv-name-qty', '4'); await page.click('#sv-name'); await page.waitForSelector('#v-rotulos:not([hidden]) #lb-preview svg'); await page.waitForTimeout(300);
+    const t2 = await page.locator('#lb-preview svg').first().textContent(), sum2 = await page.locator('#sh-summary').innerText();
+    check('Rótulos por servicio (aparte): UCI Adulto lista solo sus productos y los lleva a los rótulos', n >= 1 && /CALMADOL/.test(it1), `${n} producto(s) · ${it1.replace(/\s+/g, ' ').slice(0, 80)}`);
+    check('Servicio sin productos: lo indica; rótulo solo con el nombre del servicio (4 rótulos)', /Aún no hay productos/.test(none) && /UCI\s*NEONATAL/.test(t2) && /4 rótulo\(s\) en total/.test(sum2), t2.slice(0, 40) + ' · ' + sum2);
+  }
+
+  { // Botones Horizontal / Vertical del rótulo
+    await page.selectOption('#lb-size', '0'); await page.click('#lb-or-v'); await page.waitForTimeout(300);
+    const v = [await page.inputValue('#lb-w'), await page.inputValue('#lb-h'), await page.locator('#sh-error').isHidden()];
+    await page.click('#lb-or-h'); await page.waitForTimeout(300);
+    const hz = [await page.inputValue('#lb-w'), await page.inputValue('#lb-h')];
+    await page.selectOption('#lb-size', '-2'); await page.click('#lb-or-h'); await page.waitForTimeout(300);
+    const fh = [await page.inputValue('#lb-w'), await page.inputValue('#lb-h')];
+    await page.click('#lb-or-v'); await page.waitForTimeout(300);
+    const fv = [await page.inputValue('#lb-w'), await page.inputValue('#lb-h')];
+    check('Botones Horizontal / Vertical: 100×70 ↔ 70×100 y hoja completa 277×190 ↔ 190×277', v[0] === '70' && v[1] === '100' && v[2] && hz[0] === '100' && hz[1] === '70' && +fh[0] > +fh[1] && +fv[0] < +fv[1], JSON.stringify({ v, hz, fh, fv }));
+    await page.selectOption('#lb-size', '1');
+  }
 
   console.log('\nPrueba 7 — Respaldo y restauración');
   await page.click('.tabbar a[data-tab=respaldo]');

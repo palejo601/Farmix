@@ -8,9 +8,10 @@ import { initHistory, refreshHistory } from './history.js';
 import { initLabels, showLabels } from './labelsview.js';
 import { initBackup, refreshBackup } from './backup.js';
 import { initSettings, refreshStatus, registerSW } from './settings.js';
+import { initServices, refreshServices } from './services.js';
 
-const VIEWS = ['inicio', 'registrar', 'historial', 'rotulos', 'respaldo', 'config'];
-const ENTER = { inicio: refreshStatus, historial: refreshHistory, rotulos: showLabels, respaldo: refreshBackup, config: refreshStatus };
+const VIEWS = ['inicio', 'registrar', 'historial', 'rotulos', 'servicios', 'respaldo', 'config'];
+const ENTER = { inicio: refreshStatus, historial: refreshHistory, rotulos: showLabels, servicios: refreshServices, respaldo: refreshBackup, config: refreshStatus };
 
 window.addEventListener('error', e => { console.error(e.error || e.message); toast('Ocurrió un error inesperado: ' + (e.message || 'desconocido') + '. Sus registros guardados no se ven afectados.', 'err', 7000); });
 window.addEventListener('unhandledrejection', e => { console.error(e.reason); toast('Ocurrió un error: ' + errMsg(e.reason), 'err', 7000); });
@@ -25,7 +26,7 @@ function route() {
 
 async function start() {
   const safe = (name, fn) => { try { return fn(); } catch (e) { console.error(name, e); toast(`El módulo «${name}» no pudo iniciarse: ${errMsg(e)}`, 'err', 7000); } };
-  safe('formulario', initForm); safe('historial', initHistory); safe('respaldo', initBackup); safe('configuración', initSettings);
+  safe('formulario', initForm); safe('historial', initHistory); safe('respaldo', initBackup); safe('configuración', initSettings); safe('servicios', initServices);
   try { await db.open(); }
   catch (e) { const w = $('#file-warning'); w.hidden = false; w.textContent = 'No se puede guardar información en este navegador: ' + errMsg(e); }
   await Promise.resolve(safe('rótulos', initLabels)).catch(e => toast(errMsg(e), 'err'));
