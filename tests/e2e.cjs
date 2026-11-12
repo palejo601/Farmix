@@ -380,6 +380,19 @@ const EAN = '7701234567897';
   await page.locator('.live-actions .btn.primary').click();
   await page.waitForSelector('.live', { state: 'detached' }); await page.waitForSelector('#photo-box:not([hidden])');
   check('«Usar datos» llena el formulario, guarda una foto del escaneo y apaga la cámara', await page.inputValue('#f-lote') === 'AB12345' && await page.inputValue('#f-vencimiento') === '05/2027' && /CALMADOL/.test(await page.inputValue('#f-nombre')));
+  await page.click('#btn-form-clear'); if (await btn('Descartar').count()) await btn('Descartar').click();
+  await page.evaluate(() => {
+    const c = document.createElement('canvas'); c.width = 720; c.height = 1280; const x = c.getContext('2d');
+    const draw = () => { x.fillStyle = '#f2efe8'; x.fillRect(0, 0, 720, 1280); x.fillStyle = '#111'; x.font = 'bold 52px monospace';
+      x.fillText('LOTE: 6B0985', 90, 570); x.fillText('VENCE: 08/2027', 90, 650); x.fillRect(0, 1270, 720 * Math.random(), 2); };
+    draw(); setInterval(draw, 100);
+    const stream = c.captureStream(10); navigator.mediaDevices.getUserMedia = async () => stream;
+  });
+  const tLot = Date.now();
+  await page.click('.btn-live-lot'); await page.waitForSelector('.live .live-guide.lot');
+  await page.waitForSelector('.live', { state: 'detached', timeout: 60000 });
+  const lotScan = { lote: await page.inputValue('#f-lote'), venc: await page.inputValue('#f-vencimiento'), photo: await page.locator('#photo-box').isVisible() };
+  check('Escanear lote y fechas: confirma lote y vencimiento y se cierra solo, sin tocar la foto del registro', lotScan.lote === '6B0985' && lotScan.venc === '08/2027' && !lotScan.photo, `${((Date.now() - tLot) / 1000).toFixed(1)} s · ` + JSON.stringify(lotScan));
   await page.click('#btn-form-clear'); await btn('Descartar').click();
   console.log('\nLector nativo (ML Kit / Apple Vision) — simulado: aquí no hay teléfono');
   const natUnit = await page.evaluate(async () => {

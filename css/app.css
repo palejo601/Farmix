@@ -209,3 +209,6 @@ body.no-scroll{overflow:hidden}
 .live-guide{top:22%;height:40%}
 
 #autofill-note .warn-photo{color:#9a3412;font-weight:600}
+
+/* Modo «escanear lote»: recuadro bajo y ancho, para el bloque de lote y fechas */
+.live-guide.lot{left:8%;right:8%;top:36%;height:20%}
