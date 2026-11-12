@@ -151,13 +151,15 @@ export async function liveScan({ lotMode = false } = {}) {
     useBtn.onclick = async () => {
       useBtn.disabled = true;
       const values = Object.fromEntries(Object.keys(best).filter(f => sure(f)).map(f => [f, best[f].v]));
-      let photo = null; try { photo = await frame(); } catch { /* sin foto: se usan solo los datos */ }
-      res({ values, photo });
+      // Se copia el cuadro actual al instante (sin comprimir) y se cierra: la foto se prepara después, sin hacer esperar.
+      let still = null;
+      if (!lotMode) { try { still = document.createElement('canvas'); still.width = video.videoWidth; still.height = video.videoHeight; still.getContext('2d').drawImage(video, 0, 0); } catch { still = null; } }
+      res({ values, still });
     };
   });
   open = false;
   track.stop(); stream.getTracks().forEach(t => t.stop()); video.srcObject = null;
   root.remove(); document.body.classList.remove('no-scroll');
-  await loop.catch(() => {});
+  loop.catch(() => {});        // la lectura en curso termina sola; no se espera para devolver los datos
   return result;
 }
