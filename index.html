@@ -113,6 +113,8 @@
           <optgroup label="Unidades de cuidado intensivo"><option>UCI Adulto</option><option>UCI Neonatal</option></optgroup>
           <optgroup label="Otros servicios"><option>Ginecología</option></optgroup>
         </select></div>
+        <div class="field qty"><label for="f-cantidad">Cantidad de cajas</label><input id="f-cantidad" name="cantidad" maxlength="40" inputmode="numeric" placeholder="Ej.: 12"></div>
+        <div class="field qty"><label for="f-unidades">Cantidad de unidades</label><input id="f-unidades" name="unidades" type="number" min="0" max="999999" step="1" inputmode="numeric" placeholder="Ej.: 100"></div>
         <div class="field"><label for="f-codigoBarras">Código de barras</label><input id="f-codigoBarras" name="codigoBarras" inputmode="text" maxlength="80"></div>
         <div class="field"><label for="f-principioActivo">Principio activo</label><input id="f-principioActivo" name="principioActivo" maxlength="160"></div>
         <div class="field"><label for="f-concentracion">Concentración</label><input id="f-concentracion" name="concentracion" maxlength="80"></div>
@@ -132,8 +134,6 @@
         <div class="field"><label for="f-fechaFabricacion">Fecha de fabricación</label><input id="f-fechaFabricacion" name="fechaFabricacion" maxlength="30" placeholder="MM/AAAA o DD/MM/AAAA" spellcheck="false"></div>
         <div class="field"><label for="f-vencimiento">Fecha de vencimiento</label><input id="f-vencimiento" name="vencimiento" maxlength="30" placeholder="MM/AAAA o DD/MM/AAAA" spellcheck="false"><small class="hint">Escríbala tal como aparece en el empaque.</small></div>
         <div class="field"><label for="f-ubicacion">Ubicación</label><input id="f-ubicacion" name="ubicacion" maxlength="120"></div>
-        <div class="field"><label for="f-cantidad">Cantidad</label><input id="f-cantidad" name="cantidad" maxlength="40" placeholder="Ej.: 30 tabletas, 12 cajas"></div>
-        <div class="field"><label for="f-unidades">Cantidad de unidades</label><input id="f-unidades" name="unidades" type="number" min="0" max="999999" step="1" inputmode="numeric" placeholder="Ej.: 100 (unidades en la caja de estantería)"></div>
         <div class="field"><label for="f-condiciones">Condiciones de almacenamiento</label><input id="f-condiciones" name="condiciones" maxlength="160" list="dl-cond"></div>
         <div class="field wide"><label for="f-observaciones">Observaciones</label><textarea id="f-observaciones" name="observaciones" rows="3" maxlength="600"></textarea></div>
       </div>
