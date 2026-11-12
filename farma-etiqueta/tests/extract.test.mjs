@@ -29,5 +29,6 @@ t('Casilla sola y valor en el renglón de abajo', ['(V)', '11/2027', '(L)', 'K55
 t('«V» y «F» de palabras no son casillas', ['Vía oral. Venta libre', 'F armacia central'], { vencimiento: null, 'vencimiento?': null, fechaFabricacion: null, lote: null });
 t('Casilla sin valor válido: no se da por buena (queda para revisión)', ['[V] 85/2027', '[L] ABC'], { 'vencimiento?': '85/2027', lote: null });
 t('Fabricación posterior al vencimiento: ambas quedan para revisión, sin intercambiar', ['[F] 05/2027 [V] 05/2024'], { 'fechaFabricacion?': '05/2027', 'vencimiento?': '05/2024' });
+t('Troquelado con caracteres espaciados: L 1 5 7 5 1 0 1 / V 0 9 / 2 0 2 7', ['L 1 5 7 5 1 0 1', 'V 0 9 / 2 0 2 7'], { lote: '1575101', vencimiento: '09/2027' });
 console.log(bad ? `\n${bad} fallo(s)` : '\nTodas las reglas correctas');
 process.exit(bad ? 1 : 0);

@@ -51,8 +51,10 @@ function findDates(text) {
 // El OCR suele leer el borde del recuadro como «[», «|», «(», «I», «l» o «1»: «[L] 4B0123», «|F| 05/2024», «(V) 05/2027».
 // Solo se acepta la letra si a continuación (o en el renglón de abajo) está un valor del tipo correcto:
 // L → código con al menos un dígito; F y V → fecha válida. Así «V» de «Vía oral» o «F» sueltas no se toman como etiqueta.
-const BOX_L = String.raw`[\[\(\{|!Il1]?`, BOX_R = String.raw`[\]\)\}|!Il1]?`;
-const BOX_TOKEN = new RegExp(String.raw`(^|\s)${BOX_L}\s?([LFV])\s?${BOX_R}\s?[:.\-]?\s*(?=\S)`, 'g');
+// Borde izquierdo: corchete o barra (con o sin espacio) o I/l/1 pegado a la letra; borde derecho: corchete o barra, o I/l pegado.
+// Un «1» separado por espacio después de la letra es parte del valor («L 1575101»), no un borde.
+const BOX_L = String.raw`(?:[\[\(\{|!]\s?|[Il1](?=[LFV]))?`, BOX_R = String.raw`(?:\s?[\]\)\}|!]|[Il1](?=[\s:.\-]))?`;
+const BOX_TOKEN = new RegExp(String.raw`(^|\s)${BOX_L}([LFV])${BOX_R}\s?[:.\-]?\s*(?=\S)`, 'g');
 const BOX_ONLY = new RegExp(String.raw`^\s*${BOX_L}\s?([LFV])\s?${BOX_R}\s?[:.\-]?\s*$`);
 const BOX_HEAD = new RegExp(String.raw`^(?:\s*${BOX_L}\s?[LFV]\s?${BOX_R}\s*){2,3}$`);
 const BOX_WORD = { L: 'LOTE', F: 'FAB', V: 'VENCE' };
@@ -89,8 +91,9 @@ export function boxLabels(lines) {
 const clean = s => s.replace(/\s+/g, ' ').replace(/^[\s:.\-–|]+|[\s:.\-–|,;]+$/g, '').trim();
 const LOW = 60, OK = 80;
 
+const unspace = t => t.replace(/(^|[\s:])([0-9](?: [0-9A-Z\/\-.]){3,})(?=$|\s)/g, (m, a, b) => /\d.*\d/.test(b) ? a + b.replace(/ /g, '') : m);
 export function extractFields(lines) {
-  lines = boxLabels(lines.map(l => ({ text: (l.text || '').replace(/\s+/g, ' ').trim(), conf: l.conf ?? null, height: l.height || 0 })))
+  lines = boxLabels(lines.map(l => ({ text: unspace((l.text || '').replace(/\s+/g, ' ').trim()), conf: l.conf ?? null, height: l.height || 0 })))
     .map(l => ({ ...l, text: clean(l.text) })).filter(l => l.text.length > 1);
   // Rótulos en tabla: una fila de encabezados («LOTE  FAB  VENCE») y debajo la fila de valores. Se reordenan como «etiqueta: valor».
   for (let i = 0; i + 1 < lines.length; i++) {
@@ -294,7 +297,7 @@ function fixLabels(text) {
 const ZKEY = /^(LOTE?|LOT|BATCH|VENCE|VENC|VTO|EXP|CAD|FAB|MFG|MFD|ELAB|FECHA|DATE|DE|NO|N[°º]?)$/i;
 // Devuelve {lote, fechaFabricacion, vencimiento}: cada uno {value, labelled} o ausente.
 export function extractZone(lines) {
-  const ls = boxLabels(lines.map(l => ({ ...l, text: (l.text || '').replace(/\s+/g, ' ').trim() }))).map(l => ({ ...l, text: fixLabels(clean(l.text)) })).filter(l => l.text.length > 1);
+  const ls = boxLabels(lines.map(l => ({ ...l, text: unspace((l.text || '').replace(/\s+/g, ' ').trim()) }))).map(l => ({ ...l, text: fixLabels(clean(l.text)) })).filter(l => l.text.length > 1);
   const out = {};
   for (const f of extractFields(ls).fields) if (['lote', 'fechaFabricacion', 'vencimiento'].includes(f.field) && !f.doubt && !out[f.field]) out[f.field] = { value: f.value, labelled: true };
   // Sin etiqueta legible: en la zona marcada, las fechas válidas y el código alfanumérico restante son los candidatos.
