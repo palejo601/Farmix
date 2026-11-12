@@ -222,7 +222,7 @@ const EAN = '7701234567897';
   // Medidas físicas y textos sin recortes en todos los tamaños
   const sizes = await page.$$eval('#lb-size option', o => o.map(x => [x.value, x.textContent]));
   let allFit = true, detail = [];
-  for (const [v, name] of sizes.filter(s => s[0] !== '-1')) {
+  for (const [v, name] of sizes.filter(s => +s[0] >= 0)) {
     await page.selectOption('#lb-size', v); await page.click('#sh-auto'); await page.waitForTimeout(60);
     const r = await page.evaluate(() => {
       const w = +document.getElementById('lb-w').value, h = +document.getElementById('lb-h').value;
@@ -239,7 +239,20 @@ const EAN = '7701234567897';
   }
   await page.selectOption('#lb-size', '0'); await page.click('#sh-auto'); await page.waitForTimeout(300);
   { const t = await page.locator('#lb-preview svg').first().textContent(); check('El rótulo incluye el registro sanitario INVIMA', /Reg\. San\..*2019M-0012345/.test(t), (t.match(/Reg\. San\.[^L]*/) || [''])[0]); }
-  check('Lista de tamaños según la especificación', JSON.stringify(sizes.filter(s => s[0] !== '-1').map(s => s[1].match(/\d+ × \d+/)[0])) === JSON.stringify(['100 × 70', '70 × 50', '50 × 30', '40 × 20', '30 × 15', '20 × 10', '100 × 50', '150 × 100']) && sizes.some(s => s[0] === '-1'), sizes.map(s => s[1]).join(' · '));
+  { // Hoja completa: un rótulo que ocupa la hoja, vertical y horizontal
+    const r = [];
+    for (const o of ['v', 'h']) {
+      await page.selectOption('#lb-size', '-2'); await page.selectOption('#sh-orient', o); await page.waitForTimeout(300);
+      r.push(await page.evaluate(() => {
+        const w = +document.getElementById('lb-w').value, h = +document.getElementById('lb-h').value, g = document.querySelector('#lb-preview svg g[transform]');
+        let out = 0, big = 0; for (const t of g.querySelectorAll('text')) { const b = t.getBBox(); if (b.x < -0.05 || b.x + b.width > w + 0.05 || b.y < -0.05 || b.y + b.height > h + 0.05) out++; big = Math.max(big, b.height); }
+        return { w, h, out, big: Math.round(big), err: !document.getElementById('sh-error').hidden, sum: document.getElementById('sh-summary').innerText };
+      }));
+    }
+    check('Tamaño «Hoja completa»: ocupa la hoja A4 en vertical (190 × 277) y horizontal (277 × 190), texto grande y dentro', r[0].w === 190 && r[0].h === 277 && r[1].w === 277 && r[1].h === 190 && !r[0].out && !r[1].out && !r[0].err && !r[1].err && r[0].big >= 15, JSON.stringify(r.map(x => ({ w: x.w, h: x.h, letra_mm: x.big, fuera: x.out }))));
+    await page.selectOption('#sh-orient', 'v');
+  }
+  check('Lista de tamaños según la especificación', JSON.stringify(sizes.filter(s => +s[0] >= 0).map(s => s[1].match(/\d+ × \d+/)[0])) === JSON.stringify(['100 × 70', '70 × 50', '50 × 30', '40 × 20', '30 × 15', '20 × 10', '100 × 50', '150 × 100']) && sizes.some(s => s[0] === '-1') && sizes.some(s => s[0] === '-2'), sizes.map(s => s[1]).join(' · '));
   check('Los 6 tamaños predefinidos (100×70, 70×50, 50×30, 40×20, 30×15, 20×10): texto dentro del rótulo, sin cortes ni superposición', allFit, detail.join(' · '));
   await page.selectOption('#lb-size', '5'); await page.waitForTimeout(60);
   check('Rótulo 20 × 10 mm: el código de barras se omite con aviso en vez de imprimirse ilegible', /código de barras no cabe/.test(await page.locator('#lb-warnings').innerText()));

@@ -4,6 +4,7 @@ import * as db from './db.js';
 import { SIZES, LABEL_FIELDS, PAPERS, layoutLabel, sheetGeometry, maxFit, cellXY, pageSVG, runs } from './labels.js';
 
 const MAX_LABELS = 3000;
+const FULL = -2;          // tamaño «Hoja completa»
 let items = [];           // [{rec, qty}]
 let cfg = {
   size: 1, w: 70, h: 50, border: true,
@@ -24,7 +25,6 @@ function readCfg() {
   cfg.size = +$('#lb-size').value;
   if (cfg.size >= 0) { cfg.w = SIZES[cfg.size][1]; cfg.h = SIZES[cfg.size][2]; $('#lb-w').value = cfg.w; $('#lb-h').value = cfg.h; }
   else { cfg.w = num('lb-w', cfg.w, 10); cfg.h = num('lb-h', cfg.h, 8); }
-  $('#lb-w').disabled = $('#lb-h').disabled = cfg.size >= 0;
   for (const [f] of LABEL_FIELDS) cfg.fields[f] = $('#lbf-' + f).checked;
   cfg.border = $('#lb-border').checked;
   cfg.paper = $('#sh-paper').value; cfg.orient = $('#sh-orient').value;
@@ -32,6 +32,14 @@ function readCfg() {
   cfg.cpw = num('sh-pw', cfg.cpw, 20); cfg.cph = num('sh-ph', cfg.cph, 20);
   cfg.cols = Math.round(num('sh-cols', cfg.cols, 1)); cfg.rows = Math.round(num('sh-rows', cfg.rows, 1));
   for (const k of ['mt', 'ml', 'mb', 'mr', 'gh', 'gv']) cfg[k] = num('sh-' + k, cfg[k]);
+  // «Hoja completa»: un rótulo que ocupa toda la hoja menos los márgenes; sigue el papel y la orientación elegidos.
+  if (cfg.size === FULL) {
+    cfg.cols = cfg.rows = 1; const s = sheet();
+    cfg.w = Math.max(10, +(s.pw - cfg.ml - cfg.mr).toFixed(1)); cfg.h = Math.max(8, +(s.ph - cfg.mt - cfg.mb).toFixed(1));
+    $('#lb-w').value = cfg.w; $('#lb-h').value = cfg.h; $('#sh-cols').value = $('#sh-rows').value = 1;
+  }
+  $('#lb-w').disabled = $('#lb-h').disabled = cfg.size !== -1;
+  $('#lb-full-hint').hidden = cfg.size !== FULL;
 }
 function writeCfg() {
   $('#lb-size').value = cfg.size; $('#lb-w').value = cfg.w; $('#lb-h').value = cfg.h; $('#lb-border').checked = cfg.border;
@@ -260,7 +268,7 @@ export async function initLabels() {
   if (saved) cfg = { ...cfg, ...saved, fields: { ...cfg.fields, ...(saved.fields || {}) } };
   // Tamaños de versiones anteriores: se buscan por medidas; si ya no están en la lista, quedan como personalizados.
   if (cfg.size >= 0) cfg.size = SIZES.findIndex(([, w, hh]) => w === cfg.w && hh === cfg.h);
-  $('#lb-size').replaceChildren(...SIZES.map(([n, w, hh], i) => h('option', { value: i }, `${n} — ${w} × ${hh} mm`)), h('option', { value: -1 }, 'Personalizado'));
+  $('#lb-size').replaceChildren(...SIZES.map(([n, w, hh], i) => h('option', { value: i }, `${n} — ${w} × ${hh} mm`)), h('option', { value: FULL }, 'Hoja completa — se ajusta al papel (vertical u horizontal)'), h('option', { value: -1 }, 'Personalizado'));
   $('#lb-fields').replaceChildren(...LABEL_FIELDS.map(([f, label]) => h('label', { class: 'check' }, h('input', { type: 'checkbox', id: 'lbf-' + f }), label)));
   writeCfg();
   $('#v-rotulos').addEventListener('input', e => { if (!e.target.closest('#lb-items')) update(); });
