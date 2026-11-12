@@ -103,7 +103,7 @@ const EAN = '7701234567897';
   const tiles = await page.$$eval('#v-inicio .tile b', t => t.map(x => x.textContent));
   check('La pantalla principal tiene únicamente: Escanear fotografía, Crear rótulo, Historial', JSON.stringify(tiles) === JSON.stringify(['Escanear fotografía', 'Crear rótulo', 'Historial']), tiles.join(' · '));
   const sw = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8'), allJs = fs.readdirSync(path.join(ROOT, 'js')).map(f => fs.readFileSync(path.join(ROOT, 'js', f), 'utf8')).join('');
-  check('Lector de códigos eliminado (sin barcode.js, ZXing ni BarcodeDetector)', !fs.existsSync(path.join(ROOT, 'js', 'barcode.js')) && !fs.existsSync(path.join(ROOT, 'vendor', 'zxing')) && !/zxing|BarcodeDetector|readBarcode/i.test(sw + allJs) && await page.locator('#btn-barcode').count() === 0);
+  check('Códigos de barras solo con el lector del teléfono (sin bibliotecas externas como ZXing)', !fs.existsSync(path.join(ROOT, 'vendor', 'zxing')) && !/zxing/i.test(sw + allJs) && await page.locator('#btn-barcode').count() === 0);
   await page.click('#v-inicio .tile:has-text("Crear rótulo")'); check('«Crear rótulo» abre el generador', !!await page.waitForSelector('#v-rotulos:not([hidden])', { timeout: 5000 }).catch(() => null));
   await page.goto(URL0 + '#inicio'); await page.click('#v-inicio .tile:has-text("Historial")'); check('«Historial» abre el historial', !!await page.waitForSelector('#v-historial:not([hidden])', { timeout: 5000 }).catch(() => null));
   await page.click('.tabbar a[data-tab=registrar]');
@@ -394,11 +394,26 @@ const EAN = '7701234567897';
     draw(); setInterval(draw, 100);
     const stream = c.captureStream(10); navigator.mediaDevices.getUserMedia = async () => stream;
   });
+  await page.evaluate(() => { self.BarcodeDetector = class { async detect() { return [{ rawValue: '7702057712938', format: 'ean_13' }]; } }; });
   const tLot = Date.now();
   await page.click('.btn-live-lot'); await page.waitForSelector('.live .live-guide.lot');
   await page.waitForSelector('.live', { state: 'detached', timeout: 60000 });
   const lotScan = { lote: await page.inputValue('#f-lote'), venc: await page.inputValue('#f-vencimiento'), photo: await page.locator('#photo-box').isVisible() };
   check('Escanear lote y fechas: confirma lote y vencimiento y se cierra solo, sin tocar la foto del registro', lotScan.lote === '6B0985' && lotScan.venc === '08/2027' && !lotScan.photo, `${((Date.now() - tLot) / 1000).toFixed(1)} s · ` + JSON.stringify(lotScan));
+  check('Escáner en vivo: escribe también el código de barras (con dígito de control válido)', await page.inputValue('#f-codigoBarras') === '7702057712938', await page.inputValue('#f-codigoBarras'));
+  // DataMatrix GS1 (lote y vencimiento dentro del código): sin texto legible, todo sale del código en menos de 1 s
+  await page.click('#btn-form-clear'); if (await btn('Descartar').count()) await btn('Descartar').click();
+  await page.evaluate(() => {
+    self.BarcodeDetector = class { async detect() { return [{ rawValue: '0107702057712938172708001041005B', format: 'data_matrix' }]; } };
+    const c = document.createElement('canvas'); c.width = 720; c.height = 1280; const x = c.getContext('2d');
+    const draw = () => { x.fillStyle = '#e9e4da'; x.fillRect(0, 0, 720, 1280); x.fillRect(0, 1270, 720 * Math.random(), 2); }; draw(); setInterval(draw, 100);
+    const stream = c.captureStream(10); navigator.mediaDevices.getUserMedia = async () => stream;
+  });
+  const tGs = Date.now();
+  await page.click('.btn-live-lot'); await page.waitForSelector('.live', { state: 'detached', timeout: 30000 });
+  const gs = { ms: Date.now() - tGs, lote: await page.inputValue('#f-lote'), venc: await page.inputValue('#f-vencimiento'), cb: await page.inputValue('#f-codigoBarras') };
+  check('Código GS1 (DataMatrix): lote, vencimiento y código de barras exactos y al instante', gs.lote === '41005B' && gs.venc === '08/2027' && gs.cb === '7702057712938' && gs.ms < 2500, JSON.stringify(gs));
+  await page.evaluate(() => { delete self.BarcodeDetector; });
   await page.click('#btn-form-clear'); await btn('Descartar').click();
   console.log('\nLector nativo (ML Kit / Apple Vision) — simulado: aquí no hay teléfono');
   const natUnit = await page.evaluate(async () => {
