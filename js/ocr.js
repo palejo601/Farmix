@@ -46,14 +46,16 @@ export function recognize(...a) { const run = queue.then(() => recognizeNow(...a
 // Prepara el motor en segundo plano al abrir la app, para que la primera foto no espere su arranque.
 export function warmOCR() { initOCR().catch(() => {}); }
 async function recognizeNow(canvas, progress = () => {}, sparse = false, extra = {}) {
+  if (!canvas || canvas.width < 8 || canvas.height < 8) return { text: '', confidence: null, lines: [] };   // recorte demasiado pequeño
   const w = await initOCR(progress);
   try {
-    await w.setParameters({ tessedit_pageseg_mode: sparse === true ? '11' : sparse || '3', user_defined_dpi: '300', tessedit_char_whitelist: '', ...extra });
+    await w.setParameters({ tessedit_pageseg_mode: sparse === true ? '11' : sparse || '3', user_defined_dpi: '300', tessedit_char_whitelist: '', thresholding_method: '2', debug_file: '/dev/null', ...extra });   // 2 = Sauvola (umbral local): resiste sombras, manos y fondos oscuros
     const { data } = await w.recognize(canvas, {}, { text: true, blocks: true });
     const lines = [];
     for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || [])
       lines.push({ text: l.text, conf: l.confidence, height: l.bbox ? l.bbox.y1 - l.bbox.y0 : 0, bbox: l.bbox || null,
-        symbols: (l.words || []).flatMap(w => (w.symbols || []).map(s => ({ text: s.text, bbox: s.bbox }))) });
+        symbols: (l.words || []).flatMap(w => (w.symbols || []).map(s => ({ text: s.text, bbox: s.bbox }))),
+        words: (l.words || []).map(w => ({ text: w.text, bbox: w.bbox, conf: w.confidence })) });
     if (!lines.length && data.text) data.text.split('\n').forEach(t => lines.push({ text: t, conf: data.confidence ?? null, height: 0 }));
     return { text: data.text || '', confidence: data.confidence ?? null, lines };
   } catch (e) {
