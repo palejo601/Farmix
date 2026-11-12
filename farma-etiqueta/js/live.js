@@ -9,10 +9,11 @@ import { aiReady, aiConfig, aiReadLotDates } from './ai.js';
 import { monthToNumber } from './extract.js';
 import { fixLotLines } from './glyphs.js';
 import { LOW } from './perf.js';
+import { readBarcodes, parseGS1 } from './barcode.js';
 
 const NEED = 2;   // lecturas iguales necesarias para dar un dato por seguro (lote y fechas: 3, y sin otra lectura que compita)
 const need = f => ['lote', 'fechaFabricacion', 'vencimiento'].includes(f) ? 3 : NEED;
-const NAMES = { nombre: 'Nombre', principioActivo: 'Principio activo', concentracion: 'Concentración', formaFarmaceutica: 'Forma', presentacion: 'Presentación',
+const NAMES = { codigoBarras: 'Código de barras', nombre: 'Nombre', principioActivo: 'Principio activo', concentracion: 'Concentración', formaFarmaceutica: 'Forma', presentacion: 'Presentación',
   laboratorio: 'Laboratorio', registroSanitario: 'Registro', lote: 'Lote', fechaFabricacion: 'Fabricación', vencimiento: 'Vencimiento' };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -56,7 +57,24 @@ export async function liveScan({ lotMode = false } = {}) {
   torchBtn.onclick = async () => { try { torch = !torch; await track.applyConstraints({ advanced: [{ torch }] }); torchBtn.classList.toggle('primary', torch); } catch { toast('No se pudo encender la linterna.', 'warn'); } };
 
   const votes = {}, best = {};
-  let aiBusy = false, aiTried = false, autoDone = false; const t0 = performance.now();
+  let aiBusy = false, aiTried = false, autoDone = false, barFmt = '', barDone = false; const t0 = performance.now();
+  // Código de barras: se busca en el cuadro completo, en paralelo con el texto, hasta encontrarlo (lector del teléfono, ~0,1 s).
+  const fullFrame = () => { const vw = video.videoWidth, vh = video.videoHeight, k = Math.min(1, 1600 / Math.max(vw, vh)), c = document.createElement('canvas');
+    c.width = Math.round(vw * k); c.height = Math.round(vh * k); c.getContext('2d').drawImage(video, 0, 0, c.width, c.height); return c; };
+  const barcodePass = async () => {
+    if (barDone) return;
+    const fc = fullFrame();
+    try {
+      for (const b of await readBarcodes(fc)) {
+        const g = /DataMatrix|QR|Code 128/.test(b.format) ? parseGS1(b.value) : null;
+        if (g) {                                  // GS1: GTIN, lote y fechas exactos impresos en el código → seguros de inmediato
+          if (g.gtin) { vote('codigoBarras', g.gtin, 9); barFmt = 'EAN-13'; }
+          if (g.lote) vote('lote', g.lote, 9); if (g.venc) vote('vencimiento', g.venc, 9); if (g.fab) vote('fechaFabricacion', g.fab, 9);
+          barDone = true;
+        } else if (/^(EAN|UPC)/.test(b.format) || !best.codigoBarras) { vote('codigoBarras', b.value, 9); barFmt = b.format; if (/^(EAN|UPC)/.test(b.format)) barDone = true; }
+      }
+    } finally { fc.width = fc.height = 0; }
+  };
   // Seguro: leído igual varias veces y al menos el doble que cualquier otra lectura distinta (p. ej. 4B0123 frente a 480123).
   const sure = f => !!best[f] && (best[f].forced || (best[f].n >= need(f) && best[f].n >= 2 * best[f].rival));
   const render = () => {
@@ -69,7 +87,7 @@ export async function liveScan({ lotMode = false } = {}) {
     const falta = (lotMode ? ['lote', 'vencimiento'] : ['nombre', 'lote', 'vencimiento']).filter(f => !sure(f)).map(f => NAMES[f].toLowerCase());
     if (aiBusy) return;
     status.textContent = falta.length ? `Leyendo… falta: ${falta.join(', ')}. ${lotMode ? 'Acerque la cámara hasta que el lote llene el recuadro, sin reflejos.' : 'Acerque esa parte al recuadro, sin reflejos.'}` : lotMode ? 'Listo: lote y vencimiento confirmados.' : 'Listo: nombre, lote y vencimiento leídos. Pulse «Usar datos».';
-    if (lotMode && !falta.length && !autoDone) { autoDone = true; setTimeout(() => useBtn.click(), 700); }   // termina solo
+    if (lotMode && !falta.length && !autoDone) { autoDone = true; setTimeout(() => useBtn.click(), 300); }   // termina solo (breve pausa para ver el ✓)
   };
   const vote = (f, v, w = 1) => {
     if (!v) return;
@@ -104,7 +122,9 @@ export async function liveScan({ lotMode = false } = {}) {
       if (document.hidden || video.readyState < 2) { await sleep(250); continue; }
       const c = crop(); if (!c) { await sleep(200); continue; }
       try {
+        const barP = barcodePass().catch(() => {});
         const r = await recognize(c, () => {}, n++ % 2 ? '11' : '6');   // alterna bloque y texto disperso
+        await barP;
         if (!open) break;
         fixLotLines(c, r.lines);
         // Lectura muy clara (confianza ≥ 85 %) cuenta doble; con etiqueta (LOTE, VENCE…) cuenta 1; sin etiqueta, media.
@@ -154,7 +174,7 @@ export async function liveScan({ lotMode = false } = {}) {
       // Se copia el cuadro actual al instante (sin comprimir) y se cierra: la foto se prepara después, sin hacer esperar.
       let still = null;
       if (!lotMode) { try { still = document.createElement('canvas'); still.width = video.videoWidth; still.height = video.videoHeight; still.getContext('2d').drawImage(video, 0, 0); } catch { still = null; } }
-      res({ values, still });
+      res({ values, still, formato: barFmt });
     };
   });
   open = false;

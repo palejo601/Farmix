@@ -385,6 +385,7 @@ async function runLive(opts = {}) {
     for (const [f, v] of Object.entries(r.values)) if (!input(f).value.trim()) setField(f, v, 'ocr');
     chips(); scheduleDraft(); return;
   }
+  if (r.formato && r.values.codigoBarras) st.formatoCodigo = r.formato;   // para dibujar el código en el rótulo
   // La foto del escaneo se guarda después, en segundo plano: los datos aparecen al instante.
   if (r.still && !st.photo && !opts.lotMode) setTimeout(() => r.still.toBlob(b => { r.still.width = r.still.height = 0; if (b && !st.photo) setPhotoFromFile(new File([b], 'escaneo-en-vivo.jpg', { type: 'image/jpeg' }), 'live'); }, 'image/jpeg', 0.9), 50);
   const label = Object.fromEntries(FIELDS); let n = 0; const sug = [];

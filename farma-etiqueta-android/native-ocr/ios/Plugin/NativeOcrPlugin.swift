@@ -10,8 +10,46 @@ public class NativeOcrPlugin: CAPPlugin, CAPBridgedPlugin {
     public let jsName = "NativeOcr"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "available", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "recognize", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "recognize", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "barcodes", returnType: CAPPluginReturnPromise)
     ]
+
+    /// image: JPEG/PNG en base64. Devuelve los códigos encontrados: [{value, format, box}].
+    @objc func barcodes(_ call: CAPPluginCall) {
+        guard let b64 = call.getString("image"),
+              let data = Data(base64Encoded: b64, options: .ignoreUnknownCharacters),
+              let image = UIImage(data: data), let cg = image.cgImage else { call.reject("No se pudo abrir la imagen"); return }
+        let width = CGFloat(cg.width), height = CGFloat(cg.height)
+        func name(_ s: VNBarcodeSymbology) -> String {
+            switch s {
+            case .ean13: return "EAN-13"
+            case .ean8: return "EAN-8"
+            case .upce: return "UPC-E"
+            case .code128: return "Code 128"
+            case .code39: return "Code 39"
+            case .itf14, .i2of5: return "ITF"
+            case .qr: return "QR"
+            case .dataMatrix: return "DataMatrix"
+            default: return "Otro"
+            }
+        }
+        let request = VNDetectBarcodesRequest { req, err in
+            if let err = err { call.reject("El lector de códigos falló: " + err.localizedDescription); return }
+            var codes: [[String: Any]] = []
+            for obs in (req.results as? [VNBarcodeObservation]) ?? [] {
+                guard let v = obs.payloadStringValue, !v.isEmpty else { continue }
+                let r = obs.boundingBox
+                codes.append(["value": v, "format": name(obs.symbology),
+                              "box": [Double(r.minX * width), Double((1 - r.maxY) * height), Double(r.maxX * width), Double((1 - r.minY) * height)]])
+            }
+            call.resolve(["codes": codes])
+        }
+        request.symbologies = [.ean13, .ean8, .upce, .code128, .code39, .itf14, .i2of5, .qr, .dataMatrix]
+        DispatchQueue.global(qos: .userInitiated).async {
+            do { try VNImageRequestHandler(cgImage: cg, orientation: .up, options: [:]).perform([request]) }
+            catch { call.reject("El lector de códigos falló: " + error.localizedDescription) }
+        }
+    }
 
     @objc func available(_ call: CAPPluginCall) {
         call.resolve(["engine": "vision"])

@@ -29,6 +29,19 @@
       externalAnnotations="annotations.zip"
       proguardRules="proguard.txt"/>
   <library
+      name="com.google.mlkit:barcode-scanning:17.3.0@aar"
+      jars="/root/.gradle/caches/8.11.1/transforms/e9453dd7c24b4e56e933c53d98771b29/transformed/barcode-scanning-17.3.0/jars/classes.jar"
+      resolved="com.google.mlkit:barcode-scanning:17.3.0"
+      folder="/root/.gradle/caches/8.11.1/transforms/e9453dd7c24b4e56e933c53d98771b29/transformed/barcode-scanning-17.3.0"
+      manifest="AndroidManifest.xml"
+      resFolder="res"
+      assetsFolder="assets"
+      lintJar="lint.jar"
+      publicResources="public.txt"
+      symbolFile="R.txt"
+      externalAnnotations="annotations.zip"
+      proguardRules="proguard.txt"/>
+  <library
       name="com.google.android.gms:play-services-mlkit-text-recognition:19.0.1@aar"
       jars="/root/.gradle/caches/8.11.1/transforms/a6167d7976da187e0147ee6fa3703192/transformed/play-services-mlkit-text-recognition-19.0.1/jars/classes.jar"
       resolved="com.google.android.gms:play-services-mlkit-text-recognition:19.0.1"
@@ -46,6 +59,32 @@
       jars="/root/.gradle/caches/8.11.1/transforms/ff700a5eb22909dc3c558f6af3e933d2/transformed/text-recognition-bundled-common-17.0.0/jars/classes.jar"
       resolved="com.google.mlkit:text-recognition-bundled-common:17.0.0"
       folder="/root/.gradle/caches/8.11.1/transforms/ff700a5eb22909dc3c558f6af3e933d2/transformed/text-recognition-bundled-common-17.0.0"
+      manifest="AndroidManifest.xml"
+      resFolder="res"
+      assetsFolder="assets"
+      lintJar="lint.jar"
+      publicResources="public.txt"
+      symbolFile="R.txt"
+      externalAnnotations="annotations.zip"
+      proguardRules="proguard.txt"/>
+  <library
+      name="com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1@aar"
+      jars="/root/.gradle/caches/8.11.1/transforms/98f5c910be0583abc17910421310df0d/transformed/play-services-mlkit-barcode-scanning-18.3.1/jars/classes.jar"
+      resolved="com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1"
+      folder="/root/.gradle/caches/8.11.1/transforms/98f5c910be0583abc17910421310df0d/transformed/play-services-mlkit-barcode-scanning-18.3.1"
+      manifest="AndroidManifest.xml"
+      resFolder="res"
+      assetsFolder="assets"
+      lintJar="lint.jar"
+      publicResources="public.txt"
+      symbolFile="R.txt"
+      externalAnnotations="annotations.zip"
+      proguardRules="proguard.txt"/>
+  <library
+      name="com.google.mlkit:barcode-scanning-common:17.0.0@aar"
+      jars="/root/.gradle/caches/8.11.1/transforms/c2035d4d29dfc874381a9b93e3909d27/transformed/barcode-scanning-common-17.0.0/jars/classes.jar"
+      resolved="com.google.mlkit:barcode-scanning-common:17.0.0"
+      folder="/root/.gradle/caches/8.11.1/transforms/c2035d4d29dfc874381a9b93e3909d27/transformed/barcode-scanning-common-17.0.0"
       manifest="AndroidManifest.xml"
       resFolder="res"
       assetsFolder="assets"
@@ -466,6 +505,19 @@
       jars="/root/.gradle/caches/modules-2/files-2.1/com.google.firebase/firebase-encoders/16.1.0/267565db8531da1483692e27eb58f93ec894c78/firebase-encoders-16.1.0.jar"
       resolved="com.google.firebase:firebase-encoders:16.1.0"/>
   <library
+      name="androidx.exifinterface:exifinterface:1.0.0@aar"
+      jars="/root/.gradle/caches/8.11.1/transforms/fe23eeb59d28d68cb7f79141372a0795/transformed/exifinterface-1.0.0/jars/classes.jar"
+      resolved="androidx.exifinterface:exifinterface:1.0.0"
+      folder="/root/.gradle/caches/8.11.1/transforms/fe23eeb59d28d68cb7f79141372a0795/transformed/exifinterface-1.0.0"
+      manifest="AndroidManifest.xml"
+      resFolder="res"
+      assetsFolder="assets"
+      lintJar="lint.jar"
+      publicResources="public.txt"
+      symbolFile="R.txt"
+      externalAnnotations="annotations.zip"
+      proguardRules="proguard.txt"/>
+  <library
       name="androidx.interpolator:interpolator:1.0.0@aar"
       jars="/root/.gradle/caches/8.11.1/transforms/c246ddff93723fa14095088b03472f98/transformed/interpolator-1.0.0/jars/classes.jar"
       resolved="androidx.interpolator:interpolator:1.0.0"
@@ -499,19 +551,6 @@
       name="androidx.collection:collection-jvm:1.4.2@jar"
       jars="/root/.gradle/caches/modules-2/files-2.1/androidx.collection/collection-jvm/1.4.2/bc60b5568a66d765a9fe8e266fd0c6c727e0b50b/collection-jvm-1.4.2.jar"
       resolved="androidx.collection:collection-jvm:1.4.2"/>
-  <library
-      name="androidx.exifinterface:exifinterface:1.0.0@aar"
-      jars="/root/.gradle/caches/8.11.1/transforms/fe23eeb59d28d68cb7f79141372a0795/transformed/exifinterface-1.0.0/jars/classes.jar"
-      resolved="androidx.exifinterface:exifinterface:1.0.0"
-      folder="/root/.gradle/caches/8.11.1/transforms/fe23eeb59d28d68cb7f79141372a0795/transformed/exifinterface-1.0.0"
-      manifest="AndroidManifest.xml"
-      resFolder="res"
-      assetsFolder="assets"
-      lintJar="lint.jar"
-      publicResources="public.txt"
-      symbolFile="R.txt"
-      externalAnnotations="annotations.zip"
-      proguardRules="proguard.txt"/>
   <library
       name="androidx.annotation:annotation-jvm:1.8.1@jar"
       jars="/root/.gradle/caches/modules-2/files-2.1/androidx.annotation/annotation-jvm/1.8.1/b8a16fe526014b7941c1debaccaf9c5153692dbb/annotation-jvm-1.8.1.jar"
