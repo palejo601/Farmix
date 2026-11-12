@@ -53,6 +53,8 @@
       <svg viewBox="0 0 24 24"><use href="#i-label"/></svg><b>Crear rótulo</b><small>Imprimir, PDF y Word</small></a>
     <a class="tile" href="#historial">
       <svg viewBox="0 0 24 24"><use href="#i-list"/></svg><b>Historial</b><small id="home-count">—</small></a>
+    <a class="tile wide" href="#servicios">
+      <svg viewBox="0 0 24 24"><use href="#i-folder"/></svg><b>Rótulos por servicio</b><small>Hospitalización, Urgencias, UCI, Ginecología</small></a>
   </div>
   <p class="note">Herramienta de apoyo para identificación y rotulado. No valida información sanitaria ni sustituye la revisión del empaque original.</p>
 </section>
@@ -157,6 +159,19 @@
   <div id="hist-list" class="list"></div>
 </section>
 
+<section id="v-servicios" class="view" hidden>
+  <div class="view-head"><h2>Rótulos por servicio</h2></div>
+  <div class="card"><p class="muted">Elija el servicio. Se muestran aparte los productos registrados con ese servicio para rotularlos juntos.</p><div id="sv-grid"></div></div>
+  <div class="card" id="sv-detail" hidden>
+    <h3 id="sv-title"></h3>
+    <p id="sv-count" class="muted"></p>
+    <div id="sv-list" class="list compact"></div>
+    <button type="button" class="btn primary" id="sv-products"><svg viewBox="0 0 24 24"><use href="#i-label"/></svg>Crear rótulos de los productos marcados</button>
+    <div class="fields" style="margin-top:12px"><div class="field"><label for="sv-name-qty">Rótulos solo con el nombre del servicio</label><input id="sv-name-qty" type="number" min="1" max="3000" value="1" inputmode="numeric"></div></div>
+    <button type="button" class="btn" id="sv-name"><svg viewBox="0 0 24 24"><use href="#i-label"/></svg>Crear rótulo con el nombre del servicio</button>
+  </div>
+</section>
+
 <section id="v-rotulos" class="view" hidden>
   <div class="view-head"><h2>Generación de rótulos</h2></div>
   <div class="card">
@@ -167,7 +182,7 @@
   <div class="card">
     <h3>2. Tamaño y contenido del rótulo</h3>
     <div class="fields">
-      <div class="field wide"><label for="lb-size">Tamaño</label><select id="lb-size"></select><small class="hint" id="lb-full-hint" hidden>Un rótulo por hoja. Cambie «Orientación» (vertical u horizontal) y el papel en la sección de la hoja.</small></div>
+      <div class="field wide"><label for="lb-size">Tamaño</label><select id="lb-size"></select><div class="seg" role="group" aria-label="Orientación del rótulo"><button type="button" class="btn small" id="lb-or-h">▭ Horizontal</button><button type="button" class="btn small" id="lb-or-v">▯ Vertical</button></div><small class="hint" id="lb-full-hint" hidden>Un rótulo por hoja. Cambie «Orientación» (vertical u horizontal) y el papel en la sección de la hoja.</small></div>
       <div class="field"><label for="lb-w">Ancho (mm)</label><input id="lb-w" type="number" min="10" max="300" step="0.5" inputmode="decimal"></div>
       <div class="field"><label for="lb-h">Alto (mm)</label><input id="lb-h" type="number" min="8" max="300" step="0.5" inputmode="decimal"></div>
     </div>
