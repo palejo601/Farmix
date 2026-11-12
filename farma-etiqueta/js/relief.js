@@ -6,7 +6,7 @@
 // 4) Componentes → caracteres → renglones; se juntan los caracteres (los códigos troquelados vienen muy espaciados)
 //    y cada renglón se lee aparte. La letra suelta a la izquierda (L, F, V) se lee sola y se antepone como etiqueta.
 // Se prueba en varias escalas porque no se conoce el tamaño de la letra en la foto.
-import { recognize } from './ocr.js';
+import { recognize, nativeOcrEngine } from './ocr.js';
 
 const T = 60;   // altura de carácter (px) para la que están ajustados los parámetros
 
@@ -160,6 +160,7 @@ function inferLabels(lines) {
 const SCALE_STEPS = [1, 0.5, 0.25];
 // Lee el texto en relieve de un canvas. Devuelve líneas {text, conf, height} listas para extractFields / extractZone.
 export async function readRelief(src, progress = () => {}, { scales = SCALE_STEPS, his = [3.0, 2.6, 2.2] } = {}) {
+  const native = !!(await nativeOcrEngine());
   const lines = [];
   const base = Math.min(1, 2400 / Math.max(src.width, src.height));
   for (const sc of scales) {
@@ -183,7 +184,9 @@ export async function readRelief(src, progress = () => {}, { scales = SCALE_STEP
         }
         const vc = compose(L.chars, L.lab, W), slash = L.chars.map(c => isSlash(c, L.lab, W));
         try {
-          for (const [psm, wl] of [['7', '0123456789/-.ABCDEFGHIJKLMNOPQRSTUVWXYZ'], ['7', '0123456789/'], ['13', '']]) {
+          // Con el lector nativo las tres variantes darían lo mismo (no tiene modos): se lee una sola vez.
+          const variants = native ? [['7', '0123456789/-.ABCDEFGHIJKLMNOPQRSTUVWXYZ']] : [['7', '0123456789/-.ABCDEFGHIJKLMNOPQRSTUVWXYZ'], ['7', '0123456789/'], ['13', '']];
+          for (const [psm, wl] of variants) {
             const r = await recognize(vc, () => {}, psm, { tessedit_char_whitelist: wl });
             let t = r.text.replace(/\s+/g, '');
             // Si se leyó un carácter por cada mancha, la barra «/» se corrige por su forma (diagonal delgada).
@@ -209,5 +212,5 @@ export async function readReliefAuto(src, progress = () => {}) {
   const rx = Math.max(0, x0 - mw), ry = Math.max(0, y0 - mh), rw = Math.min(src.width, x1 + mw) - rx, rh = Math.min(src.height, y1 + mh) - ry;
   const k = Math.min(3, 1800 / rw), c = document.createElement('canvas'); c.width = Math.round(rw * k); c.height = Math.round(rh * k);
   c.getContext('2d').drawImage(src, rx, ry, rw, rh, 0, 0, c.width, c.height);
-  try { return inferLabels(voteRelief(await readRelief(c, progress))); } finally { c.width = c.height = 0; }
+  try { return inferLabels(voteRelief(await readRelief(c, progress, { scales: [1, 0.5], his: [2.6, 2.2] }))); } finally { c.width = c.height = 0; }
 }

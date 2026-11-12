@@ -25,6 +25,8 @@ const EAN = '7701234567897';
   let page = await ctx.newPage();
   const errors = []; const watch = p => { p.on('pageerror', e => errors.push(String(e))); p.on('console', m => { if (m.type() === 'error') errors.push(m.text()); }); };
   watch(page);
+  // Las pruebas cubren todas las lecturas: modo «completo» (la máquina de pruebas tiene 4 núcleos y se detectaría como antigua).
+  await ctx.addInitScript(() => { try { if (!localStorage.getItem('perfMode')) localStorage.setItem('perfMode', 'completo'); } catch {} });
   await page.goto(URL0);
   await page.waitForFunction(() => navigator.serviceWorker.controller, null, { timeout: 30000 });
   // Las pruebas 1-7 ejercitan cada lectura por separado: se desactiva el llenado automático (se prueba aparte al final).
@@ -492,6 +494,10 @@ const EAN = '7701234567897';
   await page.click('#btn-form-clear'); if (await btn('Descartar').count()) await btn('Descartar').click();
   await page.evaluate(() => sessionStorage.removeItem('mockOcr')); await page.reload(); await page.waitForTimeout(500);
   await setAuto(false);
+  const perf = await page.evaluate(async () => { const m = await import('./js/perf.js'); return { low: m.LOW, info: m.deviceInfo() }; });
+  await page.goto(URL0 + '#config'); await page.waitForSelector('#cf-perf');
+  const perfTxt = await page.locator('#cf-perf-info').innerText();
+  check('Rendimiento: modo para teléfonos antiguos configurable y explicado en Configuración', (await page.$$eval('#cf-perf option', o => o.map(x => x.value))).join() === 'auto,rapido,completo' && /núcleos/.test(perfTxt) && perf.low === false, perfTxt);
   console.log('\nGeneral');
   const ovf = await page.evaluate(async () => { const out = []; for (const v of ['inicio', 'registrar', 'historial', 'rotulos', 'respaldo', 'config']) { location.hash = '#' + v; await new Promise(r => setTimeout(r, 150)); if (document.documentElement.scrollWidth > innerWidth + 1) out.push(v); } return out; });
   check('Ninguna pantalla se desborda horizontalmente en teléfono (412 px)', ovf.length === 0, ovf.join(','));

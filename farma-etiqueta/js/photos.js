@@ -2,7 +2,8 @@
 const MAX_BYTES = 30 * 1024 * 1024;
 const MAX_SIDE = 1800;   // lado mayor de la fotografía guardada
 const QUALITY = 0.82;
-const READ_SIDE = 4000;  // copia en memoria para leer texto pequeño a resolución completa (no se guarda)
+import { LOW } from './perf.js';
+const READ_SIDE = LOW ? 3000 : 4000;  // copia en memoria para leer texto pequeño (no se guarda); menor en teléfonos lentos
 
 async function sniff(file) {
   const b = new Uint8Array(await file.slice(0, 12).arrayBuffer());
@@ -66,11 +67,12 @@ export async function processFile(file, progress = () => {}) {
       let hc;
       try { hc = toCanvas(src, READ_SIDE); hi = await toBlob(hc, 'image/jpeg', 0.9); } catch { hi = blob; } finally { freeCanvas(hc); }
     }
+    let quality = null; try { quality = qualityOf(canvas); } catch { /* sin medida */ }
     const tc = toCanvas(canvas, 144);
     const thumb = tc.toDataURL('image/jpeg', 0.7);
     freeCanvas(tc);
     progress('Lista', 1);
-    return { blob, hi, w: canvas.width, h: canvas.height, thumb, original: file.size };
+    return { blob, hi, w: canvas.width, h: canvas.height, thumb, original: file.size, quality };
   } finally {
     src.close?.();
     freeCanvas(canvas);
@@ -122,10 +124,13 @@ export function enhance(src, maxSide = 2400) {
 export const SHARP_MIN = 150, GLARE_MAX = 3;
 export async function photoQuality(blob) {
   const bmp = await createImageBitmap(blob);
-  try {
-    const k = Math.min(1, 1000 / Math.max(bmp.width, bmp.height)), c = document.createElement('canvas');
-    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
-    const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(bmp, 0, 0, c.width, c.height);
+  try { return qualityOf(bmp); } finally { bmp.close?.(); }
+}
+export function qualityOf(src) {
+  {
+    const k = Math.min(1, 1000 / Math.max(src.width, src.height)), c = document.createElement('canvas');
+    c.width = Math.round(src.width * k); c.height = Math.round(src.height * k);
+    const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(src, 0, 0, c.width, c.height);
     const W = c.width, H = c.height, d = x.getImageData(0, 0, W, H).data, g = new Float32Array(W * H);
     c.width = c.height = 0;
     let sat = 0;
@@ -141,5 +146,5 @@ export async function photoQuality(blob) {
     vals.sort((a, b) => a - b);
     const sharp = Math.round(vals[Math.floor(vals.length * 0.9)] || 0), glare = +(sat / (W * H) * 100).toFixed(1);
     return { sharp, glare, blurry: sharp < SHARP_MIN, shiny: glare > GLARE_MAX };
-  } finally { bmp.close?.(); }
+  }
 }

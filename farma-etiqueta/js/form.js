@@ -1,7 +1,7 @@
 // Registro y edición de productos: formulario, fotografía, OCR con revisión humana.
 import { $, $$, h, toast, modal, confirmDlg, busy, fmtBytes, errMsg } from './ui.js';
 import * as db from './db.js';
-import { processFile, toStored, fromStored, blobToCanvas, freeCanvas, enhance, photoQuality } from './photos.js';
+import { processFile, toStored, fromStored, blobToCanvas, freeCanvas, enhance } from './photos.js';
 import { recognize, recognizeOnline, nativeOcrEngine, ENGINE_NAME } from './ocr.js';
 import { extractFields, extractZone, dateOK } from './extract.js';
 import { liveScan } from './live.js';
@@ -10,6 +10,7 @@ import { readRelief, voteRelief, readReliefAuto } from './relief.js';
 import { readTiles } from './tiles.js';
 import { fixLotLines } from './glyphs.js';
 import { verifyFields } from './verify.js';
+import { LOW } from './perf.js';
 import { aiReady, aiConfig, aiReadLotDates } from './ai.js';
 import { monthToNumber } from './extract.js';
 
@@ -116,7 +117,7 @@ export async function setPhotoFromFile(file, after) {
     const p = await processFile(file, photoProgress);
     st.photo = { blob: p.blob, w: p.w, h: p.h }; st.thumb = p.thumb; st.photoState = 'new';
     st.src = p.hi;                                         // copia de lectura en memoria (no se reabre el archivo original)
-    st.quality = await photoQuality(p.blob).catch(() => null);
+    st.quality = p.quality || null;
     showPhoto(); scheduleDraft();
     toast(`Fotografía lista (${fmtBytes(p.original)} → ${fmtBytes(p.blob.size)}).`, 'ok');
   } catch (e) {
@@ -200,7 +201,8 @@ async function morePasses(canvas, o, prog, alive = () => true, hiSrc = null) {
   }
   // Texto GIRADO (solapas con lote y fechas en vertical): si se ve una etiqueta de lote o fecha sin su valor, se lee la foto girada.
   // Apple Vision no lee texto a 90°: en iPhone se prueba siempre girada si aún faltan datos.
-  if (need() && (native === 'vision' || /\b(?:LOTE?|LOT|VENC\w*|VENCE|PREP\w*|F\.\s?V|F\.\s?F|EXP)\b/i.test(o.res.text))) {
+  // ML Kit ya lee texto girado: la lectura de la foto girada solo se hace con Apple Vision o con Tesseract.
+  if (native !== 'mlkit' && need() && (native === 'vision' || /\b(?:LOTE?|LOT|VENC\w*|VENCE|PREP\w*|F\.\s?V|F\.\s?F|EXP)\b/i.test(o.res.text))) {
     for (const deg of [90, 270]) {
       if (!need()) break;
       prog(`Leyendo el texto girado (${deg}°)…`);
@@ -213,13 +215,14 @@ async function morePasses(canvas, o, prog, alive = () => true, hiSrc = null) {
     }
   }
   // Lote y fechas EN RELIEVE (troquelados sin tinta): siempre quedan pendientes de revisión, nunca se dan por seguros.
-  if (need()) {
+  // Es la lectura más pesada: en teléfonos lentos no se hace sola (para esos casos está «Escanear lote y fechas»).
+  if (!LOW && need()) {
     try {
       const rl = await readReliefAuto(canvas, t => prog(t));
       if (rl.length) merge({ lines: rl, text: rl.map(l => l.text).join('\n') }, 'Leído en RELIEVE (marcado sin tinta): esta lectura confunde dígitos con frecuencia. Compárelo carácter por carácter con el empaque.', true, true);
     } catch { /* sin texto en relieve */ }
   }
-  if (need()) {
+  if (!(LOW && native) && need()) {
     prog('Realzando la imagen…');
     const ec = enhance(canvas);
     try { merge(await recognize(ec, (t, f) => prog('Tercera lectura con imagen realzada…', f), true), 'Leído tras realzar la imagen (impresión tenue o por puntos): este tipo de lectura falla con frecuencia. Compárelo carácter por carácter con el empaque antes de marcarlo.', true); }
@@ -268,7 +271,7 @@ export async function autoFill(tStart, srcBlob = null) {
   const aiP = aiOn ? aiConfig().then(c => aiReadLotDates(SRC(), c.key, zoneP)).catch(e => ({ error: errMsg(e) })) : null;
   // Primera lectura sobre la copia de alta calidad (la guardada está comprimida y confunde dígitos); luego se verifican lote y fechas.
   try {
-    const side = (await nativeOcrEngine()) ? 3200 : 2200;         // el lector nativo aprovecha más resolución
+    const side = (await nativeOcrEngine()) ? (LOW ? 2400 : 3200) : (LOW ? 1800 : 2200);   // el lector nativo aprovecha más resolución; menos en teléfonos lentos
     r = face ? await analyze(srcBlob, false, side) : await withPhoto(src => analyze(src, false, side)).catch(() => analyze(st.photo.blob, false, 1800));
     zoneOk(lotZone(r));
     if (!r.res.online) await verifyFields(r.fields, SRC(), r.baseW, t => busy(t));
@@ -457,7 +460,7 @@ async function background(r, seq, missing, srcBlob = null, filledNow = new Set()
   const still = ['lote', 'vencimiento'].filter(k => !input(k).value.trim() && !hasSugg(k)).map(k => label[k].toLowerCase());
   line.textContent = (found.length ? `Encontrado en segundo plano: ${found.join(', ')} (${((performance.now() - t0) / 1000).toFixed(1)} s más). ` : '')
     + (sugg.length ? `Lectura dudosa de ${sugg.join(', ')} (por ejemplo, impresión en relieve): compárela con el empaque y toque «Usar» si coincide, o corríjala. ` : '')
-    + (still.length ? `No se encontró ${still.join(' ni ')}: use «Marcar lote y fechas» o escríbalo.` : sugg.length ? '' : 'Compare el lote y las fechas con el empaque.');
+    + (still.length ? `No se encontró ${still.join(' ni ')}: use «Escanear lote y fechas con la cámara» o escríbalo.` : sugg.length ? '' : 'Compare el lote y las fechas con el empaque.');
   if (found.length) toast(`Se agregó ${found.join(', ').toLowerCase()} desde la foto.`, 'ok');
 }
 
