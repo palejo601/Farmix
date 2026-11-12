@@ -372,8 +372,8 @@ async function addFace(file) {
 }
 
 // ---- Escáner en vivo: los datos leídos varias veces iguales se llevan al formulario ----
-async function runLive() {
-  const r = await liveScan();
+async function runLive(opts = {}) {
+  const r = await liveScan(opts);
   if (!r) return;
   if (r.read) {                                           // «Tomar foto y leer»: lectura completa de la foto (como desde la galería)
     await setPhotoFromFile(new File([r.photo], 'foto-camara.jpg', { type: r.photo.type || 'image/jpeg' }), 'live');
@@ -382,7 +382,7 @@ async function runLive() {
     for (const [f, v] of Object.entries(r.values)) if (!input(f).value.trim()) setField(f, v, 'ocr');
     chips(); scheduleDraft(); return;
   }
-  if (r.photo && !st.photo) await setPhotoFromFile(new File([r.photo], 'escaneo-en-vivo.jpg', { type: 'image/jpeg' }), 'live');
+  if (r.photo && !st.photo && !opts.lotMode) await setPhotoFromFile(new File([r.photo], 'escaneo-en-vivo.jpg', { type: 'image/jpeg' }), 'live');
   const label = Object.fromEntries(FIELDS); let n = 0; const sug = [];
   clearSuggestions();
   for (const [f, v] of Object.entries(r.values)) {
@@ -669,7 +669,8 @@ export function initForm() {
   $('#btn-ocr').addEventListener('click', () => runOCR());
   $('#btn-zone').addEventListener('click', () => runZone());
   $('#btn-auto').addEventListener('click', () => autoFill());
-  $$('.btn-live').forEach(b => b.addEventListener('click', runLive));
+  $$('.btn-live').forEach(b => b.addEventListener('click', () => runLive()));
+  $$('.btn-live-lot').forEach(b => b.addEventListener('click', () => runLive({ lotMode: true })));
 
   // Selectores de archivo: la apertura la hace el propio <label for>, en el mismo gesto del usuario.
   let after = null;

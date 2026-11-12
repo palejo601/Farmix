@@ -5,6 +5,8 @@ import { h, toast, errMsg } from './ui.js';
 import { recognize, nativeOcrEngine } from './ocr.js';
 import { extractFields, extractZone } from './extract.js';
 import { readBoxes } from './boxes.js';
+import { aiReady, aiConfig, aiReadLotDates } from './ai.js';
+import { monthToNumber } from './extract.js';
 import { fixLotLines } from './glyphs.js';
 
 const NEED = 2;   // lecturas iguales necesarias para dar un dato por seguro (lote y fechas: 3, y sin otra lectura que compita)
@@ -23,15 +25,18 @@ function cameraError(e) {
 
 // Devuelve { values: {campo: valor}, photo: Blob|null, read: bool } o null si se cancela.
 // read=true: el usuario pidió «Tomar foto y leer»: la foto se analiza completa como si viniera de la galería.
-export async function liveScan() {
+// lotMode: modo «escanear lote»: recuadro pequeño solo para el bloque de lote y fechas, más resolución de cámara,
+// termina solo cuando lote y vencimiento quedan confirmados y, si no lo logra en 6 s, consulta una vez a la IA con ese recorte.
+export async function liveScan({ lotMode = false } = {}) {
   if (!navigator.mediaDevices?.getUserMedia) { toast(isSecureContext ? 'Este navegador no permite usar la cámara en vivo. Use «Elegir de la galería».' : 'La cámara en vivo requiere abrir la app por HTTPS o instalarla.', 'err', 7000); return null; }
   let stream;
-  try { stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 }, advanced: [{ focusMode: 'continuous' }] } }); }
+  const res = lotMode ? { width: { ideal: 2560 }, height: { ideal: 1440 } } : { width: { ideal: 1920 }, height: { ideal: 1080 } };
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, ...res, advanced: [{ focusMode: 'continuous' }] } }); }
   catch (e) { toast(cameraError(e), 'err', 8000); return null; }
   const track = stream.getVideoTracks()[0];
   const video = h('video', { autoplay: true, muted: true, playsinline: true, 'aria-label': 'Imagen de la cámara' });
   video.muted = true; video.setAttribute('playsinline', ''); video.srcObject = stream;
-  const guide = h('div', { class: 'live-guide' }, h('span', {}, 'Ponga aquí el nombre, el lote o las fechas'));
+  const guide = h('div', { class: 'live-guide' + (lotMode ? ' lot' : '') }, h('span', {}, lotMode ? 'Encuadre solo el lote y las fechas' : 'Ponga aquí el nombre, el lote o las fechas'));
   const status = h('p', { class: 'live-status', role: 'status' }, 'Preparando la lectura…');
   const raw = h('p', { class: 'live-raw' }, '');
   const list = h('div', { class: 'live-list' });
@@ -50,6 +55,7 @@ export async function liveScan() {
   torchBtn.onclick = async () => { try { torch = !torch; await track.applyConstraints({ advanced: [{ torch }] }); torchBtn.classList.toggle('primary', torch); } catch { toast('No se pudo encender la linterna.', 'warn'); } };
 
   const votes = {}, best = {};
+  let aiBusy = false, aiTried = false, autoDone = false; const t0 = performance.now();
   // Seguro: leído igual varias veces y al menos el doble que cualquier otra lectura distinta (p. ej. 4B0123 frente a 480123).
   const sure = f => !!best[f] && (best[f].forced || (best[f].n >= need(f) && best[f].n >= 2 * best[f].rival));
   const render = () => {
@@ -59,8 +65,10 @@ export async function liveScan() {
       ? h('span', { class: 'chip ok' }, `✓ ${NAMES[f]}: ${best[f].v}`)
       : h('button', { type: 'button', class: 'chip warn', title: 'Tocar para aceptar', onclick: () => { best[f].forced = true; render(); } }, `… ${NAMES[f]}: ${best[f].v} (tocar si es correcto)`)));
     useBtn.disabled = !okList.length; useBtn.textContent = okList.length ? `Usar ${okList.length} dato(s)` : 'Usar datos';
-    const falta = ['nombre', 'lote', 'vencimiento'].filter(f => !sure(f)).map(f => NAMES[f].toLowerCase());
-    status.textContent = falta.length ? `Leyendo… falta: ${falta.join(', ')}. Acerque esa parte al recuadro, sin reflejos.` : 'Listo: nombre, lote y vencimiento leídos. Pulse «Usar datos».';
+    const falta = (lotMode ? ['lote', 'vencimiento'] : ['nombre', 'lote', 'vencimiento']).filter(f => !sure(f)).map(f => NAMES[f].toLowerCase());
+    if (aiBusy) return;
+    status.textContent = falta.length ? `Leyendo… falta: ${falta.join(', ')}. ${lotMode ? 'Acerque la cámara hasta que el lote llene el recuadro, sin reflejos.' : 'Acerque esa parte al recuadro, sin reflejos.'}` : lotMode ? 'Listo: lote y vencimiento confirmados.' : 'Listo: nombre, lote y vencimiento leídos. Pulse «Usar datos».';
+    if (lotMode && !falta.length && !autoDone) { autoDone = true; setTimeout(() => useBtn.click(), 700); }   // termina solo
   };
   const vote = (f, v, w = 1) => {
     if (!v) return;
@@ -72,15 +80,15 @@ export async function liveScan() {
   };
 
   // Recorta del video lo que se ve dentro del recuadro (el video se muestra recortado para llenar la pantalla).
-  const crop = () => {
+  const crop = (forAI = false) => {
     const vw = video.videoWidth, vh = video.videoHeight; if (!vw || !vh) return null;
     const vb = video.getBoundingClientRect(), gb = guide.getBoundingClientRect();
     const s = Math.max(vb.width / vw, vb.height / vh), ox = (vb.width - vw * s) / 2, oy = (vb.height - vh * s) / 2;
     const sx = Math.max(0, (gb.left - vb.left - ox) / s), sy = Math.max(0, (gb.top - vb.top - oy) / s);
     const sw = Math.min(vw - sx, gb.width / s), sh = Math.min(vh - sy, gb.height / s);
-    const k = Math.min(2.5, 1400 / sw), c = document.createElement('canvas');
+    const k = forAI ? 1 : Math.min(2.5, 1400 / sw), c = document.createElement('canvas');
     c.width = Math.round(sw * k); c.height = Math.round(sh * k);
-    const x = c.getContext('2d', { willReadFrequently: true }); x.filter = 'grayscale(1) contrast(1.25)';
+    const x = c.getContext('2d', { willReadFrequently: true }); if (!forAI) x.filter = 'grayscale(1) contrast(1.25)';
     x.drawImage(video, sx, sy, sw, sh, 0, 0, c.width, c.height);
     return c;
   };
@@ -107,6 +115,22 @@ export async function liveScan() {
         const txt = r.text.replace(/\s+/g, ' ').trim();
         raw.textContent = txt.length > 2 ? 'Texto visto: ' + txt.slice(0, 140) : 'No se ve texto en el recuadro: acerque la caja (a unos 10–15 cm), espere a que enfoque y evite reflejos.';
         render();
+        // Modo lote: si en 6 s no se confirmaron lote y vencimiento, una sola consulta a la IA con el recorte a resolución completa.
+        if (lotMode && !aiTried && performance.now() - t0 > 6000 && (!sure('lote') || !sure('vencimiento')) && await aiReady()) {
+          aiTried = true; aiBusy = true; status.textContent = 'Consultando al Asistente IA con el recorte ampliado…';
+          const ac = crop(true);
+          try {
+            const blob = await new Promise(r2 => ac.toBlob(r2, 'image/jpeg', 0.92));
+            const ai = await aiReadLotDates(blob, (await aiConfig()).key, null);
+            for (const f of ['lote', 'fechaFabricacion', 'vencimiento']) {
+              const a = ai?.[f]; if (!a?.valor) continue;
+              const v = f === 'lote' ? a.valor.trim() : monthToNumber(a.valor.trim());
+              // La IA vale 2 lecturas si está segura; coincide con lo del teléfono → queda confirmado.
+              vote(f, v, a.certeza === 'alta' ? 2 : 1);
+            }
+          } catch (e) { toast('Asistente IA: ' + errMsg(e), 'warn', 5000); }
+          finally { ac.width = ac.height = 0; aiBusy = false; render(); }
+        }
       } catch (e) { status.textContent = 'Error de lectura: ' + errMsg(e); await sleep(800); }
       finally { c.width = c.height = 0; }
     }
