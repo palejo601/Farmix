@@ -18,7 +18,7 @@ export const FIELDS = [
   ['nombre', 'Nombre del producto'], ['codigoBarras', 'Código de barras'], ['principioActivo', 'Principio activo'],
   ['concentracion', 'Concentración'], ['formaFarmaceutica', 'Forma farmacéutica'], ['presentacion', 'Presentación'],
   ['laboratorio', 'Laboratorio o fabricante'], ['registroSanitario', 'Registro sanitario'], ['lote', 'Número de lote'],
-  ['fechaFabricacion', 'Fecha de fabricación'], ['vencimiento', 'Fecha de vencimiento'], ['ubicacion', 'Ubicación'], ['condiciones', 'Condiciones de almacenamiento'], ['observaciones', 'Observaciones'],
+  ['fechaFabricacion', 'Fecha de fabricación'], ['vencimiento', 'Fecha de vencimiento'], ['ubicacion', 'Ubicación'], ['cantidad', 'Cantidad'], ['condiciones', 'Condiciones de almacenamiento'], ['observaciones', 'Observaciones'],
 ];
 export const SRC_LABEL = { manual: 'Manual', ocr: 'OCR · confirmado por el usuario', codigo: 'Leído del código de barras' };
 const SRC_CHIP = { ocr: 'OCR', codigo: 'Código leído' };
