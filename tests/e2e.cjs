@@ -340,6 +340,16 @@ const EAN = '7701234567897';
   const bxv = {}; for (const k of ['lote', 'fechaFabricacion', 'vencimiento']) bxv[k] = await page.inputValue('#f-' + k);
   check('Casillas [L] [F] [V]: cada valor va a su campo, sin intercambiarse', bxv.lote === '4B0123' && bxv.fechaFabricacion === '05/2024' && bxv.vencimiento === '05/2027', JSON.stringify(bxv));
   await page.click('#btn-form-clear'); await btn('Descartar').click();
+  const b8 = await page.evaluate(async () => {
+    const { classifyB8 } = await import('./js/glyphs.js'); let ok = 0, wrong = 0, none = 0;
+    for (const font of ['Arial', 'monospace', 'Courier New', 'DejaVu Sans']) for (const size of [24, 40, 64]) {
+      const c = document.createElement('canvas'); c.width = size * 3; c.height = size * 1.6; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.fillStyle = '#333'; x.font = `${size}px ${font}`;
+      x.fillText('B', size * 0.2, size * 1.2); x.fillText('8', size * 1.6, size * 1.2);
+      for (const [ch, x0] of [['B', size * 0.2], ['8', size * 1.6]]) { const k = classifyB8(c, { x0, y0: size * 0.25, x1: x0 + x.measureText(ch).width, y1: size * 1.3 }); if (k === ch) ok++; else if (k == null) none++; else wrong++; }
+    }
+    return { ok, wrong, none };
+  });
+  check('B y 8 por la forma: nunca se confunden (si la forma no es clara, queda para revisión)', b8.wrong === 0 && b8.ok >= b8.none * 3, JSON.stringify(b8));
   console.log('\nEscáner en vivo (cámara simulada)');
   await page.evaluate(() => {
     const c = document.createElement('canvas'); c.width = 720; c.height = 1280; const x = c.getContext('2d');

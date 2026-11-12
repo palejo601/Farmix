@@ -107,7 +107,7 @@ export function monthToNumber(s) {
 const fixMonth = t => MFIX.reduce((s, [re, m]) => s.replace(re, m), t);
 const unspace = t => t.replace(/(^|[\s:])([0-9](?: [0-9A-Z\/\-.]){3,})(?=$|\s)/g, (m, a, b) => /\d.*\d/.test(b) ? a + b.replace(/ /g, '') : m);
 export function extractFields(lines) {
-  lines = boxLabels(lines.map(l => ({ text: fixMonth(unspace((l.text || '').replace(/\s+/g, ' ').trim())), conf: l.conf ?? null, height: l.height || 0 })))
+  lines = boxLabels(lines.map(l => ({ text: fixMonth(unspace((l.text || '').replace(/\s+/g, ' ').trim())), conf: l.conf ?? null, height: l.height || 0, b8: l.b8 })))
     .map(l => ({ ...l, text: clean(l.text) })).filter(l => l.text.length > 1);
   // Rótulos en tabla: una fila de encabezados («LOTE  FAB  VENCE») y debajo la fila de valores. Se reordenan como «etiqueta: valor».
   for (let i = 0; i + 1 < lines.length; i++) {
@@ -132,6 +132,8 @@ export function extractFields(lines) {
       if (num !== value) { notes = [...notes, `En el empaque dice «${value}» (mes en letras): se convirtió a número.`]; value = num; }
     }
     const conf = lines[i]?.conf ?? null;
+    if (field === 'lote' && lines[i]?.b8 === 'unsure') { notes.push('No se pudo distinguir con seguridad si un carácter es B u 8: compárelo con el empaque.'); forceDoubt = true; }
+    if (field === 'lote' && lines[i]?.b8 === 'fixed') notes.push('B y 8 se distinguieron por la forma del carácter (la B tiene el lado izquierdo recto).');
     // Una fecha con mes o año imposibles («85/2027») es una lectura errónea: se muestra, pero nunca se premarca.
     if ((field === 'vencimiento' || field === 'fechaFabricacion') && ym(value) == null) { notes.push('La fecha leída no parece válida (mes o año fuera de rango): probablemente está mal leída.'); forceDoubt = true; }
     if (conf != null && conf < OK) notes.push('Confianza de lectura baja.');

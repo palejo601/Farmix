@@ -4,6 +4,7 @@
 // (normal y realzado) para detectar confusiones típicas (B/8, O/0, G/6): si las dos lecturas difieren, el dato queda dudoso.
 import { recognize } from './ocr.js';
 import { enhance, freeCanvas } from './photos.js';
+import { fixLotLines } from './glyphs.js';
 
 const LABEL = /(?:^|[\s\[\(|])(?:[LFV](?=\s?[\]\)|]?\s?[.:\-]\s?\S)|L[O0]TE?|BATCH|VENC\w*|VENCE|VTO|EXP\w*|CAD\w*|FAB\w*|ELAB\w*|MFG)/i;
 
@@ -56,6 +57,7 @@ export async function readTiles(src, progress = () => {}, alive = () => true, hi
   big?.close();
   try {
     const a = await recognize(zc, () => {}, '6'), b = await recognize(ec, () => {}, '6');
+    fixLotLines(zc, a.lines); fixLotLines(zc, b.lines);
     return { lines: [...a.lines, ...all], alt: b.lines };
   } finally { freeCanvas(zc); freeCanvas(ec); }
 }

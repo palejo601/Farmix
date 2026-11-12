@@ -1,6 +1,6 @@
 # Resultado de las pruebas automáticas
 
-Ejecución: 2026-11-12 01:19 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
+Ejecución: 2026-11-12 01:28 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
 
 | Estado | Comprobación | Detalle |
 |---|---|---|
@@ -74,16 +74,17 @@ Ejecución: 2026-11-12 01:19 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Sobrescribir exige una confirmación adicional |  |
 | OK | Solo con elegir la foto se llenan nombre, concentración, lote, vencimiento, registro y laboratorio | 0.9 s · {"nombre":"CALMADOL","concentracion":"500 mg","lote":"AB12345","vencimiento":"05/2027","registroSanitario":"INVIMA 2019M-0012345","laboratorio":"Laboratorios Andinos S.A"} |
 | OK | Sin ventanas que confirmar: aviso en el formulario para revisar antes de guardar |  |
-| OK | Tiempo de lectura medido y mostrado (objetivo ≤ 10 s) | 0.4 s medidos por la app |
+| OK | Tiempo de lectura medido y mostrado (objetivo ≤ 10 s) | 0.3 s medidos por la app |
 | OK | Lo escrito a mano no se reemplaza: lo leído queda como sugerencia |  |
 | OK | Tocar la sugerencia la aplica |  |
 | OK | Lote y fechas faltantes se buscan en segundo plano sin bloquear la pantalla | Leyendo la foto por partes (1 de 6)… (puede seguir revisando el formulario) |
 | OK | Al terminar informa lo que no encontró y no inventa lote ni vencimiento |  |
 | OK | Casillas [L] [F] [V]: cada valor va a su campo, sin intercambiarse | {"lote":"4B0123","fechaFabricacion":"05/2024","vencimiento":"05/2027"} |
+| OK | B y 8 por la forma: nunca se confunden (si la forma no es clara, queda para revisión) | {"ok":24,"wrong":0,"none":0} |
 | OK | En vivo: nombre, lote y vencimiento se confirman leyéndolos varias veces | 0.2 s · ✓ Nombre: CALMADOL \| ✓ Concentración: 500 mg \| ✓ Lote: AB12345 \| ✓ Vencimiento: 05/2027 |
 | OK | «Usar datos» llena el formulario, guarda una foto del escaneo y apaga la cámara |  |
 | OK | Ninguna pantalla se desborda horizontalmente en teléfono (412 px) |  |
 | OK | Botones con altura táctil ≥ 40 px | 0 pequeños |
 | OK | Sin errores de JavaScript durante toda la sesión |  |
 
-**81 de 81 correctas.**
+**82 de 82 correctas.**
