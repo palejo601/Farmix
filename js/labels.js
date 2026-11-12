@@ -5,7 +5,7 @@ export const SIZES = [
 ];
 export const LABEL_FIELDS = [
   ['nombre', 'Nombre del producto'], ['principioActivo', 'Principio activo'], ['concentracion', 'Concentración'], ['presentacion', 'Presentación'],
-  ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['laboratorio', 'Laboratorio'], ['codigoBarras', 'Código de barras'],
+  ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['laboratorio', 'Laboratorio'], ['registroSanitario', 'Registro sanitario (INVIMA)'], ['codigoBarras', 'Código de barras'],
   ['condiciones', 'Condiciones de almacenamiento'], ['ubicacion', 'Ubicación'],
 ];
 export const PAPERS = { A4: [210, 297], Carta: [215.9, 279.4], Legal: [215.9, 355.6] };
@@ -79,6 +79,7 @@ export function layoutLabel(rec, o) {
   const lot = on('lote') ? 'Lote: ' + on('lote') : '', ven = on('vencimiento') ? 'Vence: ' + on('vencimiento') : '';
   if (lot && ven) add('Lote / vencimiento', lot + ' ' + ven, 1.1, true); else if (lot || ven) add('Lote / vencimiento', lot || ven, 1.1, true);
   if (on('laboratorio')) add('Laboratorio', on('laboratorio'), 0.9);
+  if (on('registroSanitario')) add('Registro sanitario', 'Reg. San. ' + on('registroSanitario'), 0.85);
   if (on('condiciones')) add('Almacenamiento', on('condiciones'), 0.85);
   if (on('ubicacion')) add('Ubicación', 'Ubic.: ' + on('ubicacion'), 0.85);
 

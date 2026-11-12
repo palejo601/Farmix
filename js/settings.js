@@ -6,7 +6,7 @@ import { initOCR, recognizeOnline, OCR_BASE, OCR_CORES, nativeOcrEngine, ENGINE_
 import { aiConfig, aiTest, AI_MODEL } from './ai.js';
 import { LOW, DETECTED_LOW, perfMode, setPerfMode, deviceInfo } from './perf.js';
 
-export const APP_VERSION = '1.20.1';
+export const APP_VERSION = '1.20.2';
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const secure = () => self.isSecureContext && 'serviceWorker' in navigator && 'caches' in self;
 let installEvt = null, swReg = null;
