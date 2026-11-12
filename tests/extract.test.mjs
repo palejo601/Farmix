@@ -35,5 +35,7 @@ t('El nombre no se toma de un párrafo legal', ['la en hipersensibilidad a cualq
 t('Meses en letras se convierten a número', ['Vence: ENERO 2027', 'Fab: 15 MAR 2025', 'Lote AB771'], { vencimiento: '01/2027', fechaFabricacion: '15/03/2025', lote: 'AB771' });
 t('Meses en números se dejan como están', ['Vence: 08/2027', 'Fab: 2025-03'], { vencimiento: '08/2027', fechaFabricacion: '2025-03' });
 t('Inglés: EXP AUG 2027 → 08/2027', ['EXP AUG 2027', 'MFG DEC 2024'], { vencimiento: '08/2027', fechaFabricacion: '12/2024' });
+t('Lote con S leída como $ (impresión por puntos)', ['L: $16057', 'F: 11/2024', 'V: 11/2026'], { lote: 'S16057', fechaFabricacion: '11/2024', vencimiento: '11/2026' });
+t('Lote partido por un espacio', ['Lote: S16 057', 'Vence: 11/2026'], { lote: 'S16057', vencimiento: '11/2026' });
 console.log(bad ? `\n${bad} fallo(s)` : '\nTodas las reglas correctas');
 process.exit(bad ? 1 : 0);

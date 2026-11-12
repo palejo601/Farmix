@@ -84,10 +84,10 @@ const LOTV = /(?:^|[^A-Za-z0-9])(?:L[O0]TE?|LOT|BATCH|L)(?![A-Za-z])\s?[.:\-]?\s
 export function fixLotLines(src, lines) {
   for (const l of lines || []) {
     const m = (l.text || '').match(LOTV); if (!m || !/[8B0OD]/.test(m[1])) continue;
-    if (l.rot) continue;
+    if (l.rot || l.native) continue;   // lector nativo: es más fiable que el chequeo de forma; no se toca
     const r = fixB8(src, m[1], l.symbols);
     // Lector nativo: es más fiable que la forma; si la forma lo contradice no se cambia nada, el lote queda para revisión.
-    if (l.native) { if (r.changed) { l.b8 = 'unsure'; l.b8alt = r.value; } continue; }
+    if (l.native) continue;   // (no se llega aquí: ver arriba)
     if (r.changed) { l.text = l.text.replace(m[1], r.value); l.b8 = 'fixed'; for (const w of l.words || []) if (w.text && w.text.includes(m[1])) w.text = w.text.replace(m[1], r.value); }
     if (r.unsure) l.b8 = 'unsure';
   }

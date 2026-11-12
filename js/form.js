@@ -268,6 +268,7 @@ export async function autoFill(tStart) {
     return;
   } finally { busy(false); }
   const { res, onlineErr } = r, fields = [...r.fields], secs = ((performance.now() - t0) / 1000).toFixed(1);
+  st.diag = { engine: res.online ? 'OCR.space (en línea)' : ENGINE_NAME[res.engine || ''], secs, text: res.text, fields: r.fields };
   let filled = 0; const doubts = [];
   for (const f of fields) {
     const cur = input(f.field).value.trim(), src = st.origen[f.field];
@@ -285,7 +286,8 @@ export async function autoFill(tStart) {
     h('b', {}, filled ? `Se llenaron ${filled} campo(s) desde la foto` : 'No se pudo llenar ningún campo con seguridad'),
     ` (${res.online ? 'lectura en línea' : 'lectura en el teléfono con ' + ENGINE_NAME[res.engine || '']}, ${secs} s${onlineErr ? '; el servicio en línea no respondió' : ''}). Compruebe que coincidan con el empaque antes de guardar.`,
     doubts.length ? h('div', { style: 'margin-top:6px' }, `Para revisar: ${doubts.join(', ')} (vea la sugerencia bajo cada campo).`) : null,
-    missing.length ? h('div', { class: 'miss', style: 'margin-top:6px' }, `No se encontró ${missing.join(' ni ')}: use «Marcar lote y fechas» o escríbalo.`) : null));
+    missing.length ? h('div', { class: 'miss', style: 'margin-top:6px' }, `No se encontró ${missing.join(' ni ')}: use «Marcar lote y fechas» o escríbalo.`) : null,
+    h('button', { type: 'button', class: 'btn small', style: 'margin-top:8px', onclick: showDiag }, 'Ver qué leyó la app')));
   toast(filled ? `Formulario llenado con ${filled} dato(s) de la foto.` : 'No se pudieron leer datos con seguridad en esta foto.', filled ? 'ok' : 'warn');
   if (missing.length || doubts.some(d => /lote|vencim|fabric/i.test(d))) background(r, seq, missing);
 }
@@ -317,6 +319,19 @@ async function runLive() {
     sug.length ? h('div', { style: 'margin-top:6px' }, `Para revisar: ${sug.join(', ')} (vea la sugerencia bajo cada campo).`) : null,
     missing.length ? h('div', { style: 'margin-top:6px' }, `Falta ${missing.join(' y ')}: vuelva a escanear esa parte o escríbalo.`) : null));
   toast(n ? `${n} dato(s) del escáner en vivo en el formulario.` : 'No se agregaron datos nuevos.', n ? 'ok' : 'warn');
+}
+
+// Diagnóstico: el texto exacto que vio el lector y lo que se decidió con el lote y las fechas (para revisar o enviar a soporte).
+async function showDiag() {
+  const d = st.diag; if (!d) { toast('Aún no hay una lectura de foto.', 'warn'); return; }
+  const label = Object.fromEntries(FIELDS);
+  const rows = ['lote', 'fechaFabricacion', 'vencimiento'].map(k => {
+    const f = d.fields.find(x => x.field === k);
+    return `${label[k]}: ${f ? `«${f.value}»${f.alt ? ` o «${f.alt}»` : ''} — ${f.doubt ? 'DUDOSO (sugerencia)' : 'seguro (llenado)'}${f.notes?.length ? '\n   · ' + f.notes.join('\n   · ') : ''}` : 'no encontrado'}`;
+  });
+  const txt = `FARMA-ETIQUETA ${(await import('./settings.js')).APP_VERSION} · lector: ${d.engine} · ${d.secs} s\n\n${rows.join('\n')}\n\n— Texto leído —\n${(d.text || '').trim() || '(sin texto)'}`;
+  await modal('Qué leyó la app', h('div', {}, h('p', { class: 'muted small' }, 'Haga una captura de esta pantalla o cópiela para enviarla.'), h('pre', { class: 'raw', style: 'max-height:55vh' }, txt)),
+    [{ label: 'Cerrar', value: null }, { label: 'Copiar', class: 'primary', keep: true, onclick: async () => { try { await navigator.clipboard.writeText(txt); toast('Copiado.', 'ok'); } catch { toast('No se pudo copiar: haga una captura de pantalla.', 'warn'); } } }]);
 }
 
 // Busca lote y fechas sin bloquear la pantalla: el usuario puede revisar y escribir mientras tanto.
