@@ -1,6 +1,6 @@
 # Resultado de las pruebas automáticas
 
-Ejecución: 2026-11-12 03:17 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
+Ejecución: 2026-11-12 03:37 UTC · Chromium 153.0.8010.12 · emulación Pixel 7 (Android).
 
 | Estado | Comprobación | Detalle |
 |---|---|---|
@@ -77,7 +77,7 @@ Ejecución: 2026-11-12 03:17 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Tiempo de lectura medido y mostrado (objetivo ≤ 10 s) | 0.6 s medidos por la app |
 | OK | Lo escrito a mano no se reemplaza: lo leído queda como sugerencia |  |
 | OK | Tocar la sugerencia la aplica |  |
-| OK | Lote y fechas faltantes se buscan en segundo plano sin bloquear la pantalla | Leyendo la foto por partes (1 de 6)… (puede seguir revisando el formulario) |
+| OK | Lote y fechas faltantes se buscan en segundo plano sin bloquear la pantalla | Segunda lectura (lote y fechas)… 59 % (puede seguir revisando el formulario) |
 | OK | Al terminar informa lo que no encontró y no inventa lote ni vencimiento |  |
 | OK | Casillas [L] [F] [V]: cada valor va a su campo (lleno o propuesto), sin intercambiarse | {"lote":"4B0123","fechaFabricacion":"05/2024","vencimiento":"05/2027"} |
 | OK | B y 8 por la forma: nunca se confunden (si la forma no es clara, queda para revisión) | {"ok":16,"wrong":0,"none":8} |
@@ -87,8 +87,9 @@ Ejecución: 2026-11-12 03:17 UTC · Chromium 153.0.8010.12 · emulación Pixel 7
 | OK | Nativo: etiquetas y valores en columnas separadas (Lote: / F.F.: / F.V.:) | {"fechaFabricacion":"09/2024","vencimiento":"09/2026","lote":"5280924"} |
 | OK | Nativo: «L: S16057 · F: 11/2024 · V: 11/2026» | {"fechaFabricacion":"11/2024","vencimiento":"11/2026","lote":"S16057"} |
 | OK | Nativo (simulado): la app usa el lector del teléfono, verifica y llena lote y fechas | {"nombre":"CALMADOL","lote":"5280924","fechaFabricacion":"09/2024","vencimiento":"09/2026"} · 7 lecturas · Se llenaron 4 campo(s) desde la foto |
+| OK | «Ver qué leyó la app»: muestra el lector usado, el texto leído y la decisión sobre el lote | FARMA-ETIQUETA 1.14.0 · lector: Google ML Kit · 0.1 s \|  \| Número de lote: «5280924» — seguro (llenado) |
 | OK | Ninguna pantalla se desborda horizontalmente en teléfono (412 px) |  |
 | OK | Botones con altura táctil ≥ 40 px | 0 pequeños |
 | OK | Sin errores de JavaScript durante toda la sesión |  |
 
-**86 de 86 correctas.**
+**87 de 87 correctas.**

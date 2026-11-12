@@ -59,7 +59,9 @@ const BOX_ONLY = new RegExp(String.raw`^\s*${BOX_L}\s?([LFV])\s?${BOX_R}\s?[:.\-
 const BOX_HEAD = new RegExp(String.raw`^(?:\s*${BOX_L}\s?[LFV]\s?${BOX_R}\s*){2,3}$`);
 const BOX_WORD = { L: 'LOTE', F: 'FAB', V: 'VENCE' };
 const LOT_VAL = /^[A-Z0-9][A-Z0-9\-\/]{2,19}/i;
-const lotOK = t => { const m = t.match(LOT_VAL); return m && /\d/.test(m[0]) && !new RegExp('^' + DATE_SRC + '$', 'i').test(m[0]) ? m[0] : null; };
+// Impresión por puntos: el lector a veces devuelve «$» o «§» por la S. Se normaliza solo dentro del valor del lote.
+const lotSym = t => (t || '').replace(/[$§]/g, 'S');
+const lotOK = t => { const m = lotSym(t).match(LOT_VAL); return m && /\d/.test(m[0]) && !new RegExp('^' + DATE_SRC + '$', 'i').test(m[0]) ? m[0] : null; };
 const dateAt = t => { const m = t.match(new RegExp('^' + DATE_SRC, 'i')); return m && ym(m[0]) != null ? m[0] : null; };
 const valOK = (k, t) => k === 'L' ? lotOK(t) : dateAt(t);
 export function boxLabels(lines) {
@@ -191,8 +193,11 @@ export function extractFields(lines) {
 
   // --- Lote ---
   for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].text.match(LOT_KW); if (!m) continue;
-    const v = m[2];
+    const m = lotSym(lines[i].text).match(LOT_KW); if (!m) continue;
+    let v = m[2];
+    // «Lote: S16 057»: si justo después vienen 1–4 caracteres alfanuméricos sueltos, son parte del mismo lote.
+    const tail = lotSym(lines[i].text).slice(m.index + m[0].length).match(/^ ([A-Z0-9]{1,4})(?=$|\s)/i);
+    if (tail && v.length + tail[1].length <= 20 && !/^(?:F|V|FAB|VENC?E?|EXP|VTO)$/i.test(tail[1])) v += tail[1];
     if (!/\d/.test(v)) continue;                       // «LOTE Y FECHA…»: no es un número de lote
     const notes = [];
     if (new RegExp('^' + DATE_SRC + '$', 'i').test(v)) notes.push('El valor tiene forma de fecha: confirme que sea el lote.');
@@ -401,7 +406,17 @@ function kvCore(words) {
         if (KV.some(([, r]) => r.test(cands[i].text))) break;          // llegó a otra etiqueta
         const join = [0, 1, 2].map(n => cands.slice(i, i + n + 1).map(w => w.text).join('')).map(t => t.replace(/^[^A-Z0-9]+|[^A-Z0-9]+$/gi, ''));
         let v = null;
-        if (field === 'lote') v = lotOK(join[0]);
+        if (field === 'lote') {
+          // Lote partido en varias «palabras» por la separación de la impresión («S16 057»): se unen las vecinas muy próximas
+          // del mismo renglón y se toma la unión más larga que siga siendo un código válido.
+          let best = lotOK(lotSym(join[0])), cur = cands[i];
+          for (let n = 1; n < 3 && cands[i + n]; n++) {
+            const nx = cands[i + n], gap = nx.bbox.x0 - cur.bbox.x1;
+            if (gap > Math.max(cur.h, 8) * 0.9 || Math.abs(nx.cy - cur.cy) > Math.max(cur.h, 8) * 0.5 || KV.some(([, r]) => r.test(nx.text))) break;
+            const t = lotOK(lotSym(join[n])); if (t && t.length > (best || '').length) best = t; cur = nx;
+          }
+          v = best;
+        }
         else for (const t of join) { const fx = fixMonth(unspace(t)); const d = new RegExp('^' + DATE_SRC + '$', 'i').test(fx) && ym(fx) != null ? fx : null; if (d) { v = monthToNumber(d); break; } }
         const R = w => w.raw || w.bbox, bs = [R(lab), ...cands.slice(i, i + 3).map(R)];      // caja en coordenadas reales de la foto
         if (v) out[field] = { value: v, conf: Math.min(lab.conf ?? 100, cands[i].conf ?? 100), box: { x0: Math.min(...bs.map(b => b.x0)), y0: Math.min(...bs.map(b => b.y0)), x1: Math.max(...bs.map(b => b.x1)), y1: Math.max(...bs.map(b => b.y1)) } };
