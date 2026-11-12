@@ -109,7 +109,7 @@ const fixMonth = t => MFIX.reduce((s, [re, m]) => s.replace(re, m), t)
   .replace(new RegExp('((?:' + MES + ')[A-Z]{0,7}\\.?[\\/\\-. ]{0,2})([0-9ZOQDSIl|B]{4})(?![A-Za-z0-9])', 'gi'), (m, a, y) => /\d{2}/.test(y) ? a + y.replace(/[ZOQDSIl|B]/g, c => YFIX[c]) : m);
 const unspace = t => t.replace(/(^|[\s:])([0-9](?: [0-9A-Z\/\-.]){3,})(?=$|\s)/g, (m, a, b) => /\d.*\d/.test(b) ? a + b.replace(/ /g, '') : m);
 export function extractFields(lines) {
-  lines = boxLabels(lines.map(l => ({ text: fixMonth(unspace((l.text || '').replace(/\s+/g, ' ').trim())), conf: l.conf ?? null, height: l.height || 0, b8: l.b8, words: l.words, bbox: l.bbox })))
+  lines = boxLabels(lines.map(l => ({ text: fixMonth(unspace((l.text || '').replace(/\s+/g, ' ').trim())), conf: l.conf ?? null, height: l.height || 0, b8: l.b8, words: l.words, bbox: l.bbox, rot: l.rot })))
     .map(l => ({ ...l, text: clean(l.text) })).filter(l => l.text.length > 1);
   // Rótulos en tabla: una fila de encabezados («LOTE  FAB  VENCE») y debajo la fila de valores. Se reordenan como «etiqueta: valor».
   for (let i = 0; i + 1 < lines.length; i++) {
@@ -134,7 +134,7 @@ export function extractFields(lines) {
       if (num !== value) { notes = [...notes, `En el empaque dice «${value}» (mes en letras): se convirtió a número.`]; value = num; }
     }
     const conf = lines[i]?.conf ?? null;
-    if (field === 'lote' && lines[i]?.b8 === 'unsure') { notes.push('No se pudo distinguir con seguridad si un carácter es B u 8: compárelo con el empaque.'); forceDoubt = true; }
+    if (field === 'lote' && lines[i]?.b8 === 'unsure') { notes.push('No se pudo distinguir con seguridad si un carácter es letra o número (B/8, D/0): compárelo con el empaque.'); forceDoubt = true; }
     if (field === 'lote' && lines[i]?.b8 === 'fixed') notes.push('B y 8 se distinguieron por la forma del carácter (la B tiene el lado izquierdo recto).');
     // Una fecha con mes o año imposibles («85/2027») es una lectura errónea: se muestra, pero nunca se premarca.
     if ((field === 'vencimiento' || field === 'fechaFabricacion') && ym(value) == null) { notes.push('La fecha leída no parece válida (mes o año fuera de rango): probablemente está mal leída.'); forceDoubt = true; }
@@ -370,7 +370,19 @@ const KV = [
 ];
 const SKIP = /^(?:N[°ºo]?\.?|NO\.?|#|:|\.)[.:;,]*$/i;            // «Lote N.:» → se salta «N.:»
 export function kvExtract(words) {
-  const ws = (words || []).filter(w => w?.bbox && w.text && w.text.trim()).map(w => ({ ...w, text: w.text.trim(), h: w.bbox.y1 - w.bbox.y0, cy: (w.bbox.y0 + w.bbox.y1) / 2 }));
+  const all = (words || []).filter(w => w?.bbox && w.text && w.text.trim());
+  const out = kvCore(all.filter(w => !w.rot));
+  // Texto vertical (solapas): se «endereza» en los dos sentidos posibles y se toma el que dé más datos.
+  const vert = all.filter(w => w.rot);
+  if (vert.length) {
+    const turn = s => vert.map(w => ({ ...w, raw: w.bbox, bbox: s > 0 ? { x0: w.bbox.y0, x1: w.bbox.y1, y0: -w.bbox.x1, y1: -w.bbox.x0 } : { x0: -w.bbox.y1, x1: -w.bbox.y0, y0: w.bbox.x0, y1: w.bbox.x1 } }));
+    const a = kvCore(turn(1)), b = kvCore(turn(-1)), best = Object.keys(a).length >= Object.keys(b).length ? a : b;
+    for (const k of Object.keys(best)) if (!out[k]) out[k] = best[k];
+  }
+  return out;
+}
+function kvCore(words) {
+  const ws = words.map(w => ({ ...w, text: w.text.trim(), h: w.bbox.y1 - w.bbox.y0, cy: (w.bbox.y0 + w.bbox.y1) / 2 }));
   const out = {};
   for (const [field, re] of KV) {
     for (const lab of ws) {
@@ -391,8 +403,8 @@ export function kvExtract(words) {
         let v = null;
         if (field === 'lote') v = lotOK(join[0]);
         else for (const t of join) { const fx = fixMonth(unspace(t)); const d = new RegExp('^' + DATE_SRC + '$', 'i').test(fx) && ym(fx) != null ? fx : null; if (d) { v = monthToNumber(d); break; } }
-        const vb = cands[i].bbox, lb = lab.bbox;
-        if (v) out[field] = { value: v, conf: Math.min(lab.conf ?? 100, cands[i].conf ?? 100), box: { x0: Math.min(lb.x0, vb.x0), y0: Math.min(lb.y0, vb.y0), x1: Math.max(lb.x1, cands[Math.min(cands.length - 1, i + 2)].bbox.x1), y1: Math.max(lb.y1, vb.y1) } };
+        const R = w => w.raw || w.bbox, bs = [R(lab), ...cands.slice(i, i + 3).map(R)];      // caja en coordenadas reales de la foto
+        if (v) out[field] = { value: v, conf: Math.min(lab.conf ?? 100, cands[i].conf ?? 100), box: { x0: Math.min(...bs.map(b => b.x0)), y0: Math.min(...bs.map(b => b.y0)), x1: Math.max(...bs.map(b => b.x1)), y1: Math.max(...bs.map(b => b.y1)) } };
         if (field === 'lote') break;
       }
       if (out[field]) break;

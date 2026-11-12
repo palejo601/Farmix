@@ -2,9 +2,9 @@
 import { $, h, toast, confirmDlg, fmtBytes, errMsg, isNative, nativePlatform } from './ui.js';
 const appName = () => nativePlatform() === 'ios' ? 'App iPhone / iPad' : 'App Android';
 import * as db from './db.js';
-import { initOCR, recognizeOnline, OCR_BASE, OCR_CORES } from './ocr.js';
+import { initOCR, recognizeOnline, OCR_BASE, OCR_CORES, nativeOcrEngine, ENGINE_NAME } from './ocr.js';
 
-export const APP_VERSION = '1.13.0';
+export const APP_VERSION = '1.14.0';
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const secure = () => self.isSecureContext && 'serviceWorker' in navigator && 'caches' in self;
 let installEvt = null, swReg = null;
@@ -38,11 +38,13 @@ export async function refreshStatus() {
   const on = await db.kvGet('onlineOcr').catch(() => null), onOK = !!(on?.enabled && on.key);
   const [ocr, n, est, persisted] = await Promise.all([ocrOffline(), db.countRecords().catch(() => null),
     navigator.storage?.estimate?.().catch(() => null), navigator.storage?.persisted?.().catch(() => false)]);
+  const eng = await nativeOcrEngine();
   const sw = isNative() ? 'Activo' : secure() ? (navigator.serviceWorker.controller ? 'Activo' : 'Instalándose…') : 'No disponible';
   const rows = [
     ['Conexión', navigator.onLine ? 'En línea' : 'Sin conexión', navigator.onLine ? '' : 'warn'],
     ['Modo de uso', mode(), secure() || isNative() ? '' : 'bad'],
     ['Aplicación sin conexión', sw, sw === 'Activo' ? '' : 'warn'],
+    ['Lector de texto', eng ? ENGINE_NAME[eng] + ' (nativo del teléfono, sin internet)' : 'Tesseract (versión web)', ''],
     ['Recursos OCR', ocr ? 'Disponibles sin conexión' : 'Pendientes (requieren internet la primera vez)', ocr ? '' : 'warn'],
     ['Reconocimiento en línea', onOK ? (navigator.onLine ? 'Activo (OCR.space)' : 'Configurado; sin conexión se usa el OCR local') : 'No configurado (solo OCR local)', onOK ? '' : 'warn'],
     ['Registros guardados', n == null ? 'No disponible' : String(n), n == null ? 'bad' : ''],

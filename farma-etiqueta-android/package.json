@@ -13,7 +13,8 @@
     "@capacitor/core": "^7.0.0",
     "@capacitor/filesystem": "^7.0.0",
     "@capacitor/ios": "^7.6.10",
-    "@capacitor/share": "^7.0.0"
+    "@capacitor/share": "^7.0.0",
+    "farma-native-ocr": "file:native-ocr"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.0.0"

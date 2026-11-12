@@ -2,7 +2,7 @@
 import { $, $$, h, toast, modal, confirmDlg, busy, fmtBytes, errMsg } from './ui.js';
 import * as db from './db.js';
 import { processFile, toStored, fromStored, blobToCanvas, freeCanvas, enhance } from './photos.js';
-import { recognize, recognizeOnline } from './ocr.js';
+import { recognize, recognizeOnline, nativeOcrEngine, ENGINE_NAME } from './ocr.js';
 import { extractFields, extractZone, dateOK } from './extract.js';
 import { liveScan } from './live.js';
 import { readBoxes, mergeBoxes } from './boxes.js';
@@ -175,7 +175,9 @@ async function morePasses(canvas, o, prog, alive = () => true, hiSrc = null) {
   };
   // Primero las casillas impresas (L, F, V): recortes pequeños, rápidos de leer.
   if (alive()) { try { mergeBoxes(o.fields, await readBoxes(canvas, t => prog(t))); } catch { /* sin casillas legibles */ } if (!miss('vencimiento')) o.warnings = []; }
-  if (need()) merge(await recognize(canvas, (t, f) => prog('Segunda lectura (lote y fechas)…', f), true), 'Detectado en una segunda lectura de la imagen.', false);
+  const native = await nativeOcrEngine();
+  // (con el lector nativo la «segunda lectura dispersa» daría lo mismo que la primera: se omite)
+  if (!native && need()) merge(await recognize(canvas, (t, f) => prog('Segunda lectura (lote y fechas)…', f), true), 'Detectado en una segunda lectura de la imagen.', false);
   // Texto pequeño o aislado que la lectura de la página completa no detectó: lectura por partes ampliadas.
   if (need()) {
     try {
@@ -194,7 +196,8 @@ async function morePasses(canvas, o, prog, alive = () => true, hiSrc = null) {
     } catch { /* sin texto adicional */ }
   }
   // Texto GIRADO (solapas con lote y fechas en vertical): si se ve una etiqueta de lote o fecha sin su valor, se lee la foto girada.
-  if (need() && /\b(?:LOTE?|LOT|VENC\w*|VENCE|PREP\w*|F\.\s?V|F\.\s?F|EXP)\b/i.test(o.res.text)) {
+  // Apple Vision no lee texto a 90°: en iPhone se prueba siempre girada si aún faltan datos.
+  if (need() && (native === 'vision' || /\b(?:LOTE?|LOT|VENC\w*|VENCE|PREP\w*|F\.\s?V|F\.\s?F|EXP)\b/i.test(o.res.text))) {
     for (const deg of [90, 270]) {
       if (!need()) break;
       prog(`Leyendo el texto girado (${deg}°)…`);
@@ -255,7 +258,8 @@ export async function autoFill(tStart) {
   const seq = ++readSeq;
   // Primera lectura sobre la copia de alta calidad (la guardada está comprimida y confunde dígitos); luego se verifican lote y fechas.
   try {
-    r = await withPhoto(src => analyze(src, false, 2200)).catch(() => analyze(st.photo.blob, false, 1800));
+    const side = (await nativeOcrEngine()) ? 3200 : 2200;         // el lector nativo aprovecha más resolución
+    r = await withPhoto(src => analyze(src, false, side)).catch(() => analyze(st.photo.blob, false, 1800));
     if (!r.res.online) await verifyFields(r.fields, st.src || st.photo.blob, r.baseW, t => busy(t));
   }
   catch (e) {
@@ -279,7 +283,7 @@ export async function autoFill(tStart) {
   note.hidden = false; note.className = 'banner' + (filled ? '' : ' danger');
   note.replaceChildren(h('div', {},
     h('b', {}, filled ? `Se llenaron ${filled} campo(s) desde la foto` : 'No se pudo llenar ningún campo con seguridad'),
-    ` (${res.online ? 'lectura en línea' : 'lectura en el teléfono'}, ${secs} s${onlineErr ? '; el servicio en línea no respondió' : ''}). Compruebe que coincidan con el empaque antes de guardar.`,
+    ` (${res.online ? 'lectura en línea' : 'lectura en el teléfono con ' + ENGINE_NAME[res.engine || '']}, ${secs} s${onlineErr ? '; el servicio en línea no respondió' : ''}). Compruebe que coincidan con el empaque antes de guardar.`,
     doubts.length ? h('div', { style: 'margin-top:6px' }, `Para revisar: ${doubts.join(', ')} (vea la sugerencia bajo cada campo).`) : null,
     missing.length ? h('div', { class: 'miss', style: 'margin-top:6px' }, `No se encontró ${missing.join(' ni ')}: use «Marcar lote y fechas» o escríbalo.`) : null));
   toast(filled ? `Formulario llenado con ${filled} dato(s) de la foto.` : 'No se pudieron leer datos con seguridad en esta foto.', filled ? 'ok' : 'warn');

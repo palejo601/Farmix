@@ -42,9 +42,61 @@ export function initOCR(progress) {
 // sparse también admite un modo de segmentación concreto ('6' = bloque de texto, '7' = un renglón).
 // sparse=true usa segmentación de «texto disperso»: recupera textos sueltos (lote, fecha) junto a códigos de barras o gráficos.
 let queue = Promise.resolve();
-export function recognize(...a) { const run = queue.then(() => recognizeNow(...a)); queue = run.catch(() => {}); return run; }
+export function recognize(...a) { const run = queue.then(() => recognizeAny(...a)); queue = run.catch(() => {}); return run; }
+
+// ---- Lector NATIVO del teléfono: Google ML Kit (Android) o Apple Vision (iPhone). Solo existe en la app instalada. ----
+// Lee mucho mejor las fotos reales (impresión por puntos, letra pequeña, texto girado) y funciona sin internet.
+// Tesseract queda como respaldo (web, o si el lector nativo falla) y para lecturas de un solo carácter con lista permitida.
+let nativeEngine;                                                   // undefined = sin comprobar · '' = no hay · 'mlkit' | 'vision'
+export async function nativeOcrEngine() {
+  if (nativeEngine !== undefined) return nativeEngine;
+  const p = self.Capacitor?.Plugins?.NativeOcr;                     // solo existe en la app instalada (Android / iPhone)
+  if (!p) return (nativeEngine = '');
+  try { nativeEngine = (await p.available()).engine || ''; } catch { nativeEngine = ''; }
+  return nativeEngine;
+}
+export const ENGINE_NAME = { mlkit: 'Google ML Kit', vision: 'Apple Vision', '': 'Tesseract' };
+const B = b => (Array.isArray(b) && b.length === 4 ? { x0: b[0], y0: b[1], x1: b[2], y1: b[3] } : null);
+// Convierte la respuesta del plugin al mismo formato que usa el resto de la app.
+// Los renglones girados (texto vertical de solapas) se marcan con rot=true; sus cajas se dejan tal cual.
+export function mapNative(res) {
+  const lines = [];
+  for (const l of res?.lines || []) {
+    const bbox = B(l.box), text = (l.text || '').trim(); if (!text) continue;
+    const a = Math.abs(((+l.angle || 0) % 180 + 180) % 180), rot = a > 45 && a < 135;
+    const words = (l.words || []).map(w => ({ text: w.text, conf: w.conf ?? l.conf ?? null, bbox: B(w.box), rot, symbols: w.symbols || [] })).filter(w => w.bbox);
+    lines.push({ text, conf: l.conf ?? null, bbox, rot, native: true,
+      height: bbox ? (rot ? bbox.x1 - bbox.x0 : bbox.y1 - bbox.y0) : 0, words,
+      symbols: rot ? [] : words.flatMap(w => w.symbols.map(s => ({ text: s.text, bbox: B(s.box) })).filter(s => s.bbox)) });
+  }
+  const confs = lines.map(l => l.conf).filter(c => c != null);
+  return { text: lines.map(l => l.text).join('\n'), confidence: confs.length ? confs.reduce((x, y) => x + y, 0) / confs.length : null, lines, native: true, engine: res?.engine || '' };
+}
+async function recognizeAny(canvas, progress = () => {}, sparse = false, extra = {}) {
+  if (!canvas || canvas.width < 8 || canvas.height < 8) return { text: '', confidence: null, lines: [] };
+  // Lecturas con lista de caracteres permitidos o de un solo carácter: Tesseract (el lector nativo no las admite).
+  if (!extra.tessedit_char_whitelist && sparse !== '10' && await nativeOcrEngine()) {
+    try {
+      progress('Leyendo el texto…', null);
+      // El lector nativo necesita renglones de al menos ~16 px: los recortes pequeños se amplían antes de enviarlos.
+      let src = canvas;
+      if (canvas.height < 64 || canvas.width < 64) {
+        const k = Math.min(4, 64 / Math.min(canvas.width, canvas.height));
+        src = document.createElement('canvas'); src.width = Math.round(canvas.width * k); src.height = Math.round(canvas.height * k);
+        const x = src.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, src.width, src.height); x.drawImage(canvas, 0, 0, src.width, src.height);
+      }
+      const k = src.width / canvas.width;
+      const image = src.toDataURL('image/jpeg', 0.92).split(',')[1];
+      if (src !== canvas) src.width = src.height = 0;
+      const res = await self.Capacitor.Plugins.NativeOcr.recognize({ image });
+      if (k !== 1) for (const l of res.lines || []) for (const o of [l, ...(l.words || []), ...(l.words || []).flatMap(w => w.symbols || [])]) if (o.box) o.box = o.box.map(v => v / k);
+      return mapNative(res);
+    } catch (e) { console.warn('Lector nativo no disponible, se usa Tesseract:', e?.message || e); }
+  }
+  return recognizeNow(canvas, progress, sparse, extra);
+}
 // Prepara el motor en segundo plano al abrir la app, para que la primera foto no espere su arranque.
-export function warmOCR() { initOCR().catch(() => {}); }
+export function warmOCR() { nativeOcrEngine().then(n => { if (!n) initOCR().catch(() => {}); }); }
 async function recognizeNow(canvas, progress = () => {}, sparse = false, extra = {}) {
   if (!canvas || canvas.width < 8 || canvas.height < 8) return { text: '', confidence: null, lines: [] };   // recorte demasiado pequeño
   const w = await initOCR(progress);
