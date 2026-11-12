@@ -239,7 +239,7 @@ const EAN = '7701234567897';
   }
   await page.selectOption('#lb-size', '0'); await page.click('#sh-auto'); await page.waitForTimeout(300);
   { const t = await page.locator('#lb-preview svg').first().textContent(); check('El rótulo incluye el registro sanitario INVIMA', /Reg\. San\..*2019M-0012345/.test(t), (t.match(/Reg\. San\.[^L]*/) || [''])[0]); }
-  check('Lista de tamaños según la especificación', JSON.stringify(sizes.filter(s => s[0] !== '-1').map(s => s[1].match(/\d+ × \d+/)[0])) === JSON.stringify(['100 × 70', '70 × 50', '50 × 30', '40 × 20', '30 × 15', '20 × 10', '100 × 50']) && sizes.some(s => s[0] === '-1'), sizes.map(s => s[1]).join(' · '));
+  check('Lista de tamaños según la especificación', JSON.stringify(sizes.filter(s => s[0] !== '-1').map(s => s[1].match(/\d+ × \d+/)[0])) === JSON.stringify(['100 × 70', '70 × 50', '50 × 30', '40 × 20', '30 × 15', '20 × 10', '100 × 50', '150 × 100']) && sizes.some(s => s[0] === '-1'), sizes.map(s => s[1]).join(' · '));
   check('Los 6 tamaños predefinidos (100×70, 70×50, 50×30, 40×20, 30×15, 20×10): texto dentro del rótulo, sin cortes ni superposición', allFit, detail.join(' · '));
   await page.selectOption('#lb-size', '5'); await page.waitForTimeout(60);
   check('Rótulo 20 × 10 mm: el código de barras se omite con aviso en vez de imprimirse ilegible', /código de barras no cabe/.test(await page.locator('#lb-warnings').innerText()));
