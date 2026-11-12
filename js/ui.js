@@ -82,11 +82,15 @@ async function nativeSave(blob, name) {
   catch (e) { if (!/cancel/i.test(e?.message || '')) throw e; }
 }
 export const isAndroid = () => /android/i.test(navigator.userAgent);
+// Versión de computador (Windows .exe): abre con el programa instalado (Word, lector de PDF) y guarda con «Guardar como».
+const desk = () => self.farmaDesktop;
+const deskBuf = async blob => new Uint8Array(await blob.arrayBuffer());
 
 // VER: abre el archivo en una aplicación del teléfono (visor de PDF, Word, WPS…), sin pasar por Compartir.
 // win = ventana abierta en el momento del toque (en la web, el navegador bloquea las ventanas abiertas después).
-export function preopen() { return !isNative() && !isAndroid() ? window.open('', '_blank') : null; }
+export function preopen() { return !desk() && !isNative() && !isAndroid() ? window.open('', '_blank') : null; }
 export async function viewFile(blob, name, win = null) {
+  if (desk()) { const err = await desk().open(name, await deskBuf(blob)); if (err) throw new Error(`No se pudo abrir ${name}: ${err}. Instale un programa que abra ${/pdf/.test(blob.type) ? 'PDF' : 'Word'}.`); return; }
   if (isNative()) {
     const uri = await nativeWrite(blob, name), FO = self.Capacitor.Plugins.FileOpener;
     if (!FO) throw new Error('Esta versión de la app no puede abrir archivos. Instale la versión más reciente.');
@@ -105,6 +109,7 @@ export async function viewFile(blob, name, win = null) {
 // COMPARTIR: menú del sistema (WhatsApp, correo, Drive…). Si el navegador no lo permite, se descarga.
 export async function shareFile(blob, name) {
   if (isNative()) return nativeSave(blob, name);
+  if (desk()) return download(blob, name);
   const file = new File([blob], name, { type: blob.type || 'application/octet-stream' });
   if (navigator.canShare?.({ files: [file] })) {
     try { await navigator.share({ files: [file], title: name }); return; }
@@ -121,6 +126,7 @@ export async function shareFile(blob, name) {
 
 export async function download(blob, name) {
   if (isNative()) return nativeSave(blob, name);
+  if (desk()) { const path = await desk().save(name, await deskBuf(blob)); if (path) toast('Guardado en ' + path, 'ok', 5000); return; }
   // iPhone / iPad: una PWA instalada no descarga archivos de forma fiable. Se ofrece un botón que abre el menú Compartir
   // (Guardar en Archivos, imprimir, enviar). Debe pulsarlo el usuario: Safari exige un gesto directo.
   if (isIOS() && navigator.canShare) {
