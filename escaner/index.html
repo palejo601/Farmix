@@ -233,6 +233,11 @@
   .tamanos label:has(input:checked) { border-color: var(--acento); background: var(--acento-suave); box-shadow: inset 0 0 0 1px var(--acento); }
   .tamanos label:has(input:focus-visible) { outline: 3px solid var(--acento); outline-offset: 2px; }
   .pie-exportar { display: flex; justify-content: flex-end; }
+  .pesos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 560px) { .pesos { grid-template-columns: 1fr 1fr 1fr; } .pesos label strong { font-size: .8rem; } }
+  .casilla { display: flex; align-items: center; gap: 8px; font-size: .9rem; cursor: pointer; }
+  .casilla input { width: 18px; height: 18px; accent-color: var(--acento); margin: 0; }
+  .casilla[hidden], #infoPdf[hidden] { display: none; }
 
   /* Filtros con miniatura */
   .filtros { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
@@ -381,11 +386,19 @@
         <label><input type="radio" name="tamano" id="tamanoOficio" value="oficio"><strong>Oficio</strong><span class="num">216 × 330 mm</span></label>
         <label><input type="radio" name="tamano" id="tamanoOriginal" value="original"><strong>Original</strong><span class="num">300 ppp</span></label>
       </fieldset>
+      <fieldset class="tamanos pesos">
+        <legend><h3>Peso del archivo</h3></legend>
+        <label><input type="radio" name="peso" id="pesoAlta" value="alta" checked><strong>Alta calidad</strong><span class="num">300 ppp</span></label>
+        <label><input type="radio" name="peso" id="pesoEquilibrada" value="equilibrada"><strong>Equilibrado</strong><span class="num">200 ppp</span></label>
+        <label><input type="radio" name="peso" id="pesoLiviana" value="liviana"><strong>Liviano</strong><span class="num">150 ppp</span></label>
+      </fieldset>
+      <label class="casilla" for="limite30"><input type="checkbox" id="limite30" checked> No pasar de <strong class="num">30 MB</strong> (si se pasa, se comprime más)</label>
       <div class="fila">
         <button id="descargarPdf" class="primario crecer"><svg class="ic"><use href="#i-descargar"/></svg>Descargar PDF</button>
         <button id="compartirPdf" class="crecer" hidden><svg class="ic"><use href="#i-compartir"/></svg>Compartir PDF</button>
         <button id="descargarJpg" class="crecer"><svg class="ic"><use href="#i-imagen"/></svg>Descargar JPG</button>
       </div>
+      <p id="infoPdf" class="ayuda num" hidden></p>
       <div class="pie-exportar"><button id="borrarTodo" class="boton-texto peligro"><svg class="ic"><use href="#i-papelera"/></svg>Borrar todas las páginas</button></div>
     </div>
   </section>
@@ -1809,8 +1822,60 @@ async function descargar(blob, nombre) {
   setTimeout(() => URL.revokeObjectURL(a.href), 30000);
 }
 
+// Peso del PDF: lado largo máximo de cada página (A4: 3508 px = 300 ppp) y calidad JPEG.
+const PESOS = { alta: { lado: 3840, q: 0.92 }, equilibrada: { lado: 2339, q: 0.82 }, liviana: { lado: 1754, q: 0.74 } };
+const LIMITE_PDF = 30 * 1000 * 1000 * 0.98; // 30 MB con un margen
+
+async function blobACanvas(blob) {
+  const url = URL.createObjectURL(blob);
+  try {
+    const img = new Image(); img.src = url; await img.decode();
+    const c = crearCanvas(img.naturalWidth, img.naturalHeight);
+    ctx2d(c).drawImage(img, 0, 0);
+    return c;
+  } finally { URL.revokeObjectURL(url); }
+}
+// Vuelve a codificar una página solo si hace falta reducirla; el contenido no cambia.
+async function recodificar(pg, lado, q) {
+  const k = Math.min(1, lado / Math.max(pg.ancho, pg.alto));
+  if (k >= 1 && q >= 0.92) return pg;
+  const fuente = await blobACanvas(pg.blob);
+  const c = crearCanvas(Math.max(1, Math.round(pg.ancho * k)), Math.max(1, Math.round(pg.alto * k)));
+  const cx = ctx2d(c); cx.imageSmoothingQuality = 'high'; cx.drawImage(fuente, 0, 0, c.width, c.height);
+  const blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', q));
+  return { blob, ancho: c.width, alto: c.height };
+}
+const formatoMB = (b) => (b / 1e6).toLocaleString('es-CO', { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + ' MB';
+
+async function generarPdf() {
+  const tamano = document.querySelector('input[name=tamano]:checked').value;
+  let { lado, q } = PESOS[document.querySelector('input[name=peso]:checked').value];
+  const limite = $('limite30').checked ? LIMITE_PDF : Infinity;
+  const mayor = Math.max(...estado.paginas.map((p) => Math.max(p.ancho, p.alto)));
+  lado = Math.min(lado, mayor);
+  let pdf, recomprimido = false;
+  for (let intento = 0; intento < 7; intento++) {
+    $('textoOcupado').textContent = intento ? `Comprimiendo para no pasar de 30 MB (intento ${intento + 1})…` : 'Creando PDF…';
+    const paginas = [];
+    for (const pg of estado.paginas) paginas.push(await recodificar(pg, lado, q));
+    pdf = await crearPdf(paginas, tamano);
+    if (pdf.size <= limite) break;
+    recomprimido = true;
+    // Reduce la resolución en proporción a lo que sobra y baja un poco la calidad JPEG.
+    lado = Math.max(900, Math.floor(lado * Math.sqrt(limite / pdf.size) * 0.97));
+    if (intento >= 1) q = Math.max(0.55, q - 0.05); // primero solo resolución; luego también calidad
+  }
+  const n = estado.paginas.length;
+  const ppp = Math.round((lado / 297) * 25.4);
+  $('infoPdf').hidden = false;
+  $('infoPdf').textContent = `Último PDF: ${formatoMB(pdf.size)} · ${n} ${n === 1 ? 'página' : 'páginas'}` +
+    (recomprimido ? ` · comprimido a unos ${ppp} ppp para no pasar de 30 MB` : '');
+  if (pdf.size > limite) aviso('Aun comprimido, el PDF pasa de 30 MB. Divide las páginas en dos PDF.');
+  return pdf;
+}
+
 $('descargarPdf').addEventListener('click', () => ocupado('Creando PDF…', async () => {
-  await descargar(await crearPdf(estado.paginas, document.querySelector('input[name=tamano]:checked').value), nombreBase() + '.pdf');
+  await descargar(await generarPdf(), nombreBase() + '.pdf');
 }));
 $('descargarJpg').addEventListener('click', async () => {
   const base = nombreBase();
@@ -1826,7 +1891,7 @@ if (puedeCompartir) {
   $('compartirPdf').addEventListener('click', async () => {
     let archivo;
     await ocupado('Creando PDF…', async () => {
-      archivo = new File([await crearPdf(estado.paginas, document.querySelector('input[name=tamano]:checked').value)], nombreBase() + '.pdf', { type: 'application/pdf' });
+      archivo = new File([await generarPdf()], nombreBase() + '.pdf', { type: 'application/pdf' });
     });
     try { await navigator.share({ files: [archivo], title: 'Documento escaneado' }); }
     catch (e) { if (e.name !== 'AbortError') aviso('No se pudo compartir: ' + e.message); }

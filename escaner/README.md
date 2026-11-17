@@ -12,7 +12,7 @@ Aplicación web pequeña, en un solo archivo (`index.html`) y sin dependencias, 
 6. **4K**: lleva la imagen a 3840 px en el lado largo con escalado por pasos y enfoque. Ojo: el escalado no inventa detalle que la cámara no captó; mejora la presentación y la nitidez aparente.
 7. **Borrar con pincel** (✏️ Borrar / texto): se sombrea lo que se quiere quitar y la zona se rellena con el fondo que la rodea, incluido el grano de la foto. Tiene deshacer y zoom con dos dedos.
 8. **Agregar texto que imita las letras cercanas**: al tocar un renglón se miden el tamaño, el color, el grosor, el desenfoque y la línea base de las letras de alrededor, y el texto nuevo se pone con esos mismos valores. El tipo de letra se elige de una lista (Times, Arial, Calibri, máquina de escribir, etc.).
-9. **Exporta** un PDF de varias páginas (A4, Carta, Oficio o tamaño original), JPG por página, o lo comparte desde el celular.
+9. **Exporta** un PDF de varias páginas (A4, Carta, Oficio o tamaño original), JPG por página, o lo comparte desde el celular. Se elige el peso (alta calidad 300 ppp, equilibrado 200 ppp o liviano 150 ppp) y, con la casilla «No pasar de 30 MB», si el PDF se pasa se reduce la resolución y la compresión de las imágenes hasta quedar por debajo.
 
 Todo se procesa en el navegador: las imágenes no se envían a ningún servidor.
 
