@@ -59,6 +59,13 @@
   .ayuda { font-size: .85rem; color: var(--suave); margin: 0; }
   .segmentado { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
   .segmentado button { padding: 8px 4px; font-size: .85rem; }
+  .alternar[aria-pressed=true] { background: #1e293b; color: #fff; border-color: #1e293b; }
+  .panel { display: flex; flex-direction: column; gap: 8px; }
+  .panel[hidden] { display: none; }
+  .panel input[type=text] { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--borde); min-height: 44px; width: 100%; }
+  .panel input[type=color] { width: 48px; height: 44px; border: 1px solid var(--borde); border-radius: 10px; padding: 2px; background: #fff; }
+  .panel label { display: inline-flex; align-items: center; gap: 6px; font-size: .9rem; }
+  .panel input[type=range] { width: 120px; }
   .segmentado button[aria-pressed=true] { background: var(--primario); color: #fff; border-color: var(--primario); }
 
   #ocupado { position: fixed; inset: 0; background: rgba(15, 23, 30, .55); display: flex; align-items: center; justify-content: center; z-index: 10; color: #fff; flex-direction: column; gap: 12px; }
@@ -134,7 +141,12 @@
       <button data-filtro="mejorado">Mejorado</button>
       <button data-filtro="gris">Grises</button>
       <button data-filtro="bn">Blanco y negro</button>
-      <button data-filtro="original">Original</button>
+      <button data-filtro="original">Foto</button>
+    </div>
+    <div class="fila">
+      <button id="modoNoche" class="alternar crecer" aria-pressed="false" title="Aclara fotos oscuras y reduce el ruido">🌙 Poca luz</button>
+      <button id="modo4k" class="alternar crecer" aria-pressed="false" title="Lleva la imagen a 3840 px en el lado largo">4K</button>
+      <button id="abrirEdicion" class="crecer">✏️ Borrar / texto</button>
     </div>
     <div class="fila">
       <button id="girarIzq" class="crecer">↺ Girar</button>
@@ -144,6 +156,51 @@
     <div class="fila">
       <button id="volverRecorte" class="crecer">← Ajustar recorte</button>
       <button id="guardarPagina" class="primario crecer">✔ Guardar página</button>
+    </div>
+  </section>
+
+  <!-- 4. Edición: borrar con pincel y agregar texto -->
+  <section id="vistaEdicion" hidden>
+    <div class="lienzo" id="contenedorEdicion"><canvas id="lienzoEdicion"></canvas></div>
+    <div class="segmentado" id="herramientas">
+      <button data-herr="borrar">🖌️ Borrar</button>
+      <button data-herr="texto">🔤 Texto</button>
+      <button data-herr="mover">✋ Mover</button>
+      <button id="deshacer" disabled>↶ Deshacer</button>
+    </div>
+    <div id="panelBorrar" class="panel">
+      <p class="ayuda">Sombrea lo que quieras borrar y pulsa «Borrar zona». Con dos dedos acercas y mueves la imagen.</p>
+      <div class="fila">
+        <label>Pincel <input type="range" id="tamPincel" min="6" max="90" value="28"></label>
+        <button id="limpiarMascara">Quitar sombreado</button>
+        <button id="aplicarBorrado" class="primario crecer">Borrar zona</button>
+      </div>
+    </div>
+    <div id="panelTexto" class="panel" hidden>
+      <p class="ayuda">Toca el renglón donde va el texto: se copian el tamaño, el color y el grosor de las letras cercanas. Arrastra para moverlo.</p>
+      <input id="textoNuevo" type="text" placeholder="Escribe el texto…" autocomplete="off">
+      <div class="fila">
+        <select id="fuenteTexto" title="Tipo de letra">
+          <option value='"Times New Roman", Times, "Liberation Serif", "Nimbus Roman", serif'>Times (con remates)</option>
+          <option value='Georgia, "DejaVu Serif", serif'>Georgia</option>
+          <option value='Arial, Helvetica, "Liberation Sans", "Nimbus Sans", sans-serif'>Arial (sin remates)</option>
+          <option value='Verdana, "DejaVu Sans", sans-serif'>Verdana</option>
+          <option value='Calibri, Carlito, "Segoe UI", sans-serif'>Calibri</option>
+          <option value='"Courier New", Courier, "Liberation Mono", monospace'>Máquina de escribir</option>
+          <option value='"Segoe Script", "Bradley Hand", "Comic Sans MS", cursive'>Manuscrita</option>
+        </select>
+        <label>Tamaño <input type="range" id="tamTexto" min="6" max="400" value="48"></label>
+        <button id="negritaTexto" class="alternar" aria-pressed="false" title="Negrita"><b>N</b></button>
+        <input type="color" id="colorTexto" value="#1a1a1a" title="Color">
+      </div>
+      <div class="fila">
+        <button id="imitarTexto" class="crecer">✨ Imitar letras cercanas</button>
+        <button id="aplicarTexto" class="primario crecer">Poner texto</button>
+      </div>
+    </div>
+    <div class="fila">
+      <button id="cancelarEdicion" class="crecer">Cancelar</button>
+      <button id="terminarEdicion" class="primario crecer">✔ Listo</button>
     </div>
   </section>
 </main>
@@ -171,15 +228,20 @@ const estado = {
   esquinas: null,       // [[x,y] x4] en píxeles de la fuente: sup-izq, sup-der, inf-der, inf-izq
   recortado: null,      // canvas con la perspectiva corregida (sin filtro)
   filtro: localStorage.getItem('escaner.filtro') || 'mejorado',
+  base: null,           // recortado + poca luz + 4K (antes del filtro)
   resultado: null,      // canvas final mostrado
+  noche: false,
+  k4: false,
+  editado: false,       // el resultado tiene borrados o textos
 };
 
 /* =========================================================================
    Utilidades de interfaz
    ========================================================================= */
 function mostrar(vista) {
-  for (const id of ['vistaInicio', 'vistaRecorte', 'vistaResultado']) $(id).hidden = id !== vista;
+  for (const id of ['vistaInicio', 'vistaRecorte', 'vistaResultado', 'vistaEdicion']) $(id).hidden = id !== vista;
   if (vista === 'vistaRecorte') requestAnimationFrame(dibujarRecorte);
+  if (vista === 'vistaEdicion') requestAnimationFrame(() => { ajustarVistaEdicion(); dibujarEdicion(); });
 }
 async function ocupado(texto, tarea) {
   $('textoOcupado').textContent = texto;
@@ -446,6 +508,7 @@ $('completa').addEventListener('click', () => {
 $('cancelarRecorte').addEventListener('click', () => { estado.fuente = null; procesarCola(); });
 $('recortar').addEventListener('click', () => ocupado('Corrigiendo perspectiva…', async () => {
   estado.recortado = corregirPerspectiva(estado.fuente, estado.esquinas);
+  await prepararBase();
   await aplicarFiltro();
   mostrar('vistaResultado');
 }));
@@ -655,32 +718,676 @@ function girar(canvas, sentido) {
 /* =========================================================================
    Vista de resultado
    ========================================================================= */
-async function aplicarFiltro() {
-  estado.resultado = filtrar(estado.recortado, estado.filtro);
+async function prepararBase() {
+  let c = estado.recortado;
+  if (estado.noche) c = realzarNoche(c);
+  if (estado.k4) c = escalar4K(c);
+  estado.base = c;
+}
+function pintarResultado() {
   const vista = $('lienzoResultado');
   vista.width = estado.resultado.width; vista.height = estado.resultado.height;
   vista.getContext('2d').drawImage(estado.resultado, 0, 0);
   $('resolucion').textContent = `${estado.resultado.width} × ${estado.resultado.height} px`;
   for (const b of $('filtros').querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.filtro === estado.filtro));
+  $('modoNoche').setAttribute('aria-pressed', String(estado.noche));
+  $('modo4k').setAttribute('aria-pressed', String(estado.k4));
+}
+async function aplicarFiltro() {
+  estado.resultado = filtrar(estado.base, estado.filtro);
+  estado.editado = false;
+  pintarResultado();
+}
+// Cambios que rehacen la imagen: avisan si se perderían las ediciones.
+async function rehacer(texto, cambio, rehacerBase = true) {
+  if (estado.editado && !(await confirmar('Se perderán los borrados y textos que agregaste. ¿Continuar?'))) return;
+  await ocupado(texto, async () => {
+    cambio();
+    if (rehacerBase) await prepararBase();
+    await aplicarFiltro();
+  });
 }
 $('filtros').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-filtro]');
   if (!b || b.dataset.filtro === estado.filtro) return;
-  estado.filtro = b.dataset.filtro;
-  localStorage.setItem('escaner.filtro', estado.filtro);
-  ocupado('Aplicando filtro…', aplicarFiltro);
+  rehacer('Aplicando filtro…', () => {
+    estado.filtro = b.dataset.filtro;
+    try { localStorage.setItem('escaner.filtro', estado.filtro); } catch { /* sin almacenamiento */ }
+  }, false);
 });
-$('girarIzq').addEventListener('click', () => ocupado('Girando…', () => { estado.recortado = girar(estado.recortado, -1); return aplicarFiltro(); }));
-$('girarDer').addEventListener('click', () => ocupado('Girando…', () => { estado.recortado = girar(estado.recortado, 1); return aplicarFiltro(); }));
-$('volverRecorte').addEventListener('click', () => mostrar('vistaRecorte'));
+$('modoNoche').addEventListener('click', () => rehacer('Aclarando y quitando ruido…', () => { estado.noche = !estado.noche; }));
+$('modo4k').addEventListener('click', () => rehacer('Escalando a 4K…', () => { estado.k4 = !estado.k4; }));
+$('girarIzq').addEventListener('click', () => rehacer('Girando…', () => { estado.recortado = girar(estado.recortado, -1); }));
+$('girarDer').addEventListener('click', () => rehacer('Girando…', () => { estado.recortado = girar(estado.recortado, 1); }));
+$('volverRecorte').addEventListener('click', async () => {
+  if (estado.editado && !(await confirmar('Se perderán los borrados y textos que agregaste. ¿Continuar?'))) return;
+  mostrar('vistaRecorte');
+});
+$('abrirEdicion').addEventListener('click', abrirEdicion);
 $('guardarPagina').addEventListener('click', () => ocupado('Guardando página…', async () => {
   const c = estado.resultado;
   const blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', CALIDAD_JPEG));
   estado.paginas.push({ blob, url: URL.createObjectURL(blob), ancho: c.width, alto: c.height });
-  estado.fuente = estado.recortado = estado.resultado = null;
+  estado.fuente = estado.recortado = estado.base = estado.resultado = null;
+  estado.editado = false;
   renderPaginas();
   await procesarCola();
 }));
+
+
+/* =========================================================================
+   Poca luz: aclara, equilibra el color y quita el ruido sin borrar bordes
+   ========================================================================= */
+// Filtro guiado (He et al.): suaviza el ruido conservando los bordes. I en 0..1.
+function filtroGuiado(I, w, h, r, eps) {
+  const n = w * h, II = new Float32Array(n);
+  for (let i = 0; i < n; i++) II[i] = I[i] * I[i];
+  const mI = desenfoqueCaja(I, w, h, r), mII = desenfoqueCaja(II, w, h, r);
+  const a = new Float32Array(n), b = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const v = mII[i] - mI[i] * mI[i];
+    a[i] = v / (v + eps); b[i] = mI[i] - a[i] * mI[i];
+  }
+  const mA = desenfoqueCaja(a, w, h, r), mB = desenfoqueCaja(b, w, h, r);
+  const q = new Float32Array(n);
+  for (let i = 0; i < n; i++) q[i] = mA[i] * I[i] + mB[i];
+  return q;
+}
+
+// Desviación del ruido: mediana de |Y − media 3×3| (robusta frente a los bordes).
+function estimarRuido(Y, w, h) {
+  const m = desenfoqueCaja(Y, w, h, 1), hist = new Uint32Array(1024);
+  for (let i = 0; i < w * h; i++) hist[Math.min(1023, (Math.abs(Y[i] - m[i]) * 4096) | 0)]++;
+  let a = 0;
+  for (let t = 0; t < 1024; t++) { a += hist[t]; if (a >= (w * h) / 2) return (1.4826 * (t + 0.5) / 4096) / 0.943; }
+  return 0.25;
+}
+
+function realzarNoche(canvas) {
+  const W = canvas.width, H = canvas.height, n = W * H;
+  const salida = crearCanvas(W, H);
+  const img = ctx2d(canvas).getImageData(0, 0, W, H);
+  const p = img.data;
+
+  // 1) Balance de blancos (mundo gris, moderado) y separación luminancia / color.
+  let sr = 0, sg = 0, sb = 0;
+  for (let i = 0; i < n; i++) { sr += p[4 * i]; sg += p[4 * i + 1]; sb += p[4 * i + 2]; }
+  const gm = (sr + sg + sb) / 3;
+  const gR = Math.sqrt(gm / Math.max(sr, 1)), gG = Math.sqrt(gm / Math.max(sg, 1)), gB = Math.sqrt(gm / Math.max(sb, 1));
+  const Y = new Float32Array(n), Cb = new Float32Array(n), Cr = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const r = Math.min(255, p[4 * i] * gR), g = Math.min(255, p[4 * i + 1] * gG), b = Math.min(255, p[4 * i + 2] * gB);
+    const y = 0.299 * r + 0.587 * g + 0.114 * b;
+    Y[i] = y / 255; Cb[i] = (b - y) * 0.564; Cr[i] = (r - y) * 0.713;
+  }
+
+  // 2) Curva de exposición: lleva la mediana hacia 0,45 sin quemar las luces.
+  const Yb = desenfoqueCaja(Y, W, H, 2);
+  const hist = new Uint32Array(256);
+  for (let i = 0; i < n; i++) hist[Math.min(255, (Yb[i] * 255) | 0)]++;
+  const percentil = (q) => { let a = 0; for (let t = 0; t < 256; t++) { a += hist[t]; if (a >= q * n) return t / 255; } return 1; };
+  const bajo = percentil(0.002), alto = Math.max(percentil(0.995), bajo + 0.05);
+  const mediana = Math.max(0.01, (percentil(0.5) - bajo) / (alto - bajo));
+  const gamma = Math.max(0.28, Math.min(1, Math.log(0.45) / Math.log(mediana)));
+  const ganancia = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = Math.max(0, Math.min(1, (Y[i] - bajo) / (alto - bajo)));
+    const nuevo = Math.pow(t, gamma);
+    ganancia[i] = Y[i] > 0.004 ? nuevo / Y[i] : 1;
+    Y[i] = nuevo;
+  }
+
+  // 3) Quita el ruido de luminancia (filtro guiado) y de color (desenfoque fuerte del croma).
+  const sigma = estimarRuido(Y, W, H);
+  const r = Math.max(2, Math.round(Math.max(W, H) / 800));
+  const eps = Math.max(0.03, 2.2 * sigma) ** 2;
+  let Yd = filtroGuiado(Y, W, H, r, eps);
+  if (sigma > 0.04) Yd = filtroGuiado(Yd, W, H, r + 1, eps * 0.5);
+  for (let i = 0; i < n; i++) {
+    const gsat = Math.min(ganancia[i], 6);
+    Cb[i] *= gsat; Cr[i] *= gsat;
+  }
+  const rc = Math.max(3, r * 2);
+  const Cbd = desenfoqueCaja(desenfoqueCaja(Cb, W, H, rc), W, H, rc);
+  const Crd = desenfoqueCaja(desenfoqueCaja(Cr, W, H, rc), W, H, rc);
+
+  // 4) Recupera nitidez de los bordes reales (sobre la imagen ya limpia).
+  const suave = desenfoqueCaja(Yd, W, H, 1);
+  for (let i = 0; i < n; i++) {
+    const y = Math.max(0, Math.min(1, Yd[i] + 0.5 * (Yd[i] - suave[i]))) * 255;
+    const rr = y + Crd[i] / 0.713, bb = y + Cbd[i] / 0.564;
+    p[4 * i] = rr; p[4 * i + 2] = bb;
+    p[4 * i + 1] = (y - 0.299 * rr - 0.114 * bb) / 0.587;
+  }
+  ctx2d(salida).putImageData(img, 0, 0);
+  return salida;
+}
+
+/* =========================================================================
+   4K: escala a 3840 px en el lado largo y enfoca
+   ========================================================================= */
+function escalar4K(canvas) {
+  const OBJETIVO = 3840;
+  let actual = canvas;
+  const k = OBJETIVO / Math.max(canvas.width, canvas.height);
+  const W = Math.round(canvas.width * k), H = Math.round(canvas.height * k);
+  // Escalado por pasos (como máximo ×2 por paso) para conservar los bordes.
+  while (actual.width * 2 < W || (k < 1 && actual.width / 2 > W)) {
+    const f = k > 1 ? 2 : 0.5;
+    const c = crearCanvas(Math.round(actual.width * f), Math.round(actual.height * f));
+    const cx = ctx2d(c); cx.imageSmoothingQuality = 'high'; cx.drawImage(actual, 0, 0, c.width, c.height);
+    actual = c;
+  }
+  const salida = crearCanvas(W, H);
+  const sx = ctx2d(salida); sx.imageSmoothingQuality = 'high'; sx.drawImage(actual, 0, 0, W, H);
+  if (k <= 1) return salida;
+  // Máscara de enfoque proporcional al aumento.
+  const img = sx.getImageData(0, 0, W, H), p = img.data, n = W * H;
+  const L = new Float32Array(n);
+  for (let i = 0; i < n; i++) L[i] = 0.299 * p[4 * i] + 0.587 * p[4 * i + 1] + 0.114 * p[4 * i + 2];
+  const radio = Math.max(1, Math.round(k * 0.8));
+  const S = desenfoqueCaja(L, W, H, radio);
+  const cantidad = Math.min(1.1, 0.45 + 0.25 * k);
+  for (let i = 0; i < n; i++) {
+    const d = cantidad * (L[i] - S[i]);
+    p[4 * i] += d; p[4 * i + 1] += d; p[4 * i + 2] += d;
+  }
+  sx.putImageData(img, 0, 0);
+  return salida;
+}
+
+/* =========================================================================
+   Borrado: rellena la zona sombreada a partir de lo que la rodea
+   (pirámide «pull-push» + suavizado + grano igual al de la imagen)
+   ========================================================================= */
+function rellenarZona(canvas, alfa) {
+  const W = canvas.width, H = canvas.height;
+  let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (alfa[y * W + x]) {
+    if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  if (x1 < 0) return null;
+  const m = Math.round(Math.max(16, 0.25 * Math.max(x1 - x0, y1 - y0)));
+  const rx = Math.max(0, x0 - m), ry = Math.max(0, y0 - m);
+  const w = Math.min(W, x1 + m + 1) - rx, h = Math.min(H, y1 + m + 1) - ry;
+  const ctx = ctx2d(canvas);
+  const antes = ctx.getImageData(rx, ry, w, h);
+  const img = ctx.getImageData(rx, ry, w, h), d = img.data;
+
+  // Máscara local dilatada 2 px para tapar también los bordes suavizados.
+  let mask = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) mask[y * w + x] = alfa[(y + ry) * W + x + rx] ? 1 : 0;
+  mask = maximoCaja(mask, w, h, 2);
+
+  // Nivel 0
+  const niveles = [];
+  let c = new Float32Array(w * h * 3), k = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    k[i] = mask[i] ? 0 : 1;
+    for (let j = 0; j < 3; j++) c[3 * i + j] = d[4 * i + j];
+  }
+  niveles.push({ w, h, c, k });
+  // Pull: promedia los píxeles conocidos hacia niveles más pequeños.
+  let lw = w, lh = h;
+  while (lw > 2 || lh > 2) {
+    const nw = Math.ceil(lw / 2), nh = Math.ceil(lh / 2);
+    const pc = new Float32Array(nw * nh * 3), pk = new Float32Array(nw * nh);
+    const ant = niveles[niveles.length - 1];
+    for (let y = 0; y < nh; y++) for (let x = 0; x < nw; x++) {
+      let s0 = 0, s1 = 0, s2 = 0, sk = 0;
+      for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
+        const cx = 2 * x + dx, cy = 2 * y + dy;
+        if (cx >= lw || cy >= lh) continue;
+        const j = cy * lw + cx, kk = ant.k[j];
+        s0 += ant.c[3 * j] * kk; s1 += ant.c[3 * j + 1] * kk; s2 += ant.c[3 * j + 2] * kk; sk += kk;
+      }
+      const o = y * nw + x;
+      if (sk > 0) { pc[3 * o] = s0 / sk; pc[3 * o + 1] = s1 / sk; pc[3 * o + 2] = s2 / sk; pk[o] = 1; }
+    }
+    niveles.push({ w: nw, h: nh, c: pc, k: pk });
+    lw = nw; lh = nh;
+  }
+  // Nivel más pequeño: lo desconocido toma el promedio de lo conocido.
+  const top = niveles[niveles.length - 1];
+  let a0 = 0, a1 = 0, a2 = 0, ak = 0;
+  for (let i = 0; i < top.w * top.h; i++) if (top.k[i]) { a0 += top.c[3 * i]; a1 += top.c[3 * i + 1]; a2 += top.c[3 * i + 2]; ak++; }
+  for (let i = 0; i < top.w * top.h; i++) if (!top.k[i]) {
+    top.c[3 * i] = ak ? a0 / ak : 255; top.c[3 * i + 1] = ak ? a1 / ak : 255; top.c[3 * i + 2] = ak ? a2 / ak : 255;
+  }
+  // Push: baja nivel a nivel, interpola desde el padre y suaviza solo lo desconocido.
+  for (let l = niveles.length - 2; l >= 0; l--) {
+    const N = niveles[l], P = niveles[l + 1];
+    for (let y = 0; y < N.h; y++) for (let x = 0; x < N.w; x++) {
+      const i = y * N.w + x;
+      if (N.k[i]) continue;
+      const px = Math.max(0, Math.min(P.w - 1, (x + 0.5) / 2 - 0.5)), py = Math.max(0, Math.min(P.h - 1, (y + 0.5) / 2 - 0.5));
+      const qx = px | 0, qy = py | 0, qx1 = Math.min(P.w - 1, qx + 1), qy1 = Math.min(P.h - 1, qy + 1);
+      const fx = px - qx, fy = py - qy;
+      for (let j = 0; j < 3; j++) {
+        N.c[3 * i + j] =
+          P.c[3 * (qy * P.w + qx) + j] * (1 - fx) * (1 - fy) + P.c[3 * (qy * P.w + qx1) + j] * fx * (1 - fy) +
+          P.c[3 * (qy1 * P.w + qx) + j] * (1 - fx) * fy + P.c[3 * (qy1 * P.w + qx1) + j] * fx * fy;
+      }
+    }
+    const iter = l === 0 ? 8 : 4;
+    for (let it = 0; it < iter; it++) for (let y = 0; y < N.h; y++) for (let x = 0; x < N.w; x++) {
+      const i = y * N.w + x;
+      if (N.k[i]) continue;
+      const iz = x > 0 ? i - 1 : i, de = x < N.w - 1 ? i + 1 : i, ar = y > 0 ? i - N.w : i, ab = y < N.h - 1 ? i + N.w : i;
+      for (let j = 0; j < 3; j++) N.c[3 * i + j] = (N.c[3 * iz + j] + N.c[3 * de + j] + N.c[3 * ar + j] + N.c[3 * ab + j]) / 4;
+    }
+  }
+  // Grano: mide el ruido de la zona conocida y lo reproduce en el relleno.
+  const L = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) L[i] = 0.299 * d[4 * i] + 0.587 * d[4 * i + 1] + 0.114 * d[4 * i + 2];
+  const Ls = desenfoqueCaja(L, w, h, 1);
+  const Lb = desenfoqueCaja(L, w, h, 3), umbralPapel = otsu(Lb);
+  let sv = 0, sn = 0;
+  for (let i = 0; i < w * h; i++) if (!mask[i] && Lb[i] > umbralPapel) { const e = L[i] - Ls[i]; sv += e * e; sn++; }
+  const sigma = sn ? Math.min(45, Math.sqrt(sv / sn) / 0.943) : 0;
+  const c0 = niveles[0].c;
+  for (let i = 0; i < w * h; i++) {
+    if (!mask[i]) continue;
+    const g = sigma * Math.sqrt(-2 * Math.log(Math.random() + 1e-9)) * Math.cos(2 * Math.PI * Math.random());
+    for (let j = 0; j < 3; j++) d[4 * i + j] = c0[3 * i + j] + g;
+  }
+  ctx.putImageData(img, rx, ry);
+  return { x: rx, y: ry, datos: antes };
+}
+
+/* =========================================================================
+   Texto: estima tamaño, color, grosor y línea base de las letras cercanas
+   ========================================================================= */
+function analizarLetras(canvas, px, py) {
+  const W = canvas.width, H = canvas.height;
+  const x0 = Math.max(0, Math.round(px - 0.28 * W)), x1 = Math.min(W, Math.round(px + 0.28 * W));
+  const y0 = Math.max(0, Math.round(py - 0.06 * H)), y1 = Math.min(H, Math.round(py + 0.06 * H));
+  const w = x1 - x0, h = y1 - y0;
+  if (w < 8 || h < 8) return null;
+  const d = ctx2d(canvas).getImageData(x0, y0, w, h).data;
+  let L = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) L[i] = 0.299 * d[4 * i] + 0.587 * d[4 * i + 1] + 0.114 * d[4 * i + 2];
+  const rb = Math.max(1, Math.round(Math.max(W, H) / 2500));
+  L = desenfoqueCaja(L, w, h, rb);
+  const t = otsu(L);
+  let papel = 0, np = 0;
+  for (let i = 0; i < w * h; i++) if (L[i] > t) { papel += L[i]; np++; }
+  papel = np ? papel / np : 255;
+  if (papel - t < 25) return null;
+
+  // Perfil de tinta por fila y renglón más cercano al toque.
+  const filas = new Float32Array(h);
+  for (let y = 0; y < h; y++) { let c = 0; for (let x = 0; x < w; x++) if (L[y * w + x] < t) c++; filas[y] = c; }
+  const orden = [...filas].sort((p, q) => p - q);
+  const minimo = Math.max(3, w * 0.003, 2 * orden[Math.floor(h * 0.2)] + 2);
+  const ty = Math.round(py - y0);
+  let r = -1;
+  for (let dist = 0; dist < h; dist++) {
+    if (ty - dist >= 0 && ty - dist < h && filas[ty - dist] >= minimo) { r = ty - dist; break; }
+    if (ty + dist < h && ty + dist >= 0 && filas[ty + dist] >= minimo) { r = ty + dist; break; }
+  }
+  if (r < 0) return null;
+  let a = r, b = r;
+  while (a > 0 && (filas[a - 1] >= minimo || (a > 1 && filas[a - 2] >= minimo))) a--;
+  while (b < h - 1 && (filas[b + 1] >= minimo || (b < h - 2 && filas[b + 2] >= minimo))) b++;
+  let max = 0; for (let y = a; y <= b; y++) max = Math.max(max, filas[y]);
+  let n0 = -1, n1 = -1, nucleo = 0;
+  for (let y = a; y <= b; y++) if (filas[y] >= 0.4 * max) { nucleo++; if (n0 < 0) n0 = y; n1 = y; }
+  const alturaX = Math.max(nucleo, 3);
+  const tam = Math.max(6, Math.round(alturaX / 0.47));
+  if (b - a > 3 * tam) return null; // varios renglones juntos: no es fiable
+
+  // Color de la tinta (núcleo oscuro) y grosor medio del trazo.
+  let sr = 0, sg = 0, sb = 0, sn = 0, tinta = 0, tramos = 0;
+  // Nivel de tinta robusto (percentil 3 % de los píxeles oscuros) y nivel medio tinta/papel.
+  const oscuros = [];
+  for (let y = a; y <= b; y++) for (let x = 0; x < w; x++) if (L[y * w + x] < t) oscuros.push(L[y * w + x]);
+  oscuros.sort((p, q) => p - q);
+  const minL = oscuros.length ? oscuros[Math.floor(oscuros.length * 0.03)] : 0;
+  const medio = (minL + papel) / 2;
+  const corte = oscuros.length ? oscuros[Math.floor(oscuros.length * 0.12)] : medio;
+  // Grosor del trazo: mediana de los tramos horizontales de tinta en la zona de altura x.
+  const tramosLista = [];
+  for (let y = n0; y <= n1; y++) {
+    let largo = 0;
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (L[i] < medio) largo++;
+      else if (largo) { tramosLista.push(largo); largo = 0; }
+    }
+  }
+  for (let y = a; y <= b; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x;
+    if (L[i] < t) { tinta++; if (x === 0 || L[i - 1] >= t) tramos++; }
+    if (L[i] < corte) { sr += d[4 * i]; sg += d[4 * i + 1]; sb += d[4 * i + 2]; sn++; }
+  }
+  const hex = (v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0');
+  let color = sn ? '#' + hex(sr / sn) + hex(sg / sn) + hex(sb / sn) : '#1a1a1a';
+  tramosLista.sort((p, q) => p - q);
+  const grosor = tramosLista.length ? tramosLista[Math.floor(tramosLista.length / 2)] : tam * 0.09;
+
+  // Nitidez: se compara el ancho de los bordes con muestras renderizadas con distinto desenfoque.
+  const borde = (LL, ww, ya, yb) => {
+    const tt = otsu(LL.subarray(ya * ww, (yb + 1) * ww));
+    const os = []; let pp = 0, np2 = 0;
+    for (let i = ya * ww; i < (yb + 1) * ww; i++) { if (LL[i] < tt) os.push(LL[i]); else { pp += LL[i]; np2++; } }
+    if (!os.length || !np2) return 0;
+    os.sort((p, q) => p - q);
+    const ink = os[Math.floor(os.length * 0.03)], pap = pp / np2;
+    const contraste = Math.max(1, pap - ink), pendientes = [];
+    for (let y = ya; y <= yb; y++) for (let x = 2; x < ww - 1; x++) {
+      const i = y * ww + x;
+      if ((LL[i] < tt) === (LL[i - 1] < tt)) continue;
+      // Solo cruces de letras reales: a pocos píxeles hay tinta plena de un lado y papel del otro.
+      let mn = 255, mx = 0;
+      for (let k = Math.max(0, x - 6); k <= Math.min(ww - 1, x + 5); k++) { mn = Math.min(mn, LL[y * ww + k]); mx = Math.max(mx, LL[y * ww + k]); }
+      if (mn > ink + 0.35 * contraste || mx < pap - 0.25 * contraste) continue;
+      pendientes.push(Math.abs(LL[i + 1] - LL[i - 2]) / (3 * contraste));
+    }
+    if (!pendientes.length) return 0;
+    pendientes.sort((p, q) => p - q);
+    return pendientes[Math.floor(pendientes.length / 2)];
+  };
+  const observado = borde(L, w, a, b);
+  const nucleoTinta = (LL, ini, fin) => {
+    const tt = otsu(LL.subarray(ini, fin)), os = [];
+    for (let i = ini; i < fin; i++) if (LL[i] < tt) os.push(LL[i]);
+    if (!os.length) return 0;
+    os.sort((p, q) => p - q);
+    const m = Math.max(1, Math.floor(os.length * 0.12));
+    let acc = 0; for (let i = 0; i < m; i++) acc += os[i];
+    return acc / m;
+  };
+  let alcance = 1;
+  const fuente = $('fuenteTexto').value, muestraTxt = 'Producto acetaminofén mg';
+  let desenfoque = 0.5, mejorDif = Infinity;
+  // El desenfoque se limita según el tamaño: más allá, el texto se vuelve ilegible aunque la medida lo pida.
+  const candidatos = [0, 0.4, 0.8, 1.2, 1.6, 2.2, 3, 4, 5.5].filter((v) => v <= Math.max(1, tam * 0.035));
+  for (const sg of candidatos) {
+    const mw = Math.round(tam * 12), mh = Math.round(tam * 2);
+    const mc = crearCanvas(mw, mh), mx = ctx2d(mc);
+    mx.fillStyle = '#fff'; mx.fillRect(0, 0, mw, mh);
+    mx.fillStyle = '#000'; mx.font = `${grosor / tam > 0.15 ? 'bold ' : ''}${tam}px ${fuente}`;
+    mx.filter = `blur(${sg}px)`; mx.fillText(muestraTxt, tam * 0.5, tam * 1.3); mx.filter = 'none';
+    const md = mx.getImageData(0, 0, mw, mh).data;
+    let ML = new Float32Array(mw * mh);
+    for (let i = 0; i < mw * mh; i++) ML[i] = md[4 * i];
+    ML = desenfoqueCaja(ML, mw, mh, rb);
+    const dif = Math.abs(borde(ML, mw, Math.round(tam * 0.4), Math.round(tam * 1.6)) - observado);
+    if (dif < mejorDif) {
+      mejorDif = dif; desenfoque = sg;
+      // Cuánto se oscurece de verdad una letra negra con este desenfoque (1 = llega al negro).
+      alcance = Math.max(0.3, (255 - nucleoTinta(ML, Math.round(tam * 0.4) * mw, Math.round(tam * 1.6) * mw)) / 255);
+    }
+  }
+  // Color real de la tinta: lo observado ya viene aclarado por el desenfoque; se compensa.
+  let pr = 0, pg = 0, pb = 0, pn = 0;
+  for (let y = a; y <= b; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x;
+    if (L[i] > t) { pr += d[4 * i]; pg += d[4 * i + 1]; pb += d[4 * i + 2]; pn++; }
+  }
+  if (sn && pn) {
+    const real = (pc, oc) => pc - (pc - oc) / alcance;
+    color = '#' + hex(real(pr / pn, sr / sn)) + hex(real(pg / pn, sg / sn)) + hex(real(pb / pn, sb / sn));
+  }
+  return {
+    tam, color,
+    grosorRel: grosor / tam,
+    negrita: grosor / tam > 0.15,
+    base: y0 + n1 + 1,
+    desenfoque,
+  };
+}
+
+/* =========================================================================
+   Editor (borrar / texto)
+   ========================================================================= */
+const lienzoEdicion = $('lienzoEdicion');
+const edicion = {
+  img: null, mascara: null, herramienta: 'borrar', deshacer: [],
+  vista: { escala: 1, ox: 0, oy: 0, dpr: 1 },
+  texto: { x: 0, y: 0, puesto: false, desenfoque: 0.5 },
+};
+
+function abrirEdicion() {
+  const r = estado.resultado;
+  edicion.img = crearCanvas(r.width, r.height);
+  ctx2d(edicion.img).drawImage(r, 0, 0);
+  edicion.mascara = crearCanvas(r.width, r.height);
+  edicion.deshacer = [];
+  edicion.texto.puesto = false;
+  edicion.vista.escala = 0;
+  $('deshacer').disabled = true;
+  elegirHerramienta('borrar');
+  mostrar('vistaEdicion');
+}
+function ajustarVistaEdicion(forzar) {
+  const cont = $('contenedorEdicion'), img = edicion.img;
+  if (!img) return;
+  const cw = cont.clientWidth, ch = cont.clientHeight;
+  if (!forzar && edicion.vista.escala) return;
+  const e = Math.min((cw - 16) / img.width, (ch - 16) / img.height);
+  edicion.vista.escala = e;
+  edicion.vista.ox = (cw - img.width * e) / 2;
+  edicion.vista.oy = (ch - img.height * e) / 2;
+}
+function fuenteActual() {
+  return `${$('negritaTexto').getAttribute('aria-pressed') === 'true' ? 'bold ' : ''}${$('tamTexto').value}px ${$('fuenteTexto').value}`;
+}
+function dibujarEdicion() {
+  if (!edicion.img || $('vistaEdicion').hidden) return;
+  const cont = $('contenedorEdicion');
+  const dpr = window.devicePixelRatio || 1;
+  const cw = cont.clientWidth, ch = cont.clientHeight;
+  if (lienzoEdicion.width !== Math.round(cw * dpr) || lienzoEdicion.height !== Math.round(ch * dpr)) {
+    lienzoEdicion.width = Math.round(cw * dpr); lienzoEdicion.height = Math.round(ch * dpr);
+  }
+  const { escala, ox, oy } = edicion.vista;
+  const ctx = lienzoEdicion.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cw, ch);
+  ctx.setTransform(dpr * escala, 0, 0, dpr * escala, dpr * ox, dpr * oy);
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(edicion.img, 0, 0);
+  ctx.globalAlpha = 0.45; ctx.drawImage(edicion.mascara, 0, 0); ctx.globalAlpha = 1;
+  if (edicion.herramienta === 'texto' && edicion.texto.puesto) {
+    const t = edicion.texto, txt = $('textoNuevo').value;
+    ctx.font = fuenteActual();
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = $('colorTexto').value;
+    if (txt) ctx.fillText(txt, t.x, t.y);
+    const ancho = txt ? ctx.measureText(txt).width : Number($('tamTexto').value) * 2;
+    ctx.lineWidth = 2 / escala; ctx.strokeStyle = '#0ea5e9';
+    ctx.setLineDash([6 / escala, 4 / escala]);
+    ctx.beginPath(); ctx.moveTo(t.x, t.y); ctx.lineTo(t.x + ancho, t.y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(t.x, t.y + 4 / escala); ctx.lineTo(t.x, t.y - Number($('tamTexto').value) * 0.75); ctx.stroke();
+  }
+}
+function elegirHerramienta(h) {
+  edicion.herramienta = h;
+  for (const b of $('herramientas').querySelectorAll('button[data-herr]')) b.setAttribute('aria-pressed', String(b.dataset.herr === h));
+  $('panelBorrar').hidden = h !== 'borrar';
+  $('panelTexto').hidden = h !== 'texto';
+  dibujarEdicion();
+}
+$('herramientas').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-herr]');
+  if (b) elegirHerramienta(b.dataset.herr);
+});
+
+function aImagen(cx, cy) {
+  const rect = lienzoEdicion.getBoundingClientRect(), v = edicion.vista;
+  return [(cx - rect.left - v.ox) / v.escala, (cy - rect.top - v.oy) / v.escala];
+}
+function zoom(factor, cx, cy) {
+  const rect = lienzoEdicion.getBoundingClientRect(), v = edicion.vista;
+  const sx = cx - rect.left, sy = cy - rect.top;
+  const ix = (sx - v.ox) / v.escala, iy = (sy - v.oy) / v.escala;
+  v.escala = Math.max(0.02, Math.min(8, v.escala * factor));
+  v.ox = sx - ix * v.escala; v.oy = sy - iy * v.escala;
+}
+function trazar(desde, hasta) {
+  const c = ctx2d(edicion.mascara);
+  c.strokeStyle = 'rgb(255,40,40)'; c.fillStyle = 'rgb(255,40,40)';
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  c.lineWidth = Number($('tamPincel').value) / edicion.vista.escala;
+  c.beginPath(); c.moveTo(...desde); c.lineTo(...hasta); c.stroke();
+}
+
+const punteros = new Map();
+let gesto = null;
+lienzoEdicion.addEventListener('pointerdown', (e) => {
+  lienzoEdicion.setPointerCapture(e.pointerId);
+  punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (punteros.size === 2) {
+    const [a, b] = [...punteros.values()];
+    gesto = { tipo: 'pellizco', d0: Math.hypot(a.x - b.x, a.y - b.y), cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 };
+    return;
+  }
+  if (punteros.size > 2) return;
+  const p = aImagen(e.clientX, e.clientY);
+  if (edicion.herramienta === 'borrar') {
+    gesto = { tipo: 'trazo', ultimo: p };
+    trazar(p, p);
+  } else if (edicion.herramienta === 'mover') {
+    gesto = { tipo: 'mover', x: e.clientX, y: e.clientY };
+  } else {
+    const t = edicion.texto;
+    const tam = Number($('tamTexto').value);
+    const ctx = lienzoEdicion.getContext('2d'); ctx.font = fuenteActual();
+    const ancho = Math.max(tam * 2, ctx.measureText($('textoNuevo').value).width);
+    const encima = t.puesto && p[0] > t.x - tam * 0.3 && p[0] < t.x + ancho + tam * 0.3 && p[1] > t.y - tam && p[1] < t.y + tam * 0.4;
+    if (!encima) {
+      t.x = p[0]; t.y = p[1]; t.puesto = true;
+      imitarLetras(true);
+    }
+    gesto = { tipo: 'texto', ultimo: p };
+  }
+  dibujarEdicion();
+});
+lienzoEdicion.addEventListener('pointermove', (e) => {
+  if (!punteros.has(e.pointerId)) return;
+  punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (!gesto) return;
+  if (gesto.tipo === 'pellizco' && punteros.size >= 2) {
+    const [a, b] = [...punteros.values()];
+    const d = Math.hypot(a.x - b.x, a.y - b.y), cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+    edicion.vista.ox += cx - gesto.cx; edicion.vista.oy += cy - gesto.cy;
+    zoom(d / gesto.d0, cx, cy);
+    gesto.d0 = d; gesto.cx = cx; gesto.cy = cy;
+  } else if (gesto.tipo === 'trazo') {
+    const p = aImagen(e.clientX, e.clientY);
+    trazar(gesto.ultimo, p); gesto.ultimo = p;
+  } else if (gesto.tipo === 'mover') {
+    edicion.vista.ox += e.clientX - gesto.x; edicion.vista.oy += e.clientY - gesto.y;
+    gesto.x = e.clientX; gesto.y = e.clientY;
+  } else if (gesto.tipo === 'texto') {
+    const p = aImagen(e.clientX, e.clientY);
+    edicion.texto.x += p[0] - gesto.ultimo[0]; edicion.texto.y += p[1] - gesto.ultimo[1];
+    gesto.ultimo = p;
+  }
+  dibujarEdicion();
+});
+const finPuntero = (e) => {
+  punteros.delete(e.pointerId);
+  if (punteros.size === 0) gesto = null;
+  else if (gesto && gesto.tipo === 'pellizco' && punteros.size < 2) gesto = null;
+};
+lienzoEdicion.addEventListener('pointerup', finPuntero);
+lienzoEdicion.addEventListener('pointercancel', finPuntero);
+lienzoEdicion.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  zoom(Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY);
+  dibujarEdicion();
+}, { passive: false });
+window.addEventListener('resize', dibujarEdicion);
+
+function guardarDeshacer(cambio) {
+  edicion.deshacer.push(cambio);
+  if (edicion.deshacer.length > 12) edicion.deshacer.shift();
+  $('deshacer').disabled = false;
+}
+$('deshacer').addEventListener('click', () => {
+  const c = edicion.deshacer.pop();
+  if (c) ctx2d(edicion.img).putImageData(c.datos, c.x, c.y);
+  $('deshacer').disabled = !edicion.deshacer.length;
+  dibujarEdicion();
+});
+$('limpiarMascara').addEventListener('click', () => {
+  ctx2d(edicion.mascara).clearRect(0, 0, edicion.mascara.width, edicion.mascara.height);
+  dibujarEdicion();
+});
+$('aplicarBorrado').addEventListener('click', () => ocupado('Borrando…', async () => {
+  const m = edicion.mascara, W = m.width, H = m.height;
+  const md = ctx2d(m).getImageData(0, 0, W, H).data;
+  const alfa = new Uint8Array(W * H);
+  let hay = false;
+  for (let i = 0; i < W * H; i++) if (md[4 * i + 3] > 20) { alfa[i] = 1; hay = true; }
+  if (!hay) { aviso('Primero sombrea con el pincel lo que quieres borrar.'); return; }
+  const cambio = rellenarZona(edicion.img, alfa);
+  if (cambio) guardarDeshacer(cambio);
+  ctx2d(m).clearRect(0, 0, W, H);
+  dibujarEdicion();
+}));
+
+function imitarLetras(silencioso) {
+  const t = edicion.texto;
+  if (!t.puesto) { if (!silencioso) aviso('Primero toca el renglón donde va el texto.'); return; }
+  const r = analizarLetras(edicion.img, t.x, t.y);
+  if (!r) { if (!silencioso) aviso('No encontré letras cerca. Ajusta el tamaño y el color a mano.'); return; }
+  $('tamTexto').value = r.tam;
+  $('colorTexto').value = r.color;
+  $('negritaTexto').setAttribute('aria-pressed', String(r.negrita));
+  t.y = r.base;
+  t.desenfoque = r.desenfoque;
+  if (!silencioso) aviso(`Letras de ${r.tam} px${r.negrita ? ', negrita' : ''}. Elige el tipo de letra que más se parezca.`);
+  dibujarEdicion();
+}
+$('imitarTexto').addEventListener('click', () => imitarLetras(false));
+for (const id of ['textoNuevo', 'tamTexto', 'fuenteTexto', 'colorTexto']) $(id).addEventListener('input', dibujarEdicion);
+$('negritaTexto').addEventListener('click', (e) => {
+  const b = e.currentTarget;
+  b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+  dibujarEdicion();
+});
+$('aplicarTexto').addEventListener('click', () => {
+  const t = edicion.texto, txt = $('textoNuevo').value;
+  if (!t.puesto) { aviso('Toca el renglón donde va el texto.'); return; }
+  if (!txt.trim()) { aviso('Escribe el texto.'); return; }
+  const ctx = ctx2d(edicion.img);
+  ctx.font = fuenteActual();
+  const m = ctx.measureText(txt), tam = Number($('tamTexto').value), margen = Math.ceil(t.desenfoque * 3 + 4);
+  const x = Math.max(0, Math.floor(t.x - (m.actualBoundingBoxLeft || 0) - margen));
+  const y = Math.max(0, Math.floor(t.y - (m.actualBoundingBoxAscent || tam) - margen));
+  const w = Math.min(edicion.img.width - x, Math.ceil(m.width + (m.actualBoundingBoxLeft || 0) + 2 * margen));
+  const h = Math.min(edicion.img.height - y, Math.ceil((m.actualBoundingBoxAscent || tam) + (m.actualBoundingBoxDescent || tam * 0.3) + 2 * margen));
+  if (w > 0 && h > 0) guardarDeshacer({ x, y, datos: ctx.getImageData(x, y, w, h) });
+  ctx.save();
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = $('colorTexto').value;
+  ctx.globalAlpha = 0.96;
+  ctx.filter = `blur(${t.desenfoque.toFixed(2)}px)`;
+  ctx.fillText(txt, t.x, t.y);
+  ctx.restore();
+  $('textoNuevo').value = '';
+  t.puesto = false;
+  dibujarEdicion();
+});
+$('cancelarEdicion').addEventListener('click', async () => {
+  if (edicion.deshacer.length && !(await confirmar('¿Descartar los cambios de la edición?'))) return;
+  edicion.img = null;
+  mostrar('vistaResultado');
+});
+$('terminarEdicion').addEventListener('click', () => {
+  if (edicion.deshacer.length) {
+    estado.resultado = edicion.img;
+    estado.editado = true;
+    pintarResultado();
+  }
+  edicion.img = null;
+  mostrar('vistaResultado');
+});
 
 /* =========================================================================
    Lista de páginas

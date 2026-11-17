@@ -8,7 +8,11 @@ Aplicación web pequeña, en un solo archivo (`index.html`) y sin dependencias, 
 2. **Detecta los bordes de la hoja** automáticamente; se pueden ajustar las cuatro esquinas arrastrándolas (con lupa para mayor precisión).
 3. **Corrige la perspectiva** (homografía con interpolación bilineal) hasta 3508 px en el lado largo (A4 a 300 ppp).
 4. **Mejora la imagen**: quita sombras e iluminación irregular, deja el papel blanco, aumenta el contraste y enfoca el texto. Filtros: *Mejorado* (color), *Grises*, *Blanco y negro* (umbral adaptativo con bordes suaves) y *Original*.
-5. **Exporta** un PDF de varias páginas (A4, Carta, Oficio o tamaño original), JPG por página, o lo comparte desde el celular.
+5. **Poca luz** (🌙): aclara fotos oscuras, corrige el color y quita el ruido sin borrar los bordes (filtro guiado + reducción de ruido de color).
+6. **4K**: lleva la imagen a 3840 px en el lado largo con escalado por pasos y enfoque. Ojo: el escalado no inventa detalle que la cámara no captó; mejora la presentación y la nitidez aparente.
+7. **Borrar con pincel** (✏️ Borrar / texto): se sombrea lo que se quiere quitar y la zona se rellena con el fondo que la rodea, incluido el grano de la foto. Tiene deshacer y zoom con dos dedos.
+8. **Agregar texto que imita las letras cercanas**: al tocar un renglón se miden el tamaño, el color, el grosor, el desenfoque y la línea base de las letras de alrededor, y el texto nuevo se pone con esos mismos valores. El tipo de letra se elige de una lista (Times, Arial, Calibri, máquina de escribir, etc.).
+9. **Exporta** un PDF de varias páginas (A4, Carta, Oficio o tamaño original), JPG por página, o lo comparte desde el celular.
 
 Todo se procesa en el navegador: las imágenes no se envían a ningún servidor.
 
