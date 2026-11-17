@@ -3,184 +3,469 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0f766e">
+<meta name="theme-color" content="#2f55d4">
 <title>Escáner de documentos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
+  /* Plan: herramienta de trabajo. La imagen vive en una «mesa» oscura; los controles, en un panel
+     lateral (escritorio) o inferior (celular). Un solo acento azul tinta para la acción principal. */
   :root {
-    --fondo: #f4f6f8; --panel: #ffffff; --texto: #1f2933; --suave: #61707f;
-    --primario: #0f766e; --primario-osc: #0b5d57; --borde: #d8dee4; --peligro: #b42318;
+    --papel: #f2f4f8;
+    --superficie: #ffffff;
+    --superficie-2: #e8ecf3;
+    --tinta: #131926;
+    --tenue: #5a6476;
+    --linea: #d4dae4;
+    --acento: #2f55d4;
+    --acento-hover: #2445b8;
+    --acento-tinta: #ffffff;
+    --acento-suave: #e2e8fb;
+    --mesa: #171c26;
+    --peligro: #c0362c;
+    --peligro-suave: #fbe9e7;
+    --sombra: 0 1px 2px rgba(19, 25, 38, .06), 0 6px 20px rgba(19, 25, 38, .06);
+    --f-ui: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --f-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    --radio: 14px;
+    color-scheme: light;
   }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --papel: #0d1118; --superficie: #151b26; --superficie-2: #1d2431; --tinta: #e6eaf2; --tenue: #96a0b2;
+      --linea: #2a3243; --acento: #7f9cff; --acento-hover: #9bb2ff; --acento-tinta: #0b1022; --acento-suave: #1d2747;
+      --mesa: #07090d; --peligro: #f0776b; --peligro-suave: #3a1d1a;
+      --sombra: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --papel: #0d1118; --superficie: #151b26; --superficie-2: #1d2431; --tinta: #e6eaf2; --tenue: #96a0b2;
+    --linea: #2a3243; --acento: #7f9cff; --acento-hover: #9bb2ff; --acento-tinta: #0b1022; --acento-suave: #1d2747;
+    --mesa: #07090d; --peligro: #f0776b; --peligro-suave: #3a1d1a;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    color-scheme: dark;
+  }
+
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
   body {
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: var(--fondo); color: var(--texto); display: flex; flex-direction: column;
+    font-family: var(--f-ui); font-size: 15px; line-height: 1.45;
+    background: var(--papel); color: var(--tinta);
+    display: grid; grid-template-rows: auto auto 1fr;
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    -webkit-font-smoothing: antialiased;
   }
-  body { padding-bottom: env(safe-area-inset-bottom); }
-  header {
-    padding-top: max(12px, env(safe-area-inset-top)) !important;
-    background: var(--primario); color: #fff; padding: 12px 16px;
-    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  h1, h2, h3 { margin: 0; text-wrap: balance; }
+  h2 { font-size: 1.15rem; font-weight: 800; letter-spacing: -.01em; }
+  h3 { font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--tenue); }
+  p { margin: 0; }
+  .num { font-family: var(--f-num); font-variant-numeric: tabular-nums; font-size: .8rem; }
+  .ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Barra superior */
+  .barra {
+    display: flex; align-items: center; gap: 12px;
+    padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+    background: var(--superficie); border-bottom: 1px solid var(--linea);
   }
-  header h1 { font-size: 1.15rem; margin: 0; }
-  header span { font-size: .8rem; opacity: .85; }
-  main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-  section { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 12px; gap: 12px; }
-  section[hidden] { display: none; }
-  button, select, label.boton {
-    font: inherit; border-radius: 10px; border: 1px solid var(--borde); background: var(--panel);
-    color: var(--texto); padding: 10px 14px; cursor: pointer; min-height: 44px;
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  .marca { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .marca svg { width: 30px; height: 30px; color: var(--acento); flex: none; }
+  .marca h1 { font-size: 1.05rem; font-weight: 800; letter-spacing: -.01em; }
+  .marca p { font-size: .75rem; color: var(--tenue); display: flex; align-items: center; gap: 4px; }
+  .marca p .ic { width: 13px; height: 13px; }
+  .contador {
+    margin-left: auto; padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+    background: var(--acento-suave); color: var(--acento); font-weight: 700;
   }
-  button:disabled { opacity: .5; cursor: default; }
-  .primario { background: var(--primario); border-color: var(--primario); color: #fff; font-weight: 600; }
-  .primario:not(:disabled):hover { background: var(--primario-osc); }
+
+  /* Pasos: indican en qué parte del flujo está la persona */
+  .pasos {
+    display: flex; gap: 4px; list-style: none; margin: 0; padding: 8px 16px;
+    background: var(--superficie); border-bottom: 1px solid var(--linea); overflow-x: auto;
+  }
+  .pasos li {
+    display: flex; align-items: center; gap: 6px; white-space: nowrap;
+    font-size: .8rem; font-weight: 600; color: var(--tenue); padding: 4px 10px 4px 4px; border-radius: 999px;
+  }
+  .pasos li span {
+    width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+    font-size: .7rem; font-family: var(--f-num); border: 1.5px solid var(--linea);
+  }
+  .pasos li small { font-weight: 500; opacity: .8; }
+  body[data-vista="vistaInicio"] .pasos li[data-paso="vistaInicio"],
+  body[data-vista="vistaRecorte"] .pasos li[data-paso="vistaRecorte"],
+  body[data-vista="vistaResultado"] .pasos li[data-paso="vistaResultado"],
+  body[data-vista="vistaEdicion"] .pasos li[data-paso="vistaEdicion"] { background: var(--acento-suave); color: var(--acento); }
+  body[data-vista="vistaInicio"] .pasos li[data-paso="vistaInicio"] span,
+  body[data-vista="vistaRecorte"] .pasos li[data-paso="vistaRecorte"] span,
+  body[data-vista="vistaResultado"] .pasos li[data-paso="vistaResultado"] span,
+  body[data-vista="vistaEdicion"] .pasos li[data-paso="vistaEdicion"] span { background: var(--acento); border-color: var(--acento); color: var(--acento-tinta); }
+
+  main { min-height: 0; display: flex; flex-direction: column; }
+
+  /* Botones */
+  button, label.boton {
+    font: inherit; font-weight: 600; border-radius: 11px; border: 1px solid var(--linea);
+    background: var(--superficie); color: var(--tinta); padding: 9px 14px; min-height: 44px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background-color .15s, border-color .15s, color .15s;
+  }
+  button:hover:not(:disabled), label.boton:hover { border-color: var(--tenue); }
+  button:disabled { opacity: .45; cursor: default; }
+  button:focus-visible, label.boton:focus-within, input:focus-visible, select:focus-visible {
+    outline: 3px solid var(--acento); outline-offset: 2px;
+  }
+  .primario, label.boton.primario { background: var(--acento); border-color: var(--acento); color: var(--acento-tinta); }
+  .primario:hover:not(:disabled), label.boton.primario:hover { background: var(--acento-hover); border-color: var(--acento-hover); }
+  .boton-texto { background: transparent; border-color: transparent; color: var(--tenue); }
+  .boton-texto.peligro { color: var(--peligro); }
+  .boton-texto.peligro:hover:not(:disabled) { background: var(--peligro-suave); border-color: transparent; }
+  .icono-solo { padding: 0; width: 36px; min-height: 36px; border-radius: 9px; }
   .fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .fila.fin { justify-content: flex-end; }
-  .crecer { flex: 1; }
+  .crecer { flex: 1 1 0; }
   input[type=file] { display: none; }
+  input[type=range] { accent-color: var(--acento); }
 
-  .acciones-inicio { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .acciones-inicio label.boton { padding: 18px 10px; flex-direction: column; font-weight: 600; }
-  .acciones-inicio label.boton .icono { font-size: 1.8rem; }
-  .vacio { color: var(--suave); text-align: center; padding: 40px 12px; border: 2px dashed var(--borde); border-radius: 14px; }
-  .paginas { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; overflow: auto; }
-  .pagina { background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 6px; display: flex; flex-direction: column; gap: 6px; }
-  .pagina img { width: 100%; aspect-ratio: 1 / 1.3; object-fit: contain; background: #e9edf1; border-radius: 6px; }
-  .pagina .controles { display: flex; justify-content: space-between; align-items: center; font-size: .85rem; color: var(--suave); }
-  .pagina .controles button { min-height: 32px; padding: 4px 8px; border-radius: 8px; }
-  .exportar { background: var(--panel); border: 1px solid var(--borde); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-  .exportar h2 { font-size: 1rem; margin: 0; }
-
-  .lienzo { flex: 1; min-height: 0; position: relative; background: #1d2730; border-radius: 12px; overflow: hidden; touch-action: none; }
+  /* Vistas */
+  .vista[hidden] { display: none !important; }
+  .vista {
+    flex: 1; min-height: 0; display: grid; gap: 12px; padding: 12px 16px 16px;
+    grid-template-rows: minmax(220px, 1fr) auto;
+  }
+  @media (min-width: 900px) {
+    .vista { grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: minmax(0, 1fr); padding: 16px 20px 20px; gap: 16px; }
+  }
+  .etapa { position: relative; background: var(--mesa); border-radius: var(--radio); overflow: hidden; min-height: 0; }
+  .lienzo { touch-action: none; }
   .lienzo canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .vista-previa { flex: 1; min-height: 0; background: #1d2730; border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 8px; }
-  .vista-previa canvas { max-width: 100%; max-height: 100%; box-shadow: 0 4px 18px rgba(0,0,0,.45); background: #fff; }
-  .ayuda { font-size: .85rem; color: var(--suave); margin: 0; }
-  .segmentado { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .segmentado button { padding: 8px 4px; font-size: .85rem; }
-  .alternar[aria-pressed=true] { background: #1e293b; color: #fff; border-color: #1e293b; }
-  .panel { display: flex; flex-direction: column; gap: 8px; }
-  .panel[hidden] { display: none; }
-  .panel input[type=text] { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--borde); min-height: 44px; width: 100%; }
-  .panel input[type=color] { width: 48px; height: 44px; border: 1px solid var(--borde); border-radius: 10px; padding: 2px; background: #fff; }
-  .panel label { display: inline-flex; align-items: center; gap: 6px; font-size: .9rem; }
-  .panel input[type=range] { width: 120px; }
-  .segmentado button[aria-pressed=true] { background: var(--primario); color: #fff; border-color: var(--primario); }
+  .vista-previa { display: flex; align-items: center; justify-content: center; padding: 14px; }
+  .vista-previa canvas { max-width: 100%; max-height: 100%; background: #fff; box-shadow: 0 6px 24px rgba(0, 0, 0, .5); }
+  .etiqueta-res {
+    position: absolute; left: 10px; bottom: 10px; padding: 3px 8px; border-radius: 7px;
+    background: rgba(0, 0, 0, .55); color: #e8ecf3;
+  }
+  .controles {
+    display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow: auto;
+    background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); padding: 14px;
+    box-shadow: var(--sombra);
+  }
+  @media (max-width: 899px) {
+    .controles { max-height: 46vh; padding: 12px; gap: 12px; }
+    .filtros canvas { aspect-ratio: 1; }
+    .vista { padding: 10px 12px 12px; gap: 10px; }
+  }
+  @media (max-width: 480px) {
+    .interruptor small, .pasos li small { display: none; }
+    .grupo h3 { display: none; }
+    .pasos { padding: 6px 12px; }
+    .barra { padding-left: 12px; padding-right: 12px; }
+  }
+  .titulo-panel { display: flex; flex-direction: column; gap: 4px; }
+  .titulo-panel p, .ayuda { color: var(--tenue); font-size: .85rem; }
+  .grupo { display: flex; flex-direction: column; gap: 8px; }
+  .acciones { display: flex; gap: 8px; margin-top: auto; padding-top: 4px; }
+  .acciones button { flex: 1 1 0; white-space: nowrap; }
 
-  #ocupado { position: fixed; inset: 0; background: rgba(15, 23, 30, .55); display: flex; align-items: center; justify-content: center; z-index: 10; color: #fff; flex-direction: column; gap: 12px; }
-  #ocupado[hidden] { display: none; }
-  .giro { width: 42px; height: 42px; border: 4px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: girar 0.8s linear infinite; }
-  #aviso { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: #1f2933; color: #fff; padding: 12px 16px; border-radius: 10px; z-index: 20; max-width: 90vw; font-size: .9rem; box-shadow: 0 6px 20px rgba(0,0,0,.3); }
-  #aviso[hidden], #dialogo[hidden] { display: none; }
-  #dialogo { position: fixed; inset: 0; background: rgba(15, 23, 30, .55); display: flex; align-items: center; justify-content: center; z-index: 15; padding: 20px; }
-  #dialogo .caja { background: var(--panel); border-radius: 14px; padding: 18px; max-width: 360px; width: 100%; display: flex; flex-direction: column; gap: 14px; }
-  #dialogo p { margin: 0; }
+  /* Inicio */
+  .vista-inicio { display: flex; flex-direction: column; gap: 20px; overflow: auto; }
+  .vista-inicio > * { width: 100%; max-width: 1040px; margin: 0 auto; }
+  .captura {
+    display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center;
+    background: var(--superficie); border: 1.5px dashed var(--linea); border-radius: 18px; padding: 20px;
+    transition: border-color .15s, background-color .15s;
+  }
+  .captura.arrastrando { border-color: var(--acento); background: var(--acento-suave); }
+  .captura .ilustracion { width: 92px; color: var(--acento); }
+  .captura .texto { display: flex; flex-direction: column; gap: 12px; }
+  .captura h2 { font-size: 1.35rem; }
+  .captura p { color: var(--tenue); max-width: 60ch; }
+  .captura .fila label { min-height: 48px; padding: 10px 18px; }
+  @media (max-width: 560px) {
+    .captura { grid-template-columns: 1fr; text-align: left; padding: 16px; }
+    .captura .ilustracion { width: 64px; }
+    .captura .fila label { flex: 1 1 0; }
+  }
+  .pista-arrastre { font-size: .8rem; }
+  @media (hover: none) { .pista-arrastre { display: none; } }
+
+  .encabezado-seccion { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .vacio {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;
+  }
+  .consejo { background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+  .consejo strong { font-size: .9rem; }
+  .consejo p { color: var(--tenue); font-size: .85rem; }
+  .consejo .ic { color: var(--acento); width: 22px; height: 22px; }
+  @media (max-width: 700px) { .vacio { grid-template-columns: 1fr; } }
+  .vacio[hidden], .exportar[hidden] { display: none; }
+
+  .paginas { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+  .paginas:empty { display: none; }
+  .pagina {
+    background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio);
+    padding: 8px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--sombra);
+  }
+  .pagina .hoja { position: relative; aspect-ratio: 1 / 1.3; background: var(--superficie-2); border-radius: 8px; display: grid; place-items: center; overflow: hidden; }
+  .pagina img { max-width: 100%; max-height: 100%; box-shadow: 0 1px 4px rgba(0, 0, 0, .2); }
+  .pagina .numero {
+    position: absolute; top: 6px; left: 6px; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 7px;
+    display: grid; place-items: center; background: var(--tinta); color: var(--superficie); font-weight: 700;
+  }
+  .pagina .controles-pagina { display: flex; align-items: center; gap: 4px; }
+  .pagina .controles-pagina .borrar { margin-left: auto; color: var(--peligro); }
+
+  .exportar {
+    display: flex; flex-direction: column; gap: 14px; background: var(--superficie);
+    border: 1px solid var(--linea); border-radius: var(--radio); padding: 16px; box-shadow: var(--sombra);
+  }
+  .tamanos { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .tamanos legend { padding: 0; margin-bottom: 8px; }
+  @media (max-width: 560px) { .tamanos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .tamanos label {
+    position: relative; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; cursor: pointer;
+    border: 1px solid var(--linea); border-radius: 11px; background: var(--superficie);
+  }
+  .tamanos label strong { font-size: .9rem; }
+  .tamanos label .num { color: var(--tenue); font-size: .72rem; }
+  .tamanos input { position: absolute; opacity: 0; pointer-events: none; }
+  .tamanos label:has(input:checked) { border-color: var(--acento); background: var(--acento-suave); box-shadow: inset 0 0 0 1px var(--acento); }
+  .tamanos label:has(input:focus-visible) { outline: 3px solid var(--acento); outline-offset: 2px; }
+  .pie-exportar { display: flex; justify-content: flex-end; }
+
+  /* Filtros con miniatura */
+  .filtros { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .filtros button { flex-direction: column; gap: 6px; padding: 6px 6px 8px; font-size: .78rem; min-height: 0; }
+  .filtros canvas { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 7px; background: var(--superficie-2); display: block; }
+  .filtros button[aria-pressed=true] { border-color: var(--acento); box-shadow: inset 0 0 0 1px var(--acento); color: var(--acento); }
+
+  /* Interruptores (Poca luz, 4K) */
+  .interruptores { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  @media (max-width: 899px) { .interruptores { grid-template-columns: 1fr 1fr; } }
+  .interruptor { justify-content: flex-start; text-align: left; gap: 10px; padding: 10px 12px; }
+  .interruptor .textos { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+  .interruptor small { font-weight: 500; color: var(--tenue); font-size: .75rem; }
+  .interruptor .pista { width: 34px; height: 20px; border-radius: 999px; background: var(--linea); position: relative; flex: none; transition: background-color .15s; }
+  .interruptor .pista::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: transform .15s; }
+  .interruptor[aria-pressed=true] { border-color: var(--acento); }
+  .interruptor[aria-pressed=true] .pista { background: var(--acento); }
+  .interruptor[aria-pressed=true] .pista::after { transform: translateX(14px); }
+
+  /* Herramientas de edición */
+  .herramientas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .herramientas button { flex-direction: column; gap: 3px; font-size: .75rem; padding: 8px 4px; }
+  .herramientas button[aria-pressed=true] { background: var(--acento-suave); border-color: var(--acento); color: var(--acento); }
+  .panel { display: flex; flex-direction: column; gap: 10px; }
+  .panel[hidden] { display: none; }
+  .campo { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; font-weight: 600; color: var(--tenue); }
+  .campo input[type=range] { width: 100%; }
+  .panel input[type=text], .panel select {
+    font: inherit; color: var(--tinta); background: var(--superficie); padding: 10px 12px;
+    border-radius: 11px; border: 1px solid var(--linea); min-height: 44px; width: 100%;
+  }
+  .panel input[type=color] { width: 44px; height: 44px; border: 1px solid var(--linea); border-radius: 11px; padding: 3px; background: var(--superficie); flex: none; }
+  .negrita[aria-pressed=true] { background: var(--tinta); color: var(--superficie); border-color: var(--tinta); }
+
+  /* Capas: trabajo, aviso y diálogo */
+  #ocupado { position: fixed; inset: 0; background: rgba(8, 11, 17, .5); display: flex; align-items: center; justify-content: center; z-index: 10; }
+  #ocupado[hidden], #aviso[hidden], #dialogo[hidden] { display: none; }
+  .tarjeta-ocupado { background: var(--superficie); color: var(--tinta); border-radius: var(--radio); padding: 18px 22px; display: flex; align-items: center; gap: 14px; box-shadow: var(--sombra); font-weight: 600; }
+  .giro { width: 26px; height: 26px; border: 3px solid var(--acento-suave); border-top-color: var(--acento); border-radius: 50%; animation: girar .8s linear infinite; }
   @keyframes girar { to { transform: rotate(360deg); } }
+  #aviso {
+    position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+    background: var(--tinta); color: var(--superficie); padding: 12px 16px; border-radius: 12px; z-index: 20;
+    max-width: min(92vw, 480px); font-size: .9rem; font-weight: 600; box-shadow: var(--sombra);
+  }
+  #dialogo { position: fixed; inset: 0; background: rgba(8, 11, 17, .5); display: flex; align-items: center; justify-content: center; z-index: 15; padding: 20px; }
+  #dialogo .caja { background: var(--superficie); border-radius: 16px; padding: 20px; max-width: 380px; width: 100%; display: flex; flex-direction: column; gap: 16px; box-shadow: var(--sombra); }
+  #dialogo p { font-weight: 600; }
+  #dialogo .fila { justify-content: flex-end; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
 </style>
 </head>
-<body>
-<header>
-  <h1>📄 Escáner de documentos</h1>
-  <span>Las imágenes se procesan solo en este dispositivo; no se envían a ningún servidor.</span>
+<body data-vista="vistaInicio">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-camara" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></symbol>
+  <symbol id="i-subir" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></symbol>
+  <symbol id="i-candado" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-varita" viewBox="0 0 24 24"><path d="M4 20 15 9M14 4v2M19 9h2M18 5l-1.5 1.5M10 5l1 1M19 13l-1-1"/></symbol>
+  <symbol id="i-expandir" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+  <symbol id="i-girar-izq" viewBox="0 0 24 24"><path d="M4 4v5h5"/><path d="M4.5 9A8 8 0 1 1 6 16.5"/></symbol>
+  <symbol id="i-girar-der" viewBox="0 0 24 24"><path d="M20 4v5h-5"/><path d="M19.5 9A8 8 0 1 0 18 16.5"/></symbol>
+  <symbol id="i-luna" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+  <symbol id="i-4k" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9v3h3M10 9v6M14 9v6M17 9l-3 3 3 3"/></symbol>
+  <symbol id="i-lapiz" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></symbol>
+  <symbol id="i-pincel" viewBox="0 0 24 24"><path d="M14 4l6 6-7 7-6-6 7-7zM7 11l-3 3c-1 1-1 3 0 4l2 2c1 1 3 1 4 0l3-3"/></symbol>
+  <symbol id="i-texto" viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></symbol>
+  <symbol id="i-mano" viewBox="0 0 24 24"><path d="M8 12V6a1.5 1.5 0 0 1 3 0v5M11 11V4.5a1.5 1.5 0 0 1 3 0V11M14 11V6a1.5 1.5 0 0 1 3 0v7c0 4-2.5 7-6 7-2.5 0-4-1-5.5-3L4 14a1.5 1.5 0 0 1 2.5-1.6L8 14"/></symbol>
+  <symbol id="i-deshacer" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-flecha-izq" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+  <symbol id="i-flecha-der" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-chev-izq" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol>
+  <symbol id="i-chev-der" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-descargar" viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 18v1a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1"/></symbol>
+  <symbol id="i-compartir" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.6M8.2 13.2l7.6 4.6"/></symbol>
+  <symbol id="i-imagen" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></symbol>
+  <symbol id="i-papelera" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+  <symbol id="i-sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-hoja" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/></symbol>
+  <symbol id="i-chispa" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></symbol>
+</svg>
+
+<header class="barra">
+  <div class="marca">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 10V5a1 1 0 0 1 1-1h5M22 4h5a1 1 0 0 1 1 1v5M28 22v5a1 1 0 0 1-1 1h-5M10 28H5a1 1 0 0 1-1-1v-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><rect x="10" y="9" width="12" height="14" rx="1.5" fill="currentColor" opacity=".18"/><path d="M13 14h6M13 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <div>
+      <h1>Escáner de documentos</h1>
+      <p><svg class="ic"><use href="#i-candado"/></svg>Todo se procesa en este dispositivo</p>
+    </div>
+  </div>
+  <span id="contadorPaginas" class="contador num" hidden></span>
 </header>
 
+<ol class="pasos" aria-label="Pasos">
+  <li data-paso="vistaInicio"><span>1</span>Capturar</li>
+  <li data-paso="vistaRecorte"><span>2</span>Recortar</li>
+  <li data-paso="vistaResultado"><span>3</span>Ajustar</li>
+  <li data-paso="vistaEdicion"><span>4</span>Editar <small>(opcional)</small></li>
+</ol>
+
 <main>
-  <!-- 1. Inicio: páginas escaneadas y exportación -->
-  <section id="vistaInicio">
-    <div class="acciones-inicio">
-      <label class="boton primario"><span class="icono">📷</span>Tomar foto
-        <input id="entradaCamara" type="file" accept="image/*" capture="environment">
-      </label>
-      <label class="boton"><span class="icono">🖼️</span>Subir imágenes
-        <input id="entradaArchivos" type="file" accept="image/*" multiple>
-      </label>
+  <!-- 1. Inicio: captura, páginas y exportación -->
+  <section id="vistaInicio" class="vista vista-inicio">
+    <div class="captura" id="zonaCaptura">
+      <svg class="ilustracion" viewBox="0 0 96 96" aria-hidden="true">
+        <path d="M10 26V14a4 4 0 0 1 4-4h12M70 10h12a4 4 0 0 1 4 4v12M86 70v12a4 4 0 0 1-4 4H70M26 86H14a4 4 0 0 1-4-4V70" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+        <path d="M30 22h28l10 10v42H30z" fill="currentColor" opacity=".12"/>
+        <path d="M30 22h28l10 10v42H30zM58 22v10h10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M37 44h24M37 52h24M37 60h16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <div class="texto">
+        <h2>Escanea un documento</h2>
+        <p>Toma la foto con la hoja sobre una superficie oscura. Después recortas, ajustas la imagen y exportas a PDF.</p>
+        <div class="fila">
+          <label class="boton primario"><svg class="ic"><use href="#i-camara"/></svg>Tomar foto
+            <input id="entradaCamara" type="file" accept="image/*" capture="environment">
+          </label>
+          <label class="boton"><svg class="ic"><use href="#i-subir"/></svg>Subir imágenes
+            <input id="entradaArchivos" type="file" accept="image/*" multiple>
+          </label>
+        </div>
+        <p class="pista-arrastre">También puedes arrastrar imágenes a este recuadro.</p>
+      </div>
     </div>
 
-    <div id="sinPaginas" class="vacio">Aún no hay páginas. Toma una foto del documento sobre una superficie oscura y con buena luz.</div>
+    <div class="encabezado-seccion">
+      <h2>Páginas</h2>
+      <span id="resumenPaginas" class="ayuda">Aún no hay páginas</span>
+    </div>
+    <div id="sinPaginas" class="vacio">
+      <div class="consejo"><svg class="ic"><use href="#i-sol"/></svg><strong>Buena luz, sin flash directo</strong><p>Si está oscuro, activa «Poca luz» al ajustar: aclara y quita el ruido.</p></div>
+      <div class="consejo"><svg class="ic"><use href="#i-hoja"/></svg><strong>Hoja completa en la foto</strong><p>Deja un margen alrededor del papel para que se detecten los cuatro bordes.</p></div>
+      <div class="consejo"><svg class="ic"><use href="#i-chispa"/></svg><strong>Calidad de impresión</strong><p>Cada página sale hasta 3508 px (A4 a 300 ppp), o 3840 px con 4K.</p></div>
+    </div>
     <div id="paginas" class="paginas"></div>
 
     <div id="panelExportar" class="exportar" hidden>
       <h2>Exportar</h2>
+      <fieldset class="tamanos">
+        <legend><h3>Tamaño del PDF</h3></legend>
+        <label><input type="radio" name="tamano" id="tamanoA4" value="a4" checked><strong>A4</strong><span class="num">210 × 297 mm</span></label>
+        <label><input type="radio" name="tamano" id="tamanoCarta" value="carta"><strong>Carta</strong><span class="num">216 × 279 mm</span></label>
+        <label><input type="radio" name="tamano" id="tamanoOficio" value="oficio"><strong>Oficio</strong><span class="num">216 × 330 mm</span></label>
+        <label><input type="radio" name="tamano" id="tamanoOriginal" value="original"><strong>Original</strong><span class="num">300 ppp</span></label>
+      </fieldset>
       <div class="fila">
-        <label for="tamano">Tamaño del PDF:</label>
-        <select id="tamano">
-          <option value="a4">A4</option>
-          <option value="carta">Carta</option>
-          <option value="oficio">Oficio (8,5 × 13 in)</option>
-          <option value="original">Tamaño original (300 ppp)</option>
-        </select>
+        <button id="descargarPdf" class="primario crecer"><svg class="ic"><use href="#i-descargar"/></svg>Descargar PDF</button>
+        <button id="compartirPdf" class="crecer" hidden><svg class="ic"><use href="#i-compartir"/></svg>Compartir PDF</button>
+        <button id="descargarJpg" class="crecer"><svg class="ic"><use href="#i-imagen"/></svg>Descargar JPG</button>
       </div>
-      <div class="fila">
-        <button id="descargarPdf" class="primario crecer">⬇️ Descargar PDF</button>
-        <button id="compartirPdf" class="crecer" hidden>📤 Compartir PDF</button>
-        <button id="descargarJpg" class="crecer">🖼️ Descargar JPG</button>
-      </div>
-      <div class="fila fin"><button id="borrarTodo">🗑️ Borrar todo</button></div>
+      <div class="pie-exportar"><button id="borrarTodo" class="boton-texto peligro"><svg class="ic"><use href="#i-papelera"/></svg>Borrar todas las páginas</button></div>
     </div>
   </section>
 
   <!-- 2. Recorte: ajuste de las cuatro esquinas -->
-  <section id="vistaRecorte" hidden>
-    <p class="ayuda">Arrastra las cuatro esquinas hasta los bordes de la hoja.</p>
-    <div class="lienzo" id="contenedorRecorte"><canvas id="lienzoRecorte"></canvas></div>
-    <div class="fila">
-      <button id="detectar">✨ Detectar bordes</button>
-      <button id="completa">⬜ Imagen completa</button>
-    </div>
-    <div class="fila">
-      <button id="cancelarRecorte" class="crecer">Cancelar</button>
-      <button id="recortar" class="primario crecer">Recortar ➜</button>
-    </div>
+  <section id="vistaRecorte" class="vista" hidden>
+    <div class="etapa lienzo" id="contenedorRecorte"><canvas id="lienzoRecorte"></canvas></div>
+    <aside class="controles">
+      <div class="titulo-panel">
+        <h2>Recorta la hoja</h2>
+        <p>Arrastra las cuatro esquinas hasta los bordes del papel. Al arrastrar aparece una lupa para afinar.</p>
+      </div>
+      <div class="fila">
+        <button id="detectar" class="crecer"><svg class="ic"><use href="#i-varita"/></svg>Detectar bordes</button>
+        <button id="completa" class="crecer"><svg class="ic"><use href="#i-expandir"/></svg>Imagen completa</button>
+      </div>
+      <div class="acciones">
+        <button id="cancelarRecorte">Cancelar</button>
+        <button id="recortar" class="primario">Recortar<svg class="ic"><use href="#i-flecha-der"/></svg></button>
+      </div>
+    </aside>
   </section>
 
-  <!-- 3. Resultado: filtro, giro y guardado -->
-  <section id="vistaResultado" hidden>
-    <div class="vista-previa"><canvas id="lienzoResultado"></canvas></div>
-    <div class="segmentado" id="filtros">
-      <button data-filtro="mejorado">Mejorado</button>
-      <button data-filtro="gris">Grises</button>
-      <button data-filtro="bn">Blanco y negro</button>
-      <button data-filtro="original">Foto</button>
-    </div>
-    <div class="fila">
-      <button id="modoNoche" class="alternar crecer" aria-pressed="false" title="Aclara fotos oscuras y reduce el ruido">🌙 Poca luz</button>
-      <button id="modo4k" class="alternar crecer" aria-pressed="false" title="Lleva la imagen a 3840 px en el lado largo">4K</button>
-      <button id="abrirEdicion" class="crecer">✏️ Borrar / texto</button>
-    </div>
-    <div class="fila">
-      <button id="girarIzq" class="crecer">↺ Girar</button>
-      <button id="girarDer" class="crecer">↻ Girar</button>
-      <span id="resolucion" class="ayuda"></span>
-    </div>
-    <div class="fila">
-      <button id="volverRecorte" class="crecer">← Ajustar recorte</button>
-      <button id="guardarPagina" class="primario crecer">✔ Guardar página</button>
-    </div>
+  <!-- 3. Ajuste: filtro, luz, 4K, giro y guardado -->
+  <section id="vistaResultado" class="vista" hidden>
+    <div class="etapa vista-previa"><canvas id="lienzoResultado"></canvas><span id="resolucion" class="etiqueta-res num"></span></div>
+    <aside class="controles">
+      <div class="grupo">
+        <h3>Filtro</h3>
+        <div class="filtros" id="filtros">
+          <button data-filtro="mejorado"><canvas width="60" height="80"></canvas>Mejorado</button>
+          <button data-filtro="gris"><canvas width="60" height="80"></canvas>Grises</button>
+          <button data-filtro="bn"><canvas width="60" height="80"></canvas>B/N</button>
+          <button data-filtro="original"><canvas width="60" height="80"></canvas>Foto</button>
+        </div>
+      </div>
+      <div class="grupo">
+        <h3>Imagen</h3>
+        <div class="interruptores">
+          <button id="modoNoche" class="interruptor" aria-pressed="false"><svg class="ic"><use href="#i-luna"/></svg><span class="textos">Poca luz<small>Aclara y quita ruido</small></span><span class="pista"></span></button>
+          <button id="modo4k" class="interruptor" aria-pressed="false"><svg class="ic"><use href="#i-4k"/></svg><span class="textos">4K<small>3840 px de lado</small></span><span class="pista"></span></button>
+        </div>
+      </div>
+      <div class="grupo">
+        <h3>Orientación y edición</h3>
+        <div class="fila">
+          <button id="girarIzq" class="icono-solo" title="Girar a la izquierda" aria-label="Girar a la izquierda"><svg class="ic"><use href="#i-girar-izq"/></svg></button>
+          <button id="girarDer" class="icono-solo" title="Girar a la derecha" aria-label="Girar a la derecha"><svg class="ic"><use href="#i-girar-der"/></svg></button>
+          <button id="abrirEdicion" class="crecer"><svg class="ic"><use href="#i-lapiz"/></svg>Borrar o agregar texto</button>
+        </div>
+      </div>
+      <div class="acciones">
+        <button id="volverRecorte"><svg class="ic"><use href="#i-flecha-izq"/></svg>Recorte</button>
+        <button id="guardarPagina" class="primario"><svg class="ic"><use href="#i-check"/></svg>Guardar página</button>
+      </div>
+    </aside>
   </section>
 
   <!-- 4. Edición: borrar con pincel y agregar texto -->
-  <section id="vistaEdicion" hidden>
-    <div class="lienzo" id="contenedorEdicion"><canvas id="lienzoEdicion"></canvas></div>
-    <div class="segmentado" id="herramientas">
-      <button data-herr="borrar">🖌️ Borrar</button>
-      <button data-herr="texto">🔤 Texto</button>
-      <button data-herr="mover">✋ Mover</button>
-      <button id="deshacer" disabled>↶ Deshacer</button>
-    </div>
-    <div id="panelBorrar" class="panel">
-      <p class="ayuda">Sombrea lo que quieras borrar y pulsa «Borrar zona». Con dos dedos acercas y mueves la imagen.</p>
-      <div class="fila">
-        <label>Pincel <input type="range" id="tamPincel" min="6" max="90" value="28"></label>
-        <button id="limpiarMascara">Quitar sombreado</button>
-        <button id="aplicarBorrado" class="primario crecer">Borrar zona</button>
+  <section id="vistaEdicion" class="vista" hidden>
+    <div class="etapa lienzo" id="contenedorEdicion"><canvas id="lienzoEdicion"></canvas></div>
+    <aside class="controles">
+      <div class="herramientas" id="herramientas">
+        <button data-herr="borrar"><svg class="ic"><use href="#i-pincel"/></svg>Borrar</button>
+        <button data-herr="texto"><svg class="ic"><use href="#i-texto"/></svg>Texto</button>
+        <button data-herr="mover"><svg class="ic"><use href="#i-mano"/></svg>Mover</button>
+        <button id="deshacer" disabled><svg class="ic"><use href="#i-deshacer"/></svg>Deshacer</button>
       </div>
-    </div>
-    <div id="panelTexto" class="panel" hidden>
-      <p class="ayuda">Toca el renglón donde va el texto: se copian el tamaño, el color y el grosor de las letras cercanas. Arrastra para moverlo.</p>
-      <input id="textoNuevo" type="text" placeholder="Escribe el texto…" autocomplete="off">
-      <div class="fila">
-        <select id="fuenteTexto" title="Tipo de letra">
+      <div id="panelBorrar" class="panel">
+        <p class="ayuda">Sombrea lo que quieras quitar y pulsa «Borrar zona». Con dos dedos (o la rueda del ratón) acercas la imagen.</p>
+        <label class="campo" for="tamPincel">Tamaño del pincel <input type="range" id="tamPincel" min="6" max="90" value="28"></label>
+        <div class="fila">
+          <button id="limpiarMascara" class="crecer">Quitar sombreado</button>
+          <button id="aplicarBorrado" class="primario crecer"><svg class="ic"><use href="#i-pincel"/></svg>Borrar zona</button>
+        </div>
+      </div>
+      <div id="panelTexto" class="panel" hidden>
+        <p class="ayuda">Toca el renglón donde va el texto: se copian el tamaño, el color y el grosor de las letras cercanas. Arrastra para moverlo.</p>
+        <input id="textoNuevo" type="text" placeholder="Escribe el texto…" autocomplete="off" aria-label="Texto a agregar">
+        <select id="fuenteTexto" aria-label="Tipo de letra">
           <option value='"Times New Roman", Times, "Liberation Serif", "Nimbus Roman", serif'>Times (con remates)</option>
           <option value='Georgia, "DejaVu Serif", serif'>Georgia</option>
           <option value='Arial, Helvetica, "Liberation Sans", "Nimbus Sans", sans-serif'>Arial (sin remates)</option>
@@ -189,26 +474,28 @@
           <option value='"Courier New", Courier, "Liberation Mono", monospace'>Máquina de escribir</option>
           <option value='"Segoe Script", "Bradley Hand", "Comic Sans MS", cursive'>Manuscrita</option>
         </select>
-        <label>Tamaño <input type="range" id="tamTexto" min="6" max="400" value="48"></label>
-        <button id="negritaTexto" class="alternar" aria-pressed="false" title="Negrita"><b>N</b></button>
-        <input type="color" id="colorTexto" value="#1a1a1a" title="Color">
+        <div class="fila">
+          <label class="campo crecer" for="tamTexto">Tamaño <input type="range" id="tamTexto" min="6" max="400" value="48"></label>
+          <button id="negritaTexto" class="negrita icono-solo" aria-pressed="false" title="Negrita" aria-label="Negrita"><b>N</b></button>
+          <input type="color" id="colorTexto" value="#1a1a1a" title="Color" aria-label="Color del texto">
+        </div>
+        <div class="fila">
+          <button id="imitarTexto" class="crecer"><svg class="ic"><use href="#i-varita"/></svg>Imitar letras</button>
+          <button id="aplicarTexto" class="primario crecer"><svg class="ic"><use href="#i-texto"/></svg>Poner texto</button>
+        </div>
       </div>
-      <div class="fila">
-        <button id="imitarTexto" class="crecer">✨ Imitar letras cercanas</button>
-        <button id="aplicarTexto" class="primario crecer">Poner texto</button>
+      <div class="acciones">
+        <button id="cancelarEdicion">Cancelar</button>
+        <button id="terminarEdicion" class="primario"><svg class="ic"><use href="#i-check"/></svg>Listo</button>
       </div>
-    </div>
-    <div class="fila">
-      <button id="cancelarEdicion" class="crecer">Cancelar</button>
-      <button id="terminarEdicion" class="primario crecer">✔ Listo</button>
-    </div>
+    </aside>
   </section>
 </main>
 
 <div id="aviso" hidden role="status"></div>
-<div id="dialogo" hidden role="dialog" aria-modal="true"><div class="caja"><p id="textoDialogo"></p>
-  <div class="fila fin"><button id="dialogoNo">Cancelar</button><button id="dialogoSi" class="primario">Aceptar</button></div></div></div>
-<div id="ocupado" hidden><div class="giro"></div><div id="textoOcupado">Procesando…</div></div>
+<div id="dialogo" hidden role="dialog" aria-modal="true" aria-labelledby="textoDialogo"><div class="caja"><p id="textoDialogo"></p>
+  <div class="fila"><button id="dialogoNo">Cancelar</button><button id="dialogoSi" class="primario">Aceptar</button></div></div></div>
+<div id="ocupado" hidden><div class="tarjeta-ocupado"><div class="giro"></div><span id="textoOcupado">Procesando…</span></div></div>
 
 <script>
 'use strict';
@@ -240,6 +527,7 @@ const estado = {
    ========================================================================= */
 function mostrar(vista) {
   for (const id of ['vistaInicio', 'vistaRecorte', 'vistaResultado', 'vistaEdicion']) $(id).hidden = id !== vista;
+  document.body.dataset.vista = vista;
   if (vista === 'vistaRecorte') requestAnimationFrame(dibujarRecorte);
   if (vista === 'vistaEdicion') requestAnimationFrame(() => { ajustarVistaEdicion(); dibujarEdicion(); });
 }
@@ -314,6 +602,10 @@ function recibirArchivos(lista) {
   estado.cola.push(...imgs);
   procesarCola();
 }
+const zona = $('zonaCaptura');
+zona.addEventListener('dragover', (e) => { e.preventDefault(); zona.classList.add('arrastrando'); });
+zona.addEventListener('dragleave', () => zona.classList.remove('arrastrando'));
+zona.addEventListener('drop', (e) => { e.preventDefault(); zona.classList.remove('arrastrando'); recibirArchivos(e.dataTransfer.files); });
 $('entradaCamara').addEventListener('change', (e) => { recibirArchivos(e.target.files); e.target.value = ''; });
 $('entradaArchivos').addEventListener('change', (e) => { recibirArchivos(e.target.files); e.target.value = ''; });
 
@@ -723,6 +1015,21 @@ async function prepararBase() {
   if (estado.noche) c = realzarNoche(c);
   if (estado.k4) c = escalar4K(c);
   estado.base = c;
+  generarMiniaturas();
+}
+// Vista previa pequeña de cada filtro sobre la imagen actual.
+function generarMiniaturas() {
+  const b = estado.base;
+  const k = 220 / Math.max(b.width, b.height);
+  const peq = crearCanvas(Math.max(8, Math.round(b.width * k)), Math.max(8, Math.round(b.height * k)));
+  const pc = ctx2d(peq); pc.imageSmoothingQuality = 'high'; pc.drawImage(b, 0, 0, peq.width, peq.height);
+  for (const btn of $('filtros').querySelectorAll('button[data-filtro]')) {
+    const c = btn.querySelector('canvas'), f = filtrar(peq, btn.dataset.filtro);
+    const e = Math.max(c.width / f.width, c.height / f.height);
+    const cx = c.getContext('2d');
+    cx.fillStyle = '#fff'; cx.fillRect(0, 0, c.width, c.height);
+    cx.drawImage(f, (c.width - f.width * e) / 2, (c.height - f.height * e) / 2, f.width * e, f.height * e);
+  }
 }
 function pintarResultado() {
   const vista = $('lienzoResultado');
@@ -1398,12 +1705,11 @@ function renderPaginas() {
   estado.paginas.forEach((pg, i) => {
     const el = document.createElement('div');
     el.className = 'pagina';
-    el.innerHTML = `<img alt="Página ${i + 1}" src="${pg.url}">
-      <div class="controles">
-        <button data-acc="izq" title="Mover antes" ${i === 0 ? 'disabled' : ''}>◀</button>
-        <span>${i + 1}</span>
-        <button data-acc="der" title="Mover después" ${i === estado.paginas.length - 1 ? 'disabled' : ''}>▶</button>
-        <button data-acc="borrar" title="Eliminar" style="color:var(--peligro)">✕</button>
+    el.innerHTML = `<div class="hoja"><img alt="Página ${i + 1}" src="${pg.url}"><span class="numero num">${i + 1}</span></div>
+      <div class="controles-pagina">
+        <button class="icono-solo" data-acc="izq" title="Mover antes" aria-label="Mover la página ${i + 1} antes" ${i === 0 ? 'disabled' : ''}><svg class="ic"><use href="#i-chev-izq"/></svg></button>
+        <button class="icono-solo" data-acc="der" title="Mover después" aria-label="Mover la página ${i + 1} después" ${i === estado.paginas.length - 1 ? 'disabled' : ''}><svg class="ic"><use href="#i-chev-der"/></svg></button>
+        <button class="icono-solo borrar" data-acc="borrar" title="Eliminar" aria-label="Eliminar la página ${i + 1}"><svg class="ic"><use href="#i-papelera"/></svg></button>
       </div>`;
     el.addEventListener('click', async (e) => {
       const acc = e.target.closest('button')?.dataset.acc;
@@ -1417,8 +1723,12 @@ function renderPaginas() {
     cont.appendChild(el);
   });
   const hay = estado.paginas.length > 0;
+  const n = estado.paginas.length;
   $('sinPaginas').hidden = hay;
   $('panelExportar').hidden = !hay;
+  $('contadorPaginas').hidden = !hay;
+  $('contadorPaginas').textContent = `${n} ${n === 1 ? 'página' : 'páginas'}`;
+  $('resumenPaginas').textContent = hay ? 'Usa las flechas para cambiar el orden' : 'Aún no hay páginas';
 }
 $('borrarTodo').addEventListener('click', async () => {
   if (!(await confirmar('¿Borrar todas las páginas?'))) return;
@@ -1500,7 +1810,7 @@ async function descargar(blob, nombre) {
 }
 
 $('descargarPdf').addEventListener('click', () => ocupado('Creando PDF…', async () => {
-  await descargar(await crearPdf(estado.paginas, $('tamano').value), nombreBase() + '.pdf');
+  await descargar(await crearPdf(estado.paginas, document.querySelector('input[name=tamano]:checked').value), nombreBase() + '.pdf');
 }));
 $('descargarJpg').addEventListener('click', async () => {
   const base = nombreBase();
@@ -1516,7 +1826,7 @@ if (puedeCompartir) {
   $('compartirPdf').addEventListener('click', async () => {
     let archivo;
     await ocupado('Creando PDF…', async () => {
-      archivo = new File([await crearPdf(estado.paginas, $('tamano').value)], nombreBase() + '.pdf', { type: 'application/pdf' });
+      archivo = new File([await crearPdf(estado.paginas, document.querySelector('input[name=tamano]:checked').value)], nombreBase() + '.pdf', { type: 'application/pdf' });
     });
     try { await navigator.share({ files: [archivo], title: 'Documento escaneado' }); }
     catch (e) { if (e.name !== 'AbortError') aviso('No se pudo compartir: ' + e.message); }
