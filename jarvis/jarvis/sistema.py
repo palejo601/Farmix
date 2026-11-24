@@ -21,7 +21,7 @@ PROCESOS_PROTEGIDOS = {
     "system", "system idle process", "registry", "smss.exe", "csrss.exe",
     "wininit.exe", "winlogon.exe", "services.exe", "lsass.exe", "svchost.exe",
     "fontdrvhost.exe", "dwm.exe", "memory compression", "secure system",
-    "lsaiso.exe", "msmpeng.exe",
+    "lsaiso.exe", "msmpeng.exe", "memcompression", "tiworker.exe", "trustedinstaller.exe",
     # Linux / macOS
     "systemd", "init", "launchd", "kernel_task", "kthreadd",
 }

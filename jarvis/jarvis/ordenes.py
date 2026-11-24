@@ -122,18 +122,15 @@ class Ordenes:
         return (" y ".join(partes) + ".").capitalize()
 
     def _procesos(self, _t: str, cuantos: int = 3) -> str:
-        top = [p for p in sistema.procesos_principales("memoria", 15) if not p["protegido"]]
-        vistos, nombres = set(), []
-        for p in top:
-            n = _nombre_programa(p["nombre"])
-            if n not in vistos:
-                vistos.add(n)
-                total = sum(q["memoria_mb"] for q in top if _nombre_programa(q["nombre"]) == n)
-                nombres.append(f"{n} con {round(total)} megas")
-            if len(nombres) == cuantos:
-                break
-        if not nombres:
+        totales: dict[str, float] = {}
+        for p in sistema.procesos_principales("memoria", 30):
+            if not p["protegido"]:
+                n = _nombre_programa(p["nombre"])
+                totales[n] = totales.get(n, 0) + p["memoria_mb"]
+        top = sorted(totales.items(), key=lambda kv: kv[1], reverse=True)[:cuantos]
+        if not top:
             return "No encontré programas que estén gastando mucho."
+        nombres = [f"{n} con {round(mb)} megas" for n, mb in top]
         return "Lo que más memoria usa ahora es " + ", ".join(nombres[:-1]) + (" y " if len(nombres) > 1 else "") + nombres[-1] + "."
 
     def _lento(self, t: str) -> str:

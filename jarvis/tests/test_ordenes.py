@@ -7,7 +7,7 @@ from jarvis import ordenes
 PROCS = [
     {"pid": 10, "nombre": "chrome.exe", "memoria_mb": 400.0, "cpu_porcentaje": 5, "protegido": False},
     {"pid": 11, "nombre": "chrome.exe", "memoria_mb": 200.0, "cpu_porcentaje": 1, "protegido": False},
-    {"pid": 12, "nombre": "WhatsApp.exe", "memoria_mb": 300.0, "cpu_porcentaje": 0, "protegido": False},
+    {"pid": 12, "nombre": "WhatsApp.exe", "memoria_mb": 450.0, "cpu_porcentaje": 0, "protegido": False},
     {"pid": 13, "nombre": "svchost.exe", "memoria_mb": 900.0, "cpu_porcentaje": 0, "protegido": True},
 ]
 ESTADO = {"cpu_uso_porcentaje": 30, "ram_uso_porcentaje": 91, "ram_usada_gb": 3.56, "ram_total_gb": 3.9,
@@ -50,6 +50,7 @@ class OrdenesTest(unittest.TestCase):
     def test_que_consume(self):
         r = self.j.preguntar("¿qué consume más?")
         self.assertIn("Chrome con 600 megas", r)  # suma sus dos procesos
+        self.assertLess(r.index("Chrome"), r.index("Whatsapp"))  # ordenado por el total
         self.assertNotIn("Svchost", r)             # los de Windows no se mencionan
 
     def test_lento(self):
