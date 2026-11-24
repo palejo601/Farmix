@@ -15,12 +15,12 @@ import os
 import re
 from typing import Callable
 
-from . import sistema
+from . import sistema, turbo
 from .activacion import normalizar
 
 AYUDA = ("Sin clave de Claude entiendo órdenes sencillas. Puedes decirme: cómo está la memoria, "
          "cuánto espacio queda, qué consume más, por qué va lento, limpia los temporales, "
-         "cierra seguido del nombre de un programa, qué arranca con Windows, o qué hora es.")
+         "cierra seguido del nombre de un programa, modo turbo, qué arranca con Windows, o qué hora es.")
 
 NO_ENTENDI = ("No entendí esa orden. Prueba con: cómo está la memoria, cuánto espacio queda, "
               "qué consume más, limpia los temporales o cierra y el nombre del programa.")
@@ -40,6 +40,7 @@ ALIAS = {
 # Cada orden: (palabras que la activan, método). Se revisan en este orden.
 _ORDENES = [
     (r"\b(ayuda|que puedes hacer|que sabes hacer|comandos|ordenes)\b", "ayuda"),
+    (r"\b(turbo|acelera|acelerar|modo rapido|libera memoria|liberar memoria|libera ram)\b", "turbo"),
     (r"\b(cierra|cerrar|cierre|mata|matar|termina el|terminar el|apaga el)\b", "cerrar"),
     (r"\b(limpia|limpiar|limpieza|borra|borrar|elimina)\b", "limpiar"),
     (r"\b(temporales|archivos basura|basura)\b", "temporales"),
@@ -173,6 +174,9 @@ class Ordenes:
         if r["archivos_en_uso_o_sin_permiso"]:
             frase += " Algunos estaban en uso y los dejé."
         return frase
+
+    def _turbo(self, _t: str) -> str:
+        return turbo.resumen_turbo(turbo.modo_turbo(self.confirmar))
 
     def _cerrar(self, t: str) -> str:
         m = re.search(r"\b(?:cierra|cerrar|cierre|mata|matar|termina el|terminar el|apaga el)\s+(?:el |la |los |las |a )?(?:programa |proceso |aplicacion )?(.+)$", t)

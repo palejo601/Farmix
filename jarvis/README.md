@@ -72,6 +72,21 @@ Si no configuras `ANTHROPIC_API_KEY`, Jarvis arranca solo en **modo de órdenes*
 
 Para forzar este modo aunque tengas clave: `py voz.py --sin-clave` o `py main.py --sin-clave`.
 
+## Modo turbo y vigilante de RAM
+
+Pensado para PCs con poca memoria (4 GB). No necesitan clave de Claude ni internet.
+
+| Archivo | Qué hace |
+|---|---|
+| `modo_turbo.bat` | Muestra los programas pesados abiertos y pregunta uno por uno si los cierra. Después, con otro permiso, borra temporales de más de 24 h y pone el plan de energía en alto rendimiento. Al final dice cuánta RAM liberó. |
+| `vigilante.bat` | Arranca en segundo plano un vigilante (unos 20-30 MB) que avisa con una notificación cuando la RAM pasa del 90 % dos revisiones seguidas, diciendo qué programa la llena. No repite el aviso antes de 10 minutos. |
+
+También se le puede decir a Jarvis "modo turbo" o "libera memoria".
+
+La lista de programas que ofrece cerrar, el umbral y cada cuántos segundos revisa están en `turbo.json`. La app de Claude no está en la lista a propósito (cerrarla corta la sesión con Claude); agrégala con `"claude"` si quieres.
+
+Para detener el vigilante: Administrador de tareas > "pythonw.exe" > Finalizar tarea.
+
 ## Hablar con Jarvis (voz)
 
 Además del chat de texto, puedes hablarle: dices "Jarvis", haces la pregunta y te responde en voz alta.

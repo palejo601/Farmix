@@ -1,0 +1,7 @@
+{
+  "programas": ["chrome", "msedge", "firefox", "opera", "brave", "whatsapp", "spotify",
+                "ms-teams", "teams", "discord", "zoom", "hd-player", "bluestacks",
+                "onedrive", "acrord32", "acrobat", "winword", "excel", "powerpnt"],
+  "umbral_ram": 90,
+  "intervalo": 15
+}
