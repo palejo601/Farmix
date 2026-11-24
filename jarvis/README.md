@@ -105,10 +105,19 @@ Opciones de voz (variables de entorno, con `setx NOMBRE valor`):
 |---|---|---|
 | `JARVIS_WHISPER_MODELO` | `small` | `base` es más rápido y menos preciso; `medium` o `turbo`, más preciso y más pesado |
 | `JARVIS_WHISPER_DISPOSITIVO` | `cpu` | `cuda` si tienes tarjeta NVIDIA con CUDA instalado |
-| `JARVIS_VOZ_MOTOR` | `elevenlabs` si está configurado, si no `edge` | `edge`, `elevenlabs` o `sistema` (solo la voz de Windows, sin internet) |
+| `JARVIS_VOZ_MOTOR` | `voicestudio` o `elevenlabs` si están configurados, si no `edge` | `voicestudio`, `edge`, `elevenlabs` o `sistema` (solo la voz de Windows, sin internet) |
 | `JARVIS_VOZ` | `es-CO-GonzaloNeural` | Otra voz de edge-tts, p. ej. `es-CO-SalomeNeural`, `es-MX-JorgeNeural` |
 | `JARVIS_VOZ_VELOCIDAD` | `+10%` | Más rápido o más lento, p. ej. `-10%` |
 | `JARVIS_UMBRAL_VOZ` | `300` | Súbelo si se activa con el ruido; bájalo si no te oye |
+
+### Que Jarvis hable con tu propia voz (VoiceStudio, gratis y en tu PC)
+
+1. Instala VoiceStudio desde <https://voicestudio.sh> y ábrelo.
+2. Crea un perfil de voz clonada con una grabación tuya de 1 a 2 minutos.
+3. Copia el id del perfil y guárdalo: `setx JARVIS_VOZ_VOICESTUDIO "id-del-perfil"`.
+4. Con VoiceStudio abierto, arranca `iniciar_voz.bat`. Si VoiceStudio está cerrado, Jarvis usa la voz de Microsoft.
+
+Si VoiceStudio usa otro puerto: `setx JARVIS_VOICESTUDIO_URL "http://localhost:PUERTO"`.
 
 ### Que Jarvis hable con tu propia voz (ElevenLabs)
 

@@ -218,3 +218,37 @@ class ElevenLabsTest(unittest.TestCase):
 
         with self.assertRaises(RuntimeError):
             habla._VozElevenLabs(clave="", voz="x")
+
+
+class VoiceStudioTest(unittest.TestCase):
+    def test_llama_a_la_api_local(self):
+        import json
+        from unittest import mock
+        from jarvis import habla
+
+        capturado = {}
+
+        class Respuesta:
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def read(self): return b"mp3"
+
+        def falso(pedido, timeout):
+            capturado["url"] = pedido.full_url
+            capturado["cuerpo"] = json.loads(pedido.data)
+            return Respuesta()
+
+        with mock.patch("urllib.request.urlopen", falso):
+            v = habla._VozVoiceStudio(url="http://localhost:3900", voz="perfil1")
+            self.assertEqual(v.sintetizar("hola"), b"mp3")
+        self.assertEqual(capturado["url"], "http://localhost:3900/v1/audio/speech")
+        self.assertEqual(capturado["cuerpo"]["voice"], "perfil1")
+        self.assertEqual(capturado["cuerpo"]["input"], "hola")
+
+    def test_app_cerrada_da_error_claro(self):
+        from jarvis import habla
+
+        v = habla._VozVoiceStudio(url="http://127.0.0.1:9", voz="p")
+        with self.assertRaises(RuntimeError) as e:
+            v.sintetizar("hola")
+        self.assertIn("abierto", str(e.exception))

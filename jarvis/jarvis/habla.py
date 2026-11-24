@@ -1,6 +1,9 @@
 """Respuestas habladas.
 
-Tres motores:
+Cuatro motores:
+- "voicestudio": tu voz clonada en VoiceStudio (app gratis que corre en tu PC,
+  https://voicestudio.sh). Sin internet ni créditos. Necesita la app abierta y
+  JARVIS_VOZ_VOICESTUDIO (el id del perfil de voz). Si existe, se usa primero.
 - "elevenlabs": habla con la voz que elijas en ElevenLabs, por ejemplo tu
   propia voz clonada. Necesita internet, ELEVENLABS_API_KEY y
   JARVIS_VOZ_ELEVENLABS (el voice_id). Gasta créditos de ElevenLabs.
@@ -12,7 +15,7 @@ Tres motores:
   paquete de voz en español (Configuración > Hora e idioma > Voz).
 
 Si un motor falla (sin internet, sin créditos, servicio caído), Jarvis pasa
-solo al siguiente: elevenlabs -> edge -> sistema.
+solo al siguiente: voicestudio -> elevenlabs -> edge -> sistema.
 """
 from __future__ import annotations
 
@@ -29,7 +32,12 @@ import numpy as np
 ELEVEN_CLAVE = os.environ.get("ELEVENLABS_API_KEY", "")
 ELEVEN_VOZ = os.environ.get("JARVIS_VOZ_ELEVENLABS", "")
 ELEVEN_MODELO = os.environ.get("JARVIS_ELEVENLABS_MODELO", "eleven_multilingual_v2")
-MOTOR = os.environ.get("JARVIS_VOZ_MOTOR", "elevenlabs" if ELEVEN_CLAVE and ELEVEN_VOZ else "edge")
+VS_URL = os.environ.get("JARVIS_VOICESTUDIO_URL", "http://localhost:3900").rstrip("/")
+VS_VOZ = os.environ.get("JARVIS_VOZ_VOICESTUDIO", "")
+MOTOR = os.environ.get(
+    "JARVIS_VOZ_MOTOR",
+    "voicestudio" if VS_VOZ else "elevenlabs" if ELEVEN_CLAVE and ELEVEN_VOZ else "edge",
+)
 VOZ_EDGE = os.environ.get("JARVIS_VOZ", "es-CO-GonzaloNeural")  # p. ej. es-CO-SalomeNeural, es-MX-JorgeNeural
 VELOCIDAD = os.environ.get("JARVIS_VOZ_VELOCIDAD", "+10%")
 
@@ -115,6 +123,43 @@ class _VozEdge:
             sd.wait()
 
 
+class _VozVoiceStudio:
+    """API local de VoiceStudio, compatible con la de OpenAI (/v1/audio/speech)."""
+
+    def __init__(self, url: str = VS_URL, voz: str = VS_VOZ):
+        if not voz:
+            raise RuntimeError("falta JARVIS_VOZ_VOICESTUDIO (el id de tu perfil de voz)")
+        self.url, self.voz = url, voz
+
+    def sintetizar(self, texto: str) -> bytes:
+        cuerpo = json.dumps({
+            "model": "omnivoice", "input": texto, "voice": self.voz,
+            "response_format": "mp3", "language": "es",
+        }).encode()
+        pedido = urllib.request.Request(
+            f"{self.url}/v1/audio/speech",
+            data=cuerpo,
+            headers={"Content-Type": "application/json", "Authorization": "Bearer local"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(pedido, timeout=120) as r:
+                return r.read()
+        except urllib.error.HTTPError as e:
+            detalle = e.read().decode("utf-8", "replace")[:200]
+            raise RuntimeError(f"VoiceStudio respondió {e.code}: {detalle}") from None
+        except urllib.error.URLError as e:
+            raise RuntimeError(f"VoiceStudio no responde en {self.url} (¿está abierto?): {e.reason}") from None
+
+    def decir(self, texto: str) -> None:
+        import sounddevice as sd
+
+        muestras, frecuencia = decodificar_audio(self.sintetizar(texto))
+        if muestras.size:
+            sd.play(muestras, frecuencia)
+            sd.wait()
+
+
 class _VozElevenLabs:
     URL = "https://api.elevenlabs.io/v1/text-to-speech/{voz}?output_format=mp3_44100_128"
 
@@ -190,8 +235,9 @@ class Voz:
 
     def __init__(self, motor: str = MOTOR):
         self._motores: list = []
-        clases = {"elevenlabs": _VozElevenLabs, "edge": _VozEdge, "sistema": _VozSistema}
+        clases = {"voicestudio": _VozVoiceStudio, "elevenlabs": _VozElevenLabs, "edge": _VozEdge, "sistema": _VozSistema}
         orden = {
+            "voicestudio": ["voicestudio", "edge", "sistema"],
             "elevenlabs": ["elevenlabs", "edge", "sistema"],
             "edge": ["edge", "sistema"],
             "sistema": ["sistema", "edge"],
