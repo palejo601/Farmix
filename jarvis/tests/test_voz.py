@@ -252,3 +252,38 @@ class VoiceStudioTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as e:
             v.sintetizar("hola")
         self.assertIn("abierto", str(e.exception))
+
+
+class PiperTest(unittest.TestCase):
+    def test_une_los_trozos_de_audio(self):
+        import sys
+        import tempfile
+        import types
+        from unittest import mock
+        from jarvis import habla
+
+        class Trozo:
+            def __init__(self, n):
+                self.sample_rate = 22050
+                self.audio_int16_array = np.full(n, 7, dtype=np.int16)
+
+        class Voz:
+            def synthesize(self, texto, syn_config=None):
+                self.config = syn_config
+                return [Trozo(100), Trozo(50)]
+
+        falso = types.ModuleType("piper")
+        falso.PiperVoice = types.SimpleNamespace(load=lambda ruta: Voz())
+        falso.SynthesisConfig = lambda **k: k
+        with tempfile.NamedTemporaryFile(suffix=".onnx") as f, mock.patch.dict(sys.modules, {"piper": falso}):
+            v = habla._VozPiper(modelo=f.name, velocidad=0.8)
+            muestras, frecuencia = v.sintetizar("hola")
+        self.assertEqual((muestras.size, frecuencia), (150, 22050))
+        self.assertEqual(v.voz.config, {"length_scale": 0.8})
+
+    def test_sin_modelo_da_error_claro(self):
+        from jarvis import habla
+
+        with self.assertRaises(RuntimeError) as e:
+            habla._VozPiper(modelo="no-existe.onnx")
+        self.assertIn("modelo", str(e.exception))

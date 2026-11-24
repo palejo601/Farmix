@@ -105,12 +105,28 @@ Opciones de voz (variables de entorno, con `setx NOMBRE valor`):
 |---|---|---|
 | `JARVIS_WHISPER_MODELO` | `small` | `base` es más rápido y menos preciso; `medium` o `turbo`, más preciso y más pesado |
 | `JARVIS_WHISPER_DISPOSITIVO` | `cpu` | `cuda` si tienes tarjeta NVIDIA con CUDA instalado |
-| `JARVIS_VOZ_MOTOR` | `voicestudio` o `elevenlabs` si están configurados, si no `edge` | `voicestudio`, `edge`, `elevenlabs` o `sistema` (solo la voz de Windows, sin internet) |
+| `JARVIS_VOZ_MOTOR` | `voicestudio`, `elevenlabs` o `piper` si están configurados, si no `edge` | `piper`, `voicestudio`, `edge`, `elevenlabs` o `sistema` (solo la voz de Windows, sin internet) |
+| `JARVIS_PIPER_MODELO` | `voces\es_MX-ald-medium.onnx` | Otro modelo de Piper, p. ej. `voces\es_MX-claude-high.onnx` |
+| `JARVIS_PIPER_VELOCIDAD` | `0.9` | Menos es más rápido; `1.0` es la velocidad normal |
 | `JARVIS_VOZ` | `es-CO-GonzaloNeural` | Otra voz de edge-tts, p. ej. `es-CO-SalomeNeural`, `es-MX-JorgeNeural` |
 | `JARVIS_VOZ_VELOCIDAD` | `+10%` | Más rápido o más lento, p. ej. `-10%` |
 | `JARVIS_UMBRAL_VOZ` | `300` | Súbelo si se activa con el ruido; bájalo si no te oye |
 
+### Voz natural sin internet (Piper, recomendada para PCs con poca RAM)
+
+Piper corre en tu PC, gasta unos 100-200 MB de memoria y responde en segundos. No es tu voz, pero suena natural.
+
+```bat
+py -m pip install piper-tts
+py -m piper.download_voices es_MX-ald-medium --download-dir voces
+```
+
+Con el archivo `voces\es_MX-ald-medium.onnx` en su sitio, Jarvis usa Piper automáticamente. Otras voces en español: `es_MX-claude-high`, `es_ES-davefx-medium`, `es_AR-daniela-high` (escúchalas en <https://rhasspy.github.io/piper-samples/>); descárgala igual y guarda su ruta en `JARVIS_PIPER_MODELO`.
+
 ### Que Jarvis hable con tu propia voz (VoiceStudio, gratis y en tu PC)
+
+Necesita al menos 8 GB de RAM; con menos, la voz tarda minutos o no sale.
+
 
 1. Instala VoiceStudio desde <https://voicestudio.sh> y ábrelo.
 2. Crea un perfil de voz clonada con una grabación tuya de 1 a 2 minutos.

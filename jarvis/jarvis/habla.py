@@ -1,6 +1,10 @@
 """Respuestas habladas.
 
-Cuatro motores:
+Cinco motores:
+- "piper": voz neuronal que corre en tu PC, gratis y sin internet. Es liviana
+  (unos 100-200 MB de RAM) y responde en segundos. Necesita `pip install
+  piper-tts` y un modelo de voz (.onnx) en la carpeta voces/ (ver README).
+  Si encuentra el modelo, se usa automáticamente.
 - "voicestudio": tu voz clonada en VoiceStudio (app gratis que corre en tu PC,
   https://voicestudio.sh). Sin internet ni créditos. Necesita la app abierta y
   JARVIS_VOZ_VOICESTUDIO (el id del perfil de voz). Si existe, se usa primero.
@@ -15,7 +19,7 @@ Cuatro motores:
   paquete de voz en español (Configuración > Hora e idioma > Voz).
 
 Si un motor falla (sin internet, sin créditos, servicio caído), Jarvis pasa
-solo al siguiente: voicestudio -> elevenlabs -> edge -> sistema.
+solo al siguiente: voicestudio -> elevenlabs -> piper -> edge -> sistema.
 """
 from __future__ import annotations
 
@@ -26,6 +30,7 @@ import os
 import re
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 import numpy as np
 
@@ -34,9 +39,15 @@ ELEVEN_VOZ = os.environ.get("JARVIS_VOZ_ELEVENLABS", "")
 ELEVEN_MODELO = os.environ.get("JARVIS_ELEVENLABS_MODELO", "eleven_multilingual_v2")
 VS_URL = os.environ.get("JARVIS_VOICESTUDIO_URL", "http://localhost:3900").rstrip("/")
 VS_VOZ = os.environ.get("JARVIS_VOZ_VOICESTUDIO", "")
+CARPETA_VOCES = Path(__file__).resolve().parent.parent / "voces"
+PIPER_MODELO = os.environ.get("JARVIS_PIPER_MODELO", str(CARPETA_VOCES / "es_MX-ald-medium.onnx"))
+PIPER_VELOCIDAD = float(os.environ.get("JARVIS_PIPER_VELOCIDAD", "0.9"))  # < 1 habla más rápido
 MOTOR = os.environ.get(
     "JARVIS_VOZ_MOTOR",
-    "voicestudio" if VS_VOZ else "elevenlabs" if ELEVEN_CLAVE and ELEVEN_VOZ else "edge",
+    "voicestudio" if VS_VOZ
+    else "elevenlabs" if ELEVEN_CLAVE and ELEVEN_VOZ
+    else "piper" if Path(PIPER_MODELO).is_file()
+    else "edge",
 )
 VOZ_EDGE = os.environ.get("JARVIS_VOZ", "es-CO-GonzaloNeural")  # p. ej. es-CO-SalomeNeural, es-MX-JorgeNeural
 VELOCIDAD = os.environ.get("JARVIS_VOZ_VELOCIDAD", "+10%")
@@ -118,6 +129,35 @@ class _VozEdge:
         import sounddevice as sd
 
         muestras, frecuencia = decodificar_audio(asyncio.run(self._sintetizar(texto)))
+        if muestras.size:
+            sd.play(muestras, frecuencia)
+            sd.wait()
+
+
+class _VozPiper:
+    """Piper TTS (https://github.com/OHF-Voice/piper1-gpl): local, rápido y liviano."""
+
+    def __init__(self, modelo: str = PIPER_MODELO, velocidad: float = PIPER_VELOCIDAD):
+        if not Path(modelo).is_file():
+            raise RuntimeError(f"no encuentro el modelo de voz {modelo}")
+        from piper import PiperVoice, SynthesisConfig
+
+        self.voz = PiperVoice.load(modelo)
+        self.config = SynthesisConfig(length_scale=velocidad)
+
+    def sintetizar(self, texto: str) -> tuple[np.ndarray, int]:
+        partes, frecuencia = [], 22050
+        for trozo in self.voz.synthesize(texto, syn_config=self.config):
+            frecuencia = trozo.sample_rate
+            partes.append(trozo.audio_int16_array)
+        if not partes:
+            return np.zeros(0, dtype=np.int16), frecuencia
+        return np.concatenate(partes), frecuencia
+
+    def decir(self, texto: str) -> None:
+        import sounddevice as sd
+
+        muestras, frecuencia = self.sintetizar(texto)
         if muestras.size:
             sd.play(muestras, frecuencia)
             sd.wait()
@@ -235,10 +275,11 @@ class Voz:
 
     def __init__(self, motor: str = MOTOR):
         self._motores: list = []
-        clases = {"voicestudio": _VozVoiceStudio, "elevenlabs": _VozElevenLabs, "edge": _VozEdge, "sistema": _VozSistema}
+        clases = {"piper": _VozPiper, "voicestudio": _VozVoiceStudio, "elevenlabs": _VozElevenLabs, "edge": _VozEdge, "sistema": _VozSistema}
         orden = {
-            "voicestudio": ["voicestudio", "edge", "sistema"],
-            "elevenlabs": ["elevenlabs", "edge", "sistema"],
+            "voicestudio": ["voicestudio", "piper", "edge", "sistema"],
+            "elevenlabs": ["elevenlabs", "piper", "edge", "sistema"],
+            "piper": ["piper", "edge", "sistema"],
             "edge": ["edge", "sistema"],
             "sistema": ["sistema", "edge"],
         }.get(motor, ["edge", "sistema"])

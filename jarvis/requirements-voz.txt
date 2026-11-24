@@ -3,6 +3,7 @@
 # Voz
 faster-whisper>=1.1       # reconocimiento de voz (Whisper), sin internet
 sounddevice>=0.5          # micrófono y altavoces
+piper-tts>=1.3             # voz natural sin internet (necesita un modelo en voces/)
 edge-tts>=7.0             # voces naturales de Microsoft (necesita internet)
 pyttsx3>=2.98             # voces de Windows, por si no hay internet
 openwakeword>=0.6         # solo para --activacion hey_jarvis
