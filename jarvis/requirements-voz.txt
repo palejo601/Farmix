@@ -1,0 +1,8 @@
+# Lo de la versión de texto
+-r requirements.txt
+# Voz
+faster-whisper>=1.1       # reconocimiento de voz (Whisper), sin internet
+sounddevice>=0.5          # micrófono y altavoces
+edge-tts>=7.0             # voces naturales de Microsoft (necesita internet)
+pyttsx3>=2.98             # voces de Windows, por si no hay internet
+openwakeword>=0.6         # solo para --activacion hey_jarvis
