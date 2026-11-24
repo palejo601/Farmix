@@ -83,6 +83,8 @@ Pensado para PCs con poca memoria (4 GB). No necesitan clave de Claude ni intern
 
 También se le puede decir a Jarvis "modo turbo" o "libera memoria".
 
+**Turbo automático** (`"automatico": true` en `turbo.json`, activado por defecto): cuando la RAM pasa del umbral, el vigilante actúa solo, sin preguntar, pero solo con lo que no hace perder trabajo: cierra los programas de la lista que están abiertos **sin ninguna ventana visible** (quedaron en segundo plano) y borra los temporales de más de 24 h como máximo una vez al día. Nunca cierra un programa con una ventana abierta: para esos avisa con la notificación. Para apagarlo, pon `"automatico": false`.
+
 La lista de programas que ofrece cerrar, el umbral y cada cuántos segundos revisa están en `turbo.json`. La app de Claude no está en la lista a propósito (cerrarla corta la sesión con Claude); agrégala con `"claude"` si quieres.
 
 Para detener el vigilante: Administrador de tareas > "pythonw.exe" > Finalizar tarea.

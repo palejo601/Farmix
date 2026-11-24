@@ -80,8 +80,8 @@ class VigilanteTest(unittest.TestCase):
         p = mock.patch.object(turbo, "programas_abiertos", lambda: {k: dict(v) for k, v in ABIERTOS.items()})
         p.start()
         self.addCleanup(p.stop)
-        self.v = turbo.Vigilante(avisar=lambda t, x: self.avisos.append(x), config=dict(CONFIG),
-                                 reloj=lambda: self.ahora)
+        self.v = turbo.Vigilante(avisar=lambda t, x: self.avisos.append(x),
+                                 config=dict(CONFIG, automatico=False), reloj=lambda: self.ahora)
 
     def test_avisa_tras_dos_revisiones_altas(self):
         self.assertIsNone(self.v.revisar(93))
@@ -103,6 +103,50 @@ class VigilanteTest(unittest.TestCase):
         self.ahora = 700
         self.v.revisar(95)
         self.assertEqual(len(self.avisos), 2)
+
+
+class AutomaticoTest(unittest.TestCase):
+    def setUp(self):
+        self.cerrados, self.avisos, self.limpiezas = [], [], []
+        self.ahora = 0.0
+        parches = [
+            mock.patch.object(turbo, "programas_abiertos", lambda: {k: dict(v) for k, v in ABIERTOS.items()}),
+            mock.patch.object(turbo, "pids_con_ventana", lambda: {10}),  # Chrome tiene ventana
+            mock.patch.object(turbo.sistema, "cerrar_proceso", lambda pid: self.cerrados.append(pid) or {"ok": True}),
+            mock.patch.object(turbo.sistema, "limpiar_temporales",
+                              lambda h=24: self.limpiezas.append(h) or {"liberado_mb": 50.0}),
+        ]
+        for p in parches:
+            p.start()
+            self.addCleanup(p.stop)
+        self.v = turbo.Vigilante(avisar=lambda t, x: self.avisos.append(x), config=dict(CONFIG, automatico=True),
+                                 reloj=lambda: self.ahora)
+
+    def test_cierra_solo_lo_que_no_tiene_ventana(self):
+        r = turbo.turbo_automatico(dict(CONFIG))
+        self.assertEqual(self.cerrados, [12])  # WhatsApp en segundo plano; Chrome no
+        self.assertEqual(r["cerrados"], ["Whatsapp"])
+
+    def test_fuera_de_windows_no_cierra_nada(self):
+        with mock.patch.object(turbo, "pids_con_ventana", lambda: None):
+            r = turbo.turbo_automatico(dict(CONFIG))
+        self.assertEqual(self.cerrados, [])
+        self.assertEqual(r["cerrados"], [])
+
+    def test_vigilante_actua_solo_y_avisa(self):
+        self.v.revisar(95)
+        texto = self.v.revisar(95)
+        self.assertIn("Turbo automático: cerré Whatsapp", texto)
+        self.assertEqual(self.cerrados, [12])
+
+    def test_limpia_temporales_una_vez_al_dia(self):
+        self.v.revisar(95); self.v.revisar(95)
+        self.ahora = 700
+        self.v.revisar(95)
+        self.assertEqual(len(self.limpiezas), 1)
+        self.ahora = 25 * 3600
+        self.v.revisar(95)
+        self.assertEqual(len(self.limpiezas), 2)
 
 
 if __name__ == "__main__":

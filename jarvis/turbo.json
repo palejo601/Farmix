@@ -1,7 +1,26 @@
 {
-  "programas": ["chrome", "msedge", "firefox", "opera", "brave", "whatsapp", "spotify",
-                "ms-teams", "teams", "discord", "zoom", "hd-player", "bluestacks",
-                "onedrive", "acrord32", "acrobat", "winword", "excel", "powerpnt"],
+  "programas": [
+    "chrome",
+    "msedge",
+    "firefox",
+    "opera",
+    "brave",
+    "whatsapp",
+    "spotify",
+    "ms-teams",
+    "teams",
+    "discord",
+    "zoom",
+    "hd-player",
+    "bluestacks",
+    "onedrive",
+    "acrord32",
+    "acrobat",
+    "winword",
+    "excel",
+    "powerpnt"
+  ],
   "umbral_ram": 90,
-  "intervalo": 15
+  "intervalo": 15,
+  "automatico": true
 }

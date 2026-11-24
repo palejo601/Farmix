@@ -42,7 +42,8 @@ PLAN_ALTO = "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"
 
 
 def cargar_config() -> dict:
-    datos = {"programas": PROGRAMAS_PESADOS, "umbral_ram": UMBRAL_RAM, "intervalo": INTERVALO}
+    datos = {"programas": PROGRAMAS_PESADOS, "umbral_ram": UMBRAL_RAM, "intervalo": INTERVALO,
+             "automatico": True}
     try:
         datos.update(json.loads(CONFIG.read_text(encoding="utf-8")))
     except (OSError, ValueError):
@@ -139,6 +140,51 @@ def resumen_turbo(r: dict) -> str:
     return "Modo turbo listo. " + " ".join(partes)
 
 
+# ------------------------------------------------------------------ automático
+
+def pids_con_ventana() -> set[int] | None:
+    """PIDs que tienen una ventana visible. None si no se puede saber (fuera de Windows)."""
+    if not sistema.ES_WINDOWS:
+        return None
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.windll.user32
+    pids: set[int] = set()
+
+    @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    def _cada(hwnd, _):
+        if user32.IsWindowVisible(hwnd) and user32.GetWindowTextLengthW(hwnd) > 0:
+            pid = wintypes.DWORD()
+            user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+            pids.add(pid.value)
+        return True
+
+    user32.EnumWindows(_cada, 0)
+    return pids
+
+
+def turbo_automatico(config: dict | None = None, limpiar: bool = True) -> dict:
+    """Modo turbo sin preguntas, solo con lo que no se puede perder trabajo.
+
+    Cierra los programas pesados de la lista que están abiertos SIN ninguna ventana
+    visible (quedaron en segundo plano), y borra temporales de más de 24 h.
+    Nunca cierra un programa que tenga una ventana abierta.
+    """
+    config = config or cargar_config()
+    con_ventana = pids_con_ventana()
+    cerrados, liberado = [], 0
+    if con_ventana is not None:
+        for item in plan_turbo(config):
+            if any(pid in con_ventana for pid in item["pids"]):
+                continue
+            if sum(1 for pid in item["pids"] if sistema.cerrar_proceso(pid).get("ok")):
+                cerrados.append(item["programa"].capitalize())
+                liberado += item["mb"]
+    temporales_mb = round(sistema.limpiar_temporales(24)["liberado_mb"]) if limpiar else 0
+    return {"cerrados": cerrados, "liberado_mb": liberado, "temporales_mb": temporales_mb}
+
+
 # ------------------------------------------------------------------ vigilante
 
 def aviso_windows(titulo: str, texto: str) -> None:
@@ -161,7 +207,8 @@ def aviso_windows(titulo: str, texto: str) -> None:
 
 
 class Vigilante:
-    """Avisa cuando la RAM pasa del umbral dos revisiones seguidas."""
+    """Cuando la RAM pasa del umbral dos revisiones seguidas, activa el turbo automático
+    (si "automatico" está activado en turbo.json) y avisa con una notificación."""
 
     def __init__(self, avisar: Callable[[str, str], None] = aviso_windows, config: dict | None = None,
                  reloj: Callable[[], float] = time.monotonic):
@@ -170,6 +217,7 @@ class Vigilante:
         self.reloj = reloj
         self.seguidas = 0
         self.ultimo_aviso = None
+        self.ultima_limpieza = None
 
     def revisar(self, uso_ram: float | None = None) -> str | None:
         """Una revisión. Devuelve el texto del aviso si avisó."""
@@ -182,10 +230,25 @@ class Vigilante:
         if self.seguidas < 2 or (self.ultimo_aviso is not None and ahora - self.ultimo_aviso < PAUSA_AVISOS):
             return None
         self.ultimo_aviso = ahora
+        hecho = ""
+        if self.config.get("automatico", True):
+            limpiar = self.ultima_limpieza is None or ahora - self.ultima_limpieza >= 24 * 3600
+            r = turbo_automatico(self.config, limpiar=limpiar)
+            if limpiar:
+                self.ultima_limpieza = ahora
+            if r["cerrados"]:
+                hecho = (f"Turbo automático: cerré {', '.join(r['cerrados'])}, que estaban en segundo plano, "
+                         f"y liberé unos {r['liberado_mb']} MB. ")
+            elif r["temporales_mb"]:
+                hecho = f"Turbo automático: borré {r['temporales_mb']} MB de temporales. "
+            uso = psutil.virtual_memory().percent if uso_ram is None else uso_ram
         abiertos = sorted(programas_abiertos().items(), key=lambda kv: kv[1]["mb"], reverse=True)[:2]
         quienes = " y ".join(f"{n.capitalize()} ({round(g['mb'])} MB)" for n, g in abiertos)
-        texto = (f"La RAM está al {round(uso)} %. Lo que más gasta: {quienes}. "
-                 "Cierra lo que no uses o abre Modo turbo.")
+        if hecho and uso < self.config["umbral_ram"]:
+            texto = hecho + f"La RAM bajó al {round(uso)} %."
+        else:
+            texto = (hecho + f"La RAM está al {round(uso)} %. Lo que más gasta: {quienes}. "
+                     "Cierra lo que no uses o abre Modo turbo.")
         self.avisar("Tu PC se está quedando sin memoria", texto)
         return texto
 
