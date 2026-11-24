@@ -55,6 +55,23 @@ Para limpiar `C:\Windows\Temp` o cerrar programas de otros usuarios, abre la ter
 - "¿Cuánto espacio puedo liberar?" y luego "límpialo"
 - "¿Qué arranca con Windows y qué puedo quitar?"
 
+## Sin clave de Claude (modo de órdenes)
+
+Si no configuras `ANTHROPIC_API_KEY`, Jarvis arranca solo en **modo de órdenes**: no usa internet ni Claude y entiende frases fijas, por texto (`iniciar.bat`) o por voz (`iniciar_voz.bat`):
+
+| Dices | Jarvis |
+|---|---|
+| "Jarvis, ¿cómo está la memoria?" | Uso de RAM y procesador |
+| "Jarvis, ¿cuánto espacio queda?" | Espacio libre de cada disco |
+| "Jarvis, ¿qué consume más?" | Los 3 programas que más memoria usan |
+| "Jarvis, ¿por qué va lento?" | Revisa RAM y CPU y dice qué programas pesan |
+| "Jarvis, limpia los temporales" | Borra temporales viejos, **después de que digas sí** |
+| "Jarvis, cierra Chrome" | Cierra el programa, **después de que digas sí** |
+| "Jarvis, ¿qué arranca con Windows?" | Programas de inicio (solo los nombra) |
+| "Jarvis, ¿cuánta batería tengo?", "¿qué hora es?", "ayuda" | Lo obvio |
+
+Para forzar este modo aunque tengas clave: `py voz.py --sin-clave` o `py main.py --sin-clave`.
+
 ## Hablar con Jarvis (voz)
 
 Además del chat de texto, puedes hablarle: dices "Jarvis", haces la pregunta y te responde en voz alta.

@@ -5,16 +5,14 @@ Uso:
     py voz.py --activacion hey_jarvis # se activa con "Hey Jarvis" (menos CPU)
     py voz.py --activacion enter      # pulsas Enter y hablas
     py voz.py --microfonos            # lista los micrófonos disponibles
+    py voz.py --sin-clave             # órdenes fijas, sin Claude (automático si no hay clave)
 """
 from __future__ import annotations
 
 import argparse
 import sys
 
-import anthropic
-
 from jarvis.activacion import buscar_activacion, es_afirmativo, es_despedida, es_olvidalo
-from jarvis.asistente import Jarvis
 
 INSTRUCCIONES_VOZ = """Ahora hablas por voz: tu respuesta se lee en voz alta.
 Responde en una a tres frases cortas, sin tablas, listas, emojis ni formato Markdown.
@@ -27,7 +25,7 @@ SEGUNDOS_PARA_SEGUIR = 6  # tras responder, escucha esto sin pedir "Jarvis" otra
 
 
 class ConversacionPorVoz:
-    def __init__(self, activacion: str, microfono: int | None):
+    def __init__(self, activacion: str, microfono: int | None, sin_clave: bool = False):
         from jarvis.audio import Microfono
         from jarvis.habla import Voz, pitido
         from jarvis.oido import MODELO, Oido
@@ -44,7 +42,12 @@ class ConversacionPorVoz:
             print("Cargando detector de 'Hey Jarvis'...")
             self.detector = DetectorHeyJarvis()
         self.mic = Microfono(microfono)
-        self.jarvis = Jarvis(
+        self.sin_clave = sin_clave
+        if sin_clave:
+            from jarvis.ordenes import Ordenes as Cerebro
+        else:
+            from jarvis.asistente import Jarvis as Cerebro
+        self.jarvis = Cerebro(
             self.confirmar,
             al_usar_herramienta=lambda n: print(f"    · revisando: {n}"),
             sistema_extra=INSTRUCCIONES_VOZ,
@@ -91,6 +94,15 @@ class ConversacionPorVoz:
             self.decir("Hasta luego.")
             return False
         print("    (pensando...)")
+        if getattr(self, "sin_clave", False):
+            try:
+                self.decir(self.jarvis.preguntar(texto))
+            except Exception as e:
+                print(f"    (error: {type(e).__name__}: {e})")
+                self.decir("Algo falló al hacer eso. Prueba otra vez.")
+            return True
+        import anthropic
+
         try:
             self.decir(self.jarvis.preguntar(texto))
         except anthropic.AuthenticationError:
@@ -167,7 +179,8 @@ class ConversacionPorVoz:
         }[self.activacion]
         with self.mic:
             print(f"\nJarvis escuchando. {aviso}\nPara salir di \"Jarvis, adiós\" o pulsa Ctrl+C.\n")
-            self.decir("Jarvis listo.")
+            self.decir("Jarvis listo, en modo de órdenes. Di Jarvis, ayuda, para saber qué puedo hacer."
+                       if self.sin_clave else "Jarvis listo.")
             while True:
                 if not self.conversar(esperar()):
                     return
@@ -194,13 +207,20 @@ def main() -> None:
                    help="cómo se despierta Jarvis (por defecto: al oír 'Jarvis')")
     p.add_argument("--microfono", type=int, default=None, help="número de micrófono (ver --microfonos)")
     p.add_argument("--microfonos", action="store_true", help="lista los micrófonos y sale")
+    p.add_argument("--sin-clave", action="store_true",
+                   help="usa órdenes fijas sin Claude (se activa solo si no hay ANTHROPIC_API_KEY)")
     args = p.parse_args()
 
     if args.microfonos:
         listar_microfonos()
         return
+    from jarvis.ordenes import hay_clave
+
+    sin_clave = args.sin_clave or not hay_clave()
+    if sin_clave:
+        print("Modo sin clave: Jarvis entiende órdenes fijas (di \"Jarvis, ayuda\").")
     try:
-        ConversacionPorVoz(args.activacion, args.microfono).iniciar()
+        ConversacionPorVoz(args.activacion, args.microfono, sin_clave).iniciar()
     except KeyboardInterrupt:
         print("\nHasta luego.")
     except ImportError as e:
