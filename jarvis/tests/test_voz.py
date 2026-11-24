@@ -186,3 +186,35 @@ class ConversacionTest(unittest.TestCase):
         c, dicho = self.armar(["Jarvis, adiós"], [])
         self.assertFalse(c.conversar(c.esperar_jarvis()))
         self.assertEqual(c.jarvis.preguntas, [])
+
+
+class ElevenLabsTest(unittest.TestCase):
+    def test_pide_el_audio_con_la_voz_elegida(self):
+        from unittest import mock
+        from jarvis import habla
+
+        capturado = {}
+
+        class Respuesta:
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def read(self): return b"mp3"
+
+        def falso(pedido, timeout):
+            capturado["url"] = pedido.full_url
+            capturado["clave"] = pedido.get_header("Xi-api-key")
+            capturado["cuerpo"] = pedido.data
+            return Respuesta()
+
+        with mock.patch("urllib.request.urlopen", falso):
+            v = habla._VozElevenLabs(clave="k", voz="VOZ123", modelo="m")
+            self.assertEqual(v.sintetizar("hola"), b"mp3")
+        self.assertIn("/text-to-speech/VOZ123", capturado["url"])
+        self.assertEqual(capturado["clave"], "k")
+        self.assertIn(b'"hola"', capturado["cuerpo"])
+
+    def test_sin_clave_no_se_usa(self):
+        from jarvis import habla
+
+        with self.assertRaises(RuntimeError):
+            habla._VozElevenLabs(clave="", voz="x")

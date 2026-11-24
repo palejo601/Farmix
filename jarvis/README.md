@@ -105,10 +105,25 @@ Opciones de voz (variables de entorno, con `setx NOMBRE valor`):
 |---|---|---|
 | `JARVIS_WHISPER_MODELO` | `small` | `base` es más rápido y menos preciso; `medium` o `turbo`, más preciso y más pesado |
 | `JARVIS_WHISPER_DISPOSITIVO` | `cpu` | `cuda` si tienes tarjeta NVIDIA con CUDA instalado |
-| `JARVIS_VOZ_MOTOR` | `edge` | `sistema` para usar solo la voz de Windows, sin internet |
+| `JARVIS_VOZ_MOTOR` | `elevenlabs` si está configurado, si no `edge` | `edge`, `elevenlabs` o `sistema` (solo la voz de Windows, sin internet) |
 | `JARVIS_VOZ` | `es-CO-GonzaloNeural` | Otra voz de edge-tts, p. ej. `es-CO-SalomeNeural`, `es-MX-JorgeNeural` |
 | `JARVIS_VOZ_VELOCIDAD` | `+10%` | Más rápido o más lento, p. ej. `-10%` |
 | `JARVIS_UMBRAL_VOZ` | `300` | Súbelo si se activa con el ruido; bájalo si no te oye |
+
+### Que Jarvis hable con tu propia voz (ElevenLabs)
+
+1. En <https://elevenlabs.io/app/voice-lab> crea un **Instant Voice Clone** con una grabación tuya de 1 a 2 minutos, hablando normal y sin ruido.
+2. Copia el **Voice ID** de esa voz y crea tu clave en <https://elevenlabs.io/app/settings/api-keys>. Dale permiso de *Text to Speech*.
+3. Guárdalas:
+
+   ```bat
+   setx ELEVENLABS_API_KEY "tu-clave-de-elevenlabs"
+   setx JARVIS_VOZ_ELEVENLABS "el-voice-id"
+   ```
+
+4. Cierra la terminal y abre `iniciar_voz.bat`. Con esas dos variables, Jarvis usa tu voz automáticamente. Cada respuesta gasta créditos de ElevenLabs (más o menos un crédito por letra). Si se acaban o no hay internet, vuelve a la voz de Microsoft.
+
+Opcional: `setx JARVIS_ELEVENLABS_MODELO "eleven_flash_v2_5"` responde más rápido y gasta la mitad de créditos, aunque se parece un poco menos a tu voz.
 
 Si no te entiende bien: acércate al micrófono, revisa en Windows que sea el micrófono predeterminado, o prueba `JARVIS_WHISPER_MODELO=medium`.
 

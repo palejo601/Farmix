@@ -1,24 +1,35 @@
 """Respuestas habladas.
 
-Dos motores:
-- "edge" (por defecto): voces neuronales de Microsoft, suenan naturales.
+Tres motores:
+- "elevenlabs": habla con la voz que elijas en ElevenLabs, por ejemplo tu
+  propia voz clonada. Necesita internet, ELEVENLABS_API_KEY y
+  JARVIS_VOZ_ELEVENLABS (el voice_id). Gasta créditos de ElevenLabs.
+  Si esas dos variables existen, se usa automáticamente.
+- "edge" (si no hay ElevenLabs): voces neuronales de Microsoft, suenan naturales.
   Necesita internet; no requiere clave ni cuenta.
 - "sistema": las voces que trae Windows (SAPI). Funciona sin internet, suena
   más robótica. Para tener voz en español, Windows debe tener instalado el
   paquete de voz en español (Configuración > Hora e idioma > Voz).
 
-Si "edge" falla (sin internet, servicio caído), Jarvis pasa solo a "sistema".
+Si un motor falla (sin internet, sin créditos, servicio caído), Jarvis pasa
+solo al siguiente: elevenlabs -> edge -> sistema.
 """
 from __future__ import annotations
 
 import asyncio
 import io
+import json
 import os
 import re
+import urllib.error
+import urllib.request
 
 import numpy as np
 
-MOTOR = os.environ.get("JARVIS_VOZ_MOTOR", "edge")
+ELEVEN_CLAVE = os.environ.get("ELEVENLABS_API_KEY", "")
+ELEVEN_VOZ = os.environ.get("JARVIS_VOZ_ELEVENLABS", "")
+ELEVEN_MODELO = os.environ.get("JARVIS_ELEVENLABS_MODELO", "eleven_multilingual_v2")
+MOTOR = os.environ.get("JARVIS_VOZ_MOTOR", "elevenlabs" if ELEVEN_CLAVE and ELEVEN_VOZ else "edge")
 VOZ_EDGE = os.environ.get("JARVIS_VOZ", "es-CO-GonzaloNeural")  # p. ej. es-CO-SalomeNeural, es-MX-JorgeNeural
 VELOCIDAD = os.environ.get("JARVIS_VOZ_VELOCIDAD", "+10%")
 
@@ -104,6 +115,40 @@ class _VozEdge:
             sd.wait()
 
 
+class _VozElevenLabs:
+    URL = "https://api.elevenlabs.io/v1/text-to-speech/{voz}?output_format=mp3_44100_128"
+
+    def __init__(self, clave: str = ELEVEN_CLAVE, voz: str = ELEVEN_VOZ, modelo: str = ELEVEN_MODELO):
+        if not clave:
+            raise RuntimeError("falta ELEVENLABS_API_KEY")
+        if not voz:
+            raise RuntimeError("falta JARVIS_VOZ_ELEVENLABS (el voice_id de tu voz)")
+        self.clave, self.voz, self.modelo = clave, voz, modelo
+
+    def sintetizar(self, texto: str) -> bytes:
+        cuerpo = json.dumps({"text": texto, "model_id": self.modelo}).encode()
+        pedido = urllib.request.Request(
+            self.URL.format(voz=self.voz),
+            data=cuerpo,
+            headers={"xi-api-key": self.clave, "Content-Type": "application/json", "Accept": "audio/mpeg"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(pedido, timeout=30) as r:
+                return r.read()
+        except urllib.error.HTTPError as e:
+            detalle = e.read().decode("utf-8", "replace")[:200]
+            raise RuntimeError(f"ElevenLabs respondió {e.code}: {detalle}") from None
+
+    def decir(self, texto: str) -> None:
+        import sounddevice as sd
+
+        muestras, frecuencia = decodificar_audio(self.sintetizar(texto))
+        if muestras.size:
+            sd.play(muestras, frecuencia)
+            sd.wait()
+
+
 class _VozSistema:
     def __init__(self):
         import pyttsx3
@@ -145,10 +190,15 @@ class Voz:
 
     def __init__(self, motor: str = MOTOR):
         self._motores: list = []
-        orden = ["edge", "sistema"] if motor == "edge" else ["sistema", "edge"]
+        clases = {"elevenlabs": _VozElevenLabs, "edge": _VozEdge, "sistema": _VozSistema}
+        orden = {
+            "elevenlabs": ["elevenlabs", "edge", "sistema"],
+            "edge": ["edge", "sistema"],
+            "sistema": ["sistema", "edge"],
+        }.get(motor, ["edge", "sistema"])
         for nombre in orden:
             try:
-                self._motores.append(_VozEdge() if nombre == "edge" else _VozSistema())
+                self._motores.append(clases[nombre]())
             except Exception as e:
                 print(f"    (voz '{nombre}' no disponible: {e})")
         if not self._motores:
